@@ -20,6 +20,7 @@ export interface BaseRecipe {
   description?: string
   total_cost: number
   loss_factor: number
+  base_recipe_items?: BaseRecipeItem[]
   created_at: string
   updated_at: string
 }
@@ -27,13 +28,14 @@ export interface BaseRecipe {
 export interface BaseRecipeItem {
   id: string
   base_recipe_id: string
-  ingredient_id?: string
-  ingredient_name: string
+  ingredient_id: string
   quantity: number
-  unit: UnitType
-  unit_cost: number
-  loss_factor: number
-  total_cost: number
+  ingredients?: {
+    id: string
+    name: string
+    unit: UnitType
+    unit_cost: number
+  }
   created_at: string
 }
 

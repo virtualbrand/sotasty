@@ -472,7 +472,7 @@ function BasesTab() {
       description: base.description || '',
       loss_factor: base.loss_factor.toString(),
       items: (base.base_recipe_items || []).map(item => ({
-        ingredient_id: item.ingredient_id,
+        ingredient_id: item.ingredients?.id || item.ingredient_id,
         quantity: item.quantity.toString()
       }))
     })

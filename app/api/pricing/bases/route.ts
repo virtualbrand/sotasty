@@ -198,18 +198,22 @@ export async function PATCH(request: NextRequest) {
       .eq('base_recipe_id', id)
 
     if (items && items.length > 0) {
-      const itemsToInsert = items.map((item: any) => ({
-        base_recipe_id: id,
-        ingredient_id: item.ingredient_id,
-        quantity: parseFloat(item.quantity)
-      }))
+      const itemsToInsert = items
+        .filter((item: any) => item.ingredient_id || item.ingredients?.id)
+        .map((item: any) => ({
+          base_recipe_id: id,
+          ingredient_id: item.ingredient_id || item.ingredients?.id,
+          quantity: parseFloat(item.quantity)
+        }))
 
-      const { error: itemsError } = await supabase
-        .from('base_recipe_items')
-        .insert(itemsToInsert)
+      if (itemsToInsert.length > 0) {
+        const { error: itemsError } = await supabase
+          .from('base_recipe_items')
+          .insert(itemsToInsert)
 
-      if (itemsError) {
-        return NextResponse.json({ error: itemsError.message }, { status: 500 })
+        if (itemsError) {
+          return NextResponse.json({ error: itemsError.message }, { status: 500 })
+        }
       }
     }
 

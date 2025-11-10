@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { 
   LayoutDashboard, 
   Package, 
@@ -13,8 +14,15 @@ import {
   UserCheck,
   Shield,
   HelpCircle,
-  MessageSquare
+  MessageSquare,
+  Bell,
+  Settings as SettingsIcon,
+  LogOut,
+  User,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
@@ -34,6 +42,74 @@ const bottomMenuItems = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const supabase = createClient()
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    getUser()
+  }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showUserMenu && !(event.target as Element).closest('.user-menu-container')) {
+        setShowUserMenu(false)
+      }
+    }
+
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showUserMenu) {
+        setShowUserMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscKey)
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscKey)
+    }
+  }, [showUserMenu])
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      router.push('/auth/login')
+      router.refresh()
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error)
+    }
+  }
+
+  const toggleSidebar = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    
+    // Dispatch custom event to notify layout
+    const event = new CustomEvent('sidebar-collapse', { 
+      detail: { isCollapsed: newState } 
+    });
+    window.dispatchEvent(event);
+  }
+
+  const getUserInitials = () => {
+    if (user?.user_metadata?.name) {
+      return user.user_metadata.name
+        .split(' ')
+        .map((n: string) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+    }
+    return user?.email?.[0]?.toUpperCase() || 'U'
+  }
 
   const isActive = (href: string) => {
     if (href === '/') {
@@ -43,47 +119,143 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <span className="text-white text-xl font-bold">🍰</span>
-          </div>
-          <span className="text-xl font-bold text-gray-900">CakeCloud</span>
-        </Link>
-      </div>
-
-      {/* Main Menu */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
-        <div className="space-y-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon
-            const active = isActive(item.href)
-            
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all
-                  ${active 
-                    ? 'bg-gray-900 text-white shadow-sm' 
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }
-                `}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="font-medium text-sm">{item.label}</span>
-              </Link>
-            )
-          })}
+    <>
+      <aside className={`fixed left-0 top-0 h-screen bg-white shadow-lg flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+        {/* Logo & Toggle */}
+        <div className="p-6 flex items-center justify-between">
+          {!isCollapsed && (
+            <Link href="/" className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+                <span className="text-white text-xl font-bold">🍰</span>
+              </div>
+              <span className="text-xl font-bold text-gray-900">CakeCloud</span>
+            </Link>
+          )}
+          {isCollapsed && (
+            <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md mx-auto">
+              <span className="text-white text-xl font-bold">🍰</span>
+            </div>
+          )}
         </div>
-      </nav>
 
-      {/* Bottom Menu */}
-      <div className="border-t border-gray-200 p-3">
-        <div className="space-y-1">
+        {/* Collapse Button */}
+        <button
+          onClick={toggleSidebar}
+          className={`absolute -right-3 top-8 w-6 h-6 bg-purple-600 hover:bg-purple-700 rounded-full flex items-center justify-center shadow-lg transition-all ${isCollapsed ? 'rotate-180' : ''}`}
+        >
+          <ChevronLeft className="w-4 h-4 text-white" />
+        </button>
+
+        {/* User Profile */}
+        <div className={`px-4 pb-4 ${isCollapsed ? 'flex justify-center' : ''}`}>
+          <div className="relative user-menu-container">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className={`flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-all w-full ${isCollapsed ? 'justify-center' : ''}`}
+            >
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-md flex-shrink-0">
+                <span className="text-white text-sm font-semibold">{getUserInitials()}</span>
+              </div>
+              {!isCollapsed && (
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-semibold text-gray-900">
+                    {user?.user_metadata?.name || 'Usuário'}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                </div>
+              )}
+            </button>
+
+            {/* Dropdown Menu */}
+            {showUserMenu && (
+              <div className={`absolute ${isCollapsed ? 'left-full ml-2' : 'left-0'} top-0 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-[100]`}>
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <p className="text-sm font-semibold text-gray-900">
+                    {user?.user_metadata?.name || 'Usuário'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{user?.email}</p>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false)
+                    router.push('/profile')
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-purple-50 flex items-center gap-3 transition-colors"
+                >
+                  <User className="w-4 h-4" />
+                  Meu Perfil
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false)
+                    router.push('/settings')
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-purple-50 flex items-center gap-3 transition-colors"
+                >
+                  <SettingsIcon className="w-4 h-4" />
+                  Configurações
+                </button>
+
+                <div className="border-t border-gray-100 my-2"></div>
+                
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sair
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Main Menu */}
+        <nav className="flex-1 overflow-y-auto px-3 py-2">
+          <div className="space-y-1">
+            {menuItems.map((item) => {
+              const Icon = item.icon
+              const active = isActive(item.href)
+              
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`
+                    flex items-center gap-3 px-4 py-3 rounded-xl transition-all group
+                    ${active 
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/30' 
+                      : 'text-gray-600 hover:bg-gray-50'
+                    }
+                    ${isCollapsed ? 'justify-center' : ''}
+                  `}
+                  title={isCollapsed ? item.label : ''}
+                >
+                  <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-gray-500 group-hover:text-gray-900'}`} />
+                  {!isCollapsed && <span className="font-medium text-sm">{item.label}</span>}
+                  {active && !isCollapsed && (
+                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white"></div>
+                  )}
+                </Link>
+              )
+            })}
+          </div>
+        </nav>
+
+        {/* Bottom Menu */}
+        <div className="border-t border-gray-100 p-3 space-y-2">
+          {/* Notifications */}
+          <button 
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-gray-600 hover:bg-purple-50 relative group ${isCollapsed ? 'justify-center' : ''}`}
+            title={isCollapsed ? 'Notificações' : ''}
+          >
+            <Bell className="w-5 h-5 flex-shrink-0 text-gray-500 group-hover:text-purple-600" />
+            {!isCollapsed && <span className="font-medium text-sm">Notificações</span>}
+            <span className="absolute top-2 left-7 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+
           {bottomMenuItems.map((item) => {
             const Icon = item.icon
             const active = isActive(item.href)
@@ -93,20 +265,22 @@ export default function Sidebar() {
                 key={item.href}
                 href={item.href}
                 className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all
+                  flex items-center gap-3 px-4 py-3 rounded-xl transition-all group
                   ${active 
-                    ? 'bg-gray-900 text-white' 
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-purple-50 text-purple-600' 
+                    : 'text-gray-600 hover:bg-purple-50'
                   }
+                  ${isCollapsed ? 'justify-center' : ''}
                 `}
+                title={isCollapsed ? item.label : ''}
               >
-                <Icon className="w-5 h-5" />
-                <span className="font-medium text-sm">{item.label}</span>
+                <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-purple-600' : 'text-gray-500 group-hover:text-purple-600'}`} />
+                {!isCollapsed && <span className="font-medium text-sm">{item.label}</span>}
               </Link>
             )
           })}
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   )
 }

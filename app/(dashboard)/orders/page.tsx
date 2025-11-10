@@ -105,7 +105,7 @@ export default function OrdersPage() {
   }
 
   const getViewTitle = () => {
-    if (view === 'list') return 'All Events'
+    if (view === 'list') return 'Pedidos'
     if (view === 'day') {
       return currentDate.toLocaleDateString('en-US', { 
         weekday: 'long', 
@@ -635,7 +635,7 @@ export default function OrdersPage() {
               startOfWeek.setDate(currentDate.getDate() - currentDate.getDay())
               
               return (
-                <>
+                <div key={hour} className="contents">
                   <div className="p-2 text-xs text-gray-500 border-r border-b border-gray-200 text-center">
                     {hour.toString().padStart(2, '0')}:00
                   </div>
@@ -670,7 +670,7 @@ export default function OrdersPage() {
                       </div>
                     )
                   })}
-                </>
+                </div>
               )
             })}
           </div>
