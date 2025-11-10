@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import Modal from '@/components/Modal'
 import { 
   Plus, 
   Clock, 
@@ -17,16 +18,17 @@ import {
   ChevronRight,
   X
 } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Combobox } from '@/components/ui/combobox'
+
+// Brazilian number formatting helper
+const formatBRL = (value: number, decimals: number = 2): string => {
+  return value.toLocaleString('pt-BR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  })
+}
 
 type Order = {
   id: string
@@ -42,16 +44,122 @@ type Order = {
   category?: string
 }
 
+type Customer = {
+  id: string
+  name: string
+  email: string
+  phone: string
+}
+
+type Product = {
+  id: string
+  name: string
+  description: string
+  price?: number
+  selling_price?: number
+  category: string
+  available?: boolean
+}
+
 export default function OrdersPage() {
   const [view, setView] = useState<'month' | 'week' | 'day' | 'list'>('list')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [currentDate, setCurrentDate] = useState(new Date(2025, 10, 10))
   const [activeFilters, setActiveFilters] = useState<string[]>([])
   const [showColorFilter, setShowColorFilter] = useState(false)
   const [showTagFilter, setShowTagFilter] = useState(false)
   const [showCategoryFilter, setShowCategoryFilter] = useState(false)
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+  const [loadingCustomers, setLoadingCustomers] = useState(true)
+  const [loadingProducts, setLoadingProducts] = useState(true)
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false)
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false)
+  const [newCustomerData, setNewCustomerData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+  })
+  const [newProductData, setNewProductData] = useState({
+    name: '',
+    description: '',
+    category: 'cake' as 'cake' | 'cupcake' | 'cookie' | 'pie' | 'other',
+    selling_price: '',
+  })
+  const [formData, setFormData] = useState({
+    customer: '',
+    customerId: '',
+    product: '',
+    productId: '',
+    deliveryDate: '',
+    deliveryTime: '',
+    status: 'pending' as Order['status'],
+    phone: '',
+    value: '',
+    notes: ''
+  })
+
+  // Carregar clientes e produtos
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [customersRes, productsRes] = await Promise.all([
+          fetch('/api/customers'),
+          fetch('/api/products')
+        ])
+        
+        if (customersRes.ok) {
+          const customersData = await customersRes.json()
+          setCustomers(customersData)
+        }
+        
+        if (productsRes.ok) {
+          const productsData = await productsRes.json()
+          setProducts(productsData)
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error)
+      } finally {
+        setLoadingCustomers(false)
+        setLoadingProducts(false)
+      }
+    }
+    
+    fetchData()
+  }, [])
+
+  // Fechar filtros ao clicar fora ou pressionar ESC
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (!target.closest('.filter-dropdown') && !target.closest('.filter-button')) {
+        setShowColorFilter(false)
+        setShowTagFilter(false)
+        setShowCategoryFilter(false)
+      }
+    }
+
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowColorFilter(false)
+        setShowTagFilter(false)
+        setShowCategoryFilter(false)
+      }
+    }
+
+    if (showColorFilter || showTagFilter || showCategoryFilter) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleEscKey)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscKey)
+    }
+  }, [showColorFilter, showTagFilter, showCategoryFilter])
 
   const demoOrders: Order[] = [
     {
@@ -96,12 +204,133 @@ export default function OrdersPage() {
 
   const handleOrderClick = (order: Order) => {
     setSelectedOrder(order)
-    setIsDialogOpen(true)
+    setIsEditing(true)
+    setFormData({
+      customer: order.customer,
+      customerId: '',
+      product: order.product,
+      productId: '',
+      deliveryDate: order.deliveryDate.toISOString().split('T')[0],
+      deliveryTime: order.deliveryDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      status: order.status,
+      phone: order.phone || '',
+      value: order.value?.toString() || '',
+      notes: order.notes || ''
+    })
+    setIsModalOpen(true)
   }
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false)
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
     setSelectedOrder(null)
+    setIsEditing(false)
+    setFormData({
+      customer: '',
+      customerId: '',
+      product: '',
+      productId: '',
+      deliveryDate: '',
+      deliveryTime: '',
+      status: 'pending',
+      phone: '',
+      value: '',
+      notes: ''
+    })
+  }
+
+  const handleNewOrder = () => {
+    setIsEditing(false)
+    setSelectedOrder(null)
+    setFormData({
+      customer: '',
+      customerId: '',
+      product: '',
+      productId: '',
+      deliveryDate: '',
+      deliveryTime: '',
+      status: 'pending',
+      phone: '',
+      value: '',
+      notes: ''
+    })
+    setIsModalOpen(true)
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Aqui você implementaria a lógica de salvar no banco de dados
+    console.log('Salvar pedido:', formData)
+    handleCloseModal()
+  }
+
+  const handleDelete = () => {
+    if (confirm('Tem certeza que deseja excluir este pedido?')) {
+      // Aqui você implementaria a lógica de deletar do banco de dados
+      console.log('Deletar pedido:', selectedOrder?.id)
+      handleCloseModal()
+    }
+  }
+
+  const handleCreateCustomer = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const response = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCustomerData),
+      })
+
+      if (response.ok) {
+        const newCustomer = await response.json()
+        setCustomers(prev => [...prev, newCustomer])
+        setFormData(prev => ({
+          ...prev,
+          customerId: newCustomer.id,
+          customer: newCustomer.name,
+          phone: newCustomer.phone,
+        }))
+        setIsCustomerModalOpen(false)
+        setNewCustomerData({ name: '', email: '', phone: '' })
+      }
+    } catch (error) {
+      console.error('Erro ao criar cliente:', error)
+      alert('Erro ao criar cliente. Tente novamente.')
+    }
+  }
+
+  const handleCreateProduct = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newProductData,
+          selling_price: parseFloat(newProductData.selling_price),
+        }),
+      })
+
+      if (response.ok) {
+        const newProduct = await response.json()
+        setProducts(prev => [...prev, newProduct])
+        setFormData(prev => ({
+          ...prev,
+          productId: newProduct.id,
+          product: newProduct.name,
+          value: newProduct.selling_price?.toString() || '',
+        }))
+        setIsProductModalOpen(false)
+        setNewProductData({ name: '', description: '', category: 'cake', selling_price: '' })
+      }
+    } catch (error) {
+      console.error('Erro ao criar produto:', error)
+      alert('Erro ao criar produto. Tente novamente.')
+    }
   }
 
   const getViewTitle = () => {
@@ -298,10 +527,13 @@ export default function OrdersPage() {
               <ListIcon className="h-4 w-4 mr-2" />
               Lista
             </Button>
-            <Button className="h-9 bg-pink-600 hover:bg-pink-700 text-white">
-              <Plus className="h-4 w-4 mr-2" />
+            <button 
+              onClick={handleNewOrder}
+              className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
               Novo Pedido
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -322,6 +554,7 @@ export default function OrdersPage() {
             <Button
               variant="outline"
               size="sm"
+              className="filter-button"
               onClick={() => {
                 setShowColorFilter(!showColorFilter)
                 setShowTagFilter(false)
@@ -338,7 +571,7 @@ export default function OrdersPage() {
             </Button>
             
             {showColorFilter && (
-              <div className="absolute top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 min-w-[200px]">
+              <div className="filter-dropdown absolute top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 min-w-[200px]">
                 {colors.map(color => (
                   <button
                     key={color.id}
@@ -360,6 +593,7 @@ export default function OrdersPage() {
             <Button
               variant="outline"
               size="sm"
+              className="filter-button"
               onClick={() => {
                 setShowTagFilter(!showTagFilter)
                 setShowColorFilter(false)
@@ -371,7 +605,7 @@ export default function OrdersPage() {
             </Button>
             
             {showTagFilter && (
-              <div className="absolute top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 min-w-[200px]">
+              <div className="filter-dropdown absolute top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 min-w-[200px]">
                 {allTags.map(tag => (
                   <button
                     key={tag}
@@ -392,6 +626,7 @@ export default function OrdersPage() {
             <Button
               variant="outline"
               size="sm"
+              className="filter-button"
               onClick={() => {
                 setShowCategoryFilter(!showCategoryFilter)
                 setShowColorFilter(false)
@@ -403,7 +638,7 @@ export default function OrdersPage() {
             </Button>
             
             {showCategoryFilter && (
-              <div className="absolute top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 min-w-[200px]">
+              <div className="filter-dropdown absolute top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 min-w-[200px]">
                 {allCategories.map(category => (
                   <button
                     key={category}
@@ -733,7 +968,7 @@ export default function OrdersPage() {
                                   
                                   {order.value && (
                                     <span className="font-medium text-green-700">
-                                      R$ {order.value.toFixed(2)}
+                                      R$ {formatBRL(order.value)}
                                     </span>
                                   )}
                                 </div>
@@ -765,121 +1000,367 @@ export default function OrdersPage() {
         </div>
       )}
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Detalhes do Pedido</DialogTitle>
-            <DialogDescription>
-              Visualize e edite as informações do pedido
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedOrder && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="customer">Cliente</Label>
-                <div className="flex items-center gap-2 p-3 border rounded-lg bg-gray-50">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">{selectedOrder.customer}</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="product">Produto</Label>
-                <div className="flex items-center gap-2 p-3 border rounded-lg bg-gray-50">
-                  <Package className="h-4 w-4 text-gray-500" />
-                  <span>{selectedOrder.product}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Data de Entrega</Label>
-                  <div className="flex items-center gap-2 p-3 border rounded-lg bg-gray-50">
-                    <Clock className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">
-                      {selectedOrder.deliveryDate.toLocaleDateString('pt-BR')}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Horário</Label>
-                  <div className="flex items-center gap-2 p-3 border rounded-lg bg-gray-50">
-                    <Clock className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">
-                      {selectedOrder.deliveryDate.toLocaleTimeString('pt-BR', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <div className="flex items-center gap-2 p-3 border rounded-lg bg-gray-50">
-                  <div className={`h-3 w-3 rounded-full ${getStatusColor(selectedOrder.status)}`} />
-                  <span className="font-medium">{getStatusLabel(selectedOrder.status)}</span>
-                </div>
-              </div>
-
-              {selectedOrder.phone && (
-                <div className="space-y-2">
-                  <Label>Telefone</Label>
-                  <div className="p-3 border rounded-lg bg-gray-50">
-                    <span>{selectedOrder.phone}</span>
-                  </div>
-                </div>
-              )}
-
-              {selectedOrder.value && (
-                <div className="space-y-2">
-                  <Label>Valor</Label>
-                  <div className="p-3 border border-green-200 rounded-lg bg-green-50">
-                    <span className="text-lg font-bold text-green-700">
-                      R$ {selectedOrder.value.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {selectedOrder.notes && (
-                <div className="space-y-2">
-                  <Label>Observações</Label>
-                  <div className="p-3 border rounded-lg bg-gray-50">
-                    <p className="text-sm text-gray-700">{selectedOrder.notes}</p>
-                  </div>
-                </div>
-              )}
+      {/* Modal Pedido */}
+      {isModalOpen && (
+        <Modal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          title={isEditing ? 'Editar Pedido' : 'Novo Pedido'}
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Cliente *
+              </label>
+              <Combobox
+                options={customers.map(c => ({
+                  value: c.id,
+                  label: c.name,
+                  subtitle: c.phone
+                }))}
+                value={formData.customerId}
+                onValueChange={(value) => {
+                  const selectedCustomer = customers.find(c => c.id === value)
+                  setFormData(prev => ({
+                    ...prev,
+                    customerId: value,
+                    customer: selectedCustomer?.name || '',
+                    phone: selectedCustomer?.phone || prev.phone
+                  }))
+                }}
+                placeholder="Selecione ou busque um cliente"
+                searchPlaceholder="Digite o nome do cliente..."
+                emptyMessage="Cliente não encontrado"
+                onCreateNew={(searchTerm) => {
+                  setNewCustomerData(prev => ({ ...prev, name: searchTerm }))
+                  setIsCustomerModalOpen(true)
+                }}
+                createNewLabel="Adicionar"
+                loading={loadingCustomers}
+              />
             </div>
-          )}
 
-          <DialogFooter className="flex gap-2">
-            <Button
-              variant="destructive"
-              onClick={handleCloseDialog}
-              className="flex-1"
-            >
-              Excluir
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleCloseDialog}
-              className="flex-1"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleCloseDialog}
-              className="flex-1 bg-pink-600 hover:bg-pink-700"
-            >
-              Salvar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Produto *
+              </label>
+              <Combobox
+                options={products.map(p => ({
+                  value: p.id,
+                  label: p.name,
+                  subtitle: p.selling_price ? `R$ ${p.selling_price.toFixed(2)}` : undefined
+                }))}
+                value={formData.productId}
+                onValueChange={(value) => {
+                  const selectedProduct = products.find(p => p.id === value)
+                  setFormData(prev => ({
+                    ...prev,
+                    productId: value,
+                    product: selectedProduct?.name || '',
+                    value: selectedProduct?.selling_price?.toString() || prev.value
+                  }))
+                }}
+                placeholder="Selecione ou busque um produto"
+                searchPlaceholder="Digite o nome do produto..."
+                emptyMessage="Produto não encontrado"
+                onCreateNew={(searchTerm) => {
+                  setNewProductData(prev => ({ ...prev, name: searchTerm }))
+                  setIsProductModalOpen(true)
+                }}
+                createNewLabel="Adicionar"
+                loading={loadingProducts}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Data de Entrega *
+                </label>
+                <input
+                  type="date"
+                  name="deliveryDate"
+                  value={formData.deliveryDate}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Horário *
+                </label>
+                <input
+                  type="time"
+                  name="deliveryTime"
+                  value={formData.deliveryTime}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Status *
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900"
+              >
+                <option value="pending">Pendente</option>
+                <option value="in-progress">Em Andamento</option>
+                <option value="completed">Concluído</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Telefone
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
+                placeholder="(00) 00000-0000"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Valor
+              </label>
+              <input
+                type="number"
+                name="value"
+                value={formData.value}
+                onChange={handleInputChange}
+                step="0.01"
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
+                placeholder="0,00"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Observações
+              </label>
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleInputChange}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500 resize-none"
+                placeholder="Observações sobre o pedido"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  className="btn-danger flex-1"
+                >
+                  Excluir
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleCloseModal}
+                className="btn-outline-grey flex-1"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="btn-success flex-1"
+              >
+                {isEditing ? 'Atualizar' : 'Salvar Pedido'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Modal Novo Cliente */}
+      {isCustomerModalOpen && (
+        <Modal
+          isOpen={isCustomerModalOpen}
+          onClose={() => {
+            setIsCustomerModalOpen(false)
+            setNewCustomerData({ name: '', email: '', phone: '' })
+          }}
+          title="Novo Cliente"
+        >
+          <form onSubmit={handleCreateCustomer} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nome *
+              </label>
+              <input
+                type="text"
+                value={newCustomerData.name}
+                onChange={(e) => setNewCustomerData(prev => ({ ...prev, name: e.target.value }))}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
+                placeholder="Nome completo"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email *
+              </label>
+              <input
+                type="email"
+                value={newCustomerData.email}
+                onChange={(e) => setNewCustomerData(prev => ({ ...prev, email: e.target.value }))}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
+                placeholder="email@exemplo.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Telefone *
+              </label>
+              <input
+                type="tel"
+                value={newCustomerData.phone}
+                onChange={(e) => setNewCustomerData(prev => ({ ...prev, phone: e.target.value }))}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
+                placeholder="(00) 00000-0000"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCustomerModalOpen(false)
+                  setNewCustomerData({ name: '', email: '', phone: '' })
+                }}
+                className="btn-outline-grey flex-1"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="btn-success flex-1"
+              >
+                Adicionar Cliente
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Modal Novo Produto */}
+      {isProductModalOpen && (
+        <Modal
+          isOpen={isProductModalOpen}
+          onClose={() => {
+            setIsProductModalOpen(false)
+            setNewProductData({ name: '', description: '', category: 'cake', selling_price: '' })
+          }}
+          title="Novo Produto"
+        >
+          <form onSubmit={handleCreateProduct} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nome *
+              </label>
+              <input
+                type="text"
+                value={newProductData.name}
+                onChange={(e) => setNewProductData(prev => ({ ...prev, name: e.target.value }))}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
+                placeholder="Nome do produto"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Categoria *
+              </label>
+              <select
+                value={newProductData.category}
+                onChange={(e) => setNewProductData(prev => ({ 
+                  ...prev, 
+                  category: e.target.value as 'cake' | 'cupcake' | 'cookie' | 'pie' | 'other'
+                }))}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900"
+              >
+                <option value="cake">Bolo</option>
+                <option value="cupcake">Cupcake</option>
+                <option value="cookie">Cookie</option>
+                <option value="pie">Torta</option>
+                <option value="other">Outro</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Preço de Venda
+              </label>
+              <input
+                type="number"
+                value={newProductData.selling_price}
+                onChange={(e) => setNewProductData(prev => ({ ...prev, selling_price: e.target.value }))}
+                step="0.01"
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
+                placeholder="0,00"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Descrição
+              </label>
+              <textarea
+                value={newProductData.description}
+                onChange={(e) => setNewProductData(prev => ({ ...prev, description: e.target.value }))}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500 resize-none"
+                placeholder="Descrição do produto"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsProductModalOpen(false)
+                  setNewProductData({ name: '', description: '', category: 'cake', selling_price: '' })
+                }}
+                className="btn-outline-grey flex-1"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="btn-success flex-1"
+              >
+                Adicionar Produto
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   )
 }

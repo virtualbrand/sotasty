@@ -74,14 +74,12 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FFFBFB] to-[#EBC7C1] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Logo */}
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <span className="text-white text-3xl">🍰</span>
-            </div>
+            <img src="/logo.svg" alt="CakeCloud" className="w-16 h-16" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900">
             CakeCloud
@@ -124,7 +122,7 @@ export default function SignUpPage() {
                 required
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition placeholder:text-gray-500 text-gray-900"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent transition placeholder:text-gray-500 text-gray-900"
                 placeholder="Digite seu nome completo"
               />
             </div>
@@ -141,7 +139,7 @@ export default function SignUpPage() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition placeholder:text-gray-500 text-gray-900"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent transition placeholder:text-gray-500 text-gray-900"
                 placeholder="Digite seu e-mail"
               />
             </div>
@@ -158,7 +156,7 @@ export default function SignUpPage() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition placeholder:text-gray-500 text-gray-900"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent transition placeholder:text-gray-500 text-gray-900"
                 placeholder="Crie uma senha segura"
               />
               <p className="mt-1 text-xs text-gray-500">Mínimo de 6 caracteres</p>
@@ -176,7 +174,7 @@ export default function SignUpPage() {
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition placeholder:text-gray-500 text-gray-900"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent transition placeholder:text-gray-500 text-gray-900"
                 placeholder="Digite a senha novamente"
               />
             </div>
@@ -188,17 +186,17 @@ export default function SignUpPage() {
                   name="terms"
                   type="checkbox"
                   required
-                  className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-[#B3736B] focus:ring-[#B3736B] border-gray-300 rounded"
                 />
               </div>
               <div className="ml-2 text-sm">
                 <label htmlFor="terms" className="text-gray-700">
                   Eu concordo com os{' '}
-                  <a href="#" className="font-medium text-pink-600 hover:text-pink-500">
+                  <a href="#" className="font-medium text-[#B3736B] hover:text-[#BE9089]">
                     Termos de Serviço
                   </a>{' '}
                   e{' '}
-                  <a href="#" className="font-medium text-pink-600 hover:text-pink-500">
+                  <a href="#" className="font-medium text-[#B3736B] hover:text-[#BE9089]">
                     Política de Privacidade
                   </a>
                 </label>
@@ -208,7 +206,7 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-gradient-to-r from-[#B3736B] to-[#E79F9C] hover:from-[#BE9089] hover:to-[#E7B97C] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#B3736B] disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {loading ? (
                 <span className="flex items-center">
@@ -237,7 +235,7 @@ export default function SignUpPage() {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Já tem uma conta?{' '}
-                <Link href="/auth/login" className="font-medium text-pink-600 hover:text-pink-500">
+                <Link href="/auth/login" className="font-medium text-[#B3736B] hover:text-[#BE9089]">
                   Faça login
                 </Link>
               </p>

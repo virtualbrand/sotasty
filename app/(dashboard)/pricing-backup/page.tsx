@@ -239,7 +239,7 @@ function IngredientsTab() {
         </button>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Insumo" : "Cadastrar Insumo"}>
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Insumo" : "Cadastrar Novo Insumo"}>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
@@ -537,7 +537,7 @@ function BasesTab() {
         </button>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Base de Preparo" : "Cadastrar Base de Preparo"}>
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Base de Preparo" : "Cadastrar Nova Base de Preparo"}>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 mb-4">
             <div>
@@ -948,7 +948,7 @@ function ProductsTab() {
         </button>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Produto Final" : "Cadastrar Produto Final"}>
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Produto Final" : "Cadastrar Novo Produto Final"}>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 mb-4">
             <div>

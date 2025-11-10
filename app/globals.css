@@ -4,11 +4,22 @@
 
 @theme {
   --font-sans: var(--font-kumbh-sans);
+  
+  /* CakeCloud Color Palette */
+  --color-snow: #FFFBFB;
+  --color-lavender-blush: #FFEEEB;
+  --color-pale-dogwood: #EBC7C1;
+  --color-rosy-brown: #BE9089;
+  --color-melon: #E79F9C;
+  --color-old-rose: #B3736B;
+  --color-old-rose-dark: #9D635A;
+  --color-licorice: #1B0F0E;
 }
 
 body {
   font-family: var(--font-kumbh-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-weight: 400;
+  background-color: var(--color-snow);
 }
 
 /* Títulos em bold */
@@ -133,11 +144,189 @@ h1, h2, h3, h4, h5, h6 {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+/* Button Styles - Based on color palette */
+.btn-info,
+.btn-success,
+.btn-warning,
+.btn-danger,
+.btn-outline-info,
+.btn-outline-success,
+.btn-outline-warning,
+.btn-outline-danger,
+.btn-outline-grey {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 8px 22px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  transition: all 0.2s;
+  outline: none;
+  cursor: pointer;
+}
+
+.btn-info:focus,
+.btn-success:focus,
+.btn-warning:focus,
+.btn-danger:focus,
+.btn-outline-info:focus,
+.btn-outline-success:focus,
+.btn-outline-warning:focus,
+.btn-outline-danger:focus,
+.btn-outline-grey:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.btn-info:disabled,
+.btn-success:disabled,
+.btn-warning:disabled,
+.btn-danger:disabled,
+.btn-outline-info:disabled,
+.btn-outline-success:disabled,
+.btn-outline-warning:disabled,
+.btn-outline-danger:disabled,
+.btn-outline-grey:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Info Button - Azul acinzentado suave */
+.btn-info {
+  background-color: #A1C7D6;
+  color: #2D3A3F;
+  border: none;
+}
+
+.btn-info:hover:not(:disabled) {
+  background-color: #8BB9CA;
+}
+
+.btn-info:focus {
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #A1C7D6;
+}
+
+.btn-outline-info {
+  background-color: transparent;
+  color: #A1C7D6;
+  border: 2px solid #A1C7D6;
+}
+
+.btn-outline-info:hover:not(:disabled) {
+  background-color: #A1C7D6;
+  color: #2D3A3F;
+}
+
+.btn-outline-info:focus {
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #A1C7D6;
+}
+
+/* Success Button - Verde sálvia natural */
+.btn-success {
+  background-color: #A8C9A1;
+  color: #2D3A3F;
+  border: none;
+}
+
+.btn-success:hover:not(:disabled) {
+  background-color: #97BA91;
+}
+
+.btn-success:focus {
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #A8C9A1;
+}
+
+.btn-outline-success {
+  background-color: transparent;
+  color: #A8C9A1;
+  border: 2px solid #A8C9A1;
+}
+
+.btn-outline-success:hover:not(:disabled) {
+  background-color: #A8C9A1;
+  color: #2D3A3F;
+}
+
+.btn-outline-success:focus {
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #A8C9A1;
+}
+
+/* Warning Button - Dourado damasco quente */
+.btn-warning {
+  background-color: #E7B97C;
+  color: #3A2F29;
+  border: none;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background-color: #DDA96B;
+}
+
+.btn-warning:focus {
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #E7B97C;
+}
+
+.btn-outline-warning {
+  background-color: transparent;
+  color: #E7B97C;
+  border: 2px solid #E7B97C;
+}
+
+.btn-outline-warning:hover:not(:disabled) {
+  background-color: #E7B97C;
+  color: #3A2F29;
+}
+
+.btn-outline-warning:focus {
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #E7B97C;
+}
+
+/* Danger Button - Vermelho rosado harmonioso */
+.btn-danger {
+  background-color: #D67973;
+  color: #FFF6F5;
+  border: none;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #C86561;
+}
+
+.btn-danger:focus {
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #D67973;
+}
+
+.btn-outline-danger {
+  background-color: transparent;
+  color: #D67973;
+  border: 2px solid #D67973;
+}
+
+.btn-outline-danger:hover:not(:disabled) {
+  background-color: #D67973;
+  color: #FFF6F5;
+}
+
+.btn-outline-danger:focus {
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #D67973;
+}
+
+/* Grey Outline Button - Para cancelar */
+.btn-outline-grey {
+  background-color: transparent;
+  color: #6B7280;
+  border: 2px solid #D1D5DB;
+}
+
+.btn-outline-grey:hover:not(:disabled) {
+  background-color: #F3F4F6;
+  color: #374151;
+  border-color: #9CA3AF;
+}
+
+.btn-outline-grey:focus {
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #D1D5DB;
 }
