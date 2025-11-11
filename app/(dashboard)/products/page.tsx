@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Modal from '@/components/Modal'
+import { Info } from 'lucide-react'
 
 // Função para formatar números no padrão brasileiro
 const formatBRL = (value: number, decimals: number = 2): string => {
@@ -86,64 +87,95 @@ type FinalProduct = {
 
 export default function ProductsPage() {
   const [activeTab, setActiveTab] = useState<'ingredients' | 'bases' | 'products'>('ingredients')
+  const [triggerModalOpen, setTriggerModalOpen] = useState(0)
+
+  const handleNewButtonClick = () => {
+    setTriggerModalOpen(prev => prev + 1)
+  }
 
   return (
     <div className="p-8">
       {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Produtos</h1>
-        <p className="text-gray-500 mt-1">Gerencie insumos, bases de preparo e produtos finais</p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-gray-900">Produtos</h1>
+            <div className="group relative">
+              <Info className="w-5 h-5 text-gray-400 cursor-help" />
+              <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[330px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '25px 15px 30px 20px' }}>
+                Gerencie todos os produtos da sua confeitaria. Cadastre insumos/matérias-primas, crie bases de preparo e monte produtos finais com precificação automática.
+              </div>
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={handleNewButtonClick}
+          className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold"
+        >
+          {activeTab === 'ingredients' && '+ Novo Insumo'}
+          {activeTab === 'bases' && '+ Nova Base'}
+          {activeTab === 'products' && '+ Novo Produto'}
+        </button>
       </div>
 
       {/* Tabs */}
       <div className="bg-[var(--color-snow)] rounded-xl border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200">
-          <nav className="flex">
+        <div className="border-b border-gray-200 bg-white">
+          <div className="flex gap-1 px-4">
             <button
               onClick={() => setActiveTab('ingredients')}
-              className={`px-6 py-4 text-sm font-medium transition-all ${
+              className={`px-4 py-3 text-sm font-semibold transition-colors relative ${
                 activeTab === 'ingredients'
-                  ? 'border-b-2 border-[var(--color-old-rose)] text-[var(--color-old-rose)] bg-[var(--color-lavender-blush)]'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ? 'text-gray-900'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              📦 Insumos / Matérias-Primas
+              Insumos / Matérias-Primas
+              {activeTab === 'ingredients' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-old-rose)]" />
+              )}
             </button>
             <button
               onClick={() => setActiveTab('bases')}
-              className={`px-6 py-4 text-sm font-medium transition-all ${
+              className={`px-4 py-3 text-sm font-semibold transition-colors relative ${
                 activeTab === 'bases'
-                  ? 'border-b-2 border-[var(--color-old-rose)] text-[var(--color-old-rose)] bg-[var(--color-lavender-blush)]'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ? 'text-gray-900'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              🥄 Bases de Preparo
+              Bases de Preparo
+              {activeTab === 'bases' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-old-rose)]" />
+              )}
             </button>
             <button
               onClick={() => setActiveTab('products')}
-              className={`px-6 py-4 text-sm font-medium transition-all ${
+              className={`px-4 py-3 text-sm font-semibold transition-colors relative ${
                 activeTab === 'products'
-                  ? 'border-b-2 border-[var(--color-old-rose)] text-[var(--color-old-rose)] bg-[var(--color-lavender-blush)]'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ? 'text-gray-900'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              🍰 Produtos Finais
+              Produtos Finais
+              {activeTab === 'products' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-old-rose)]" />
+              )}
             </button>
-          </nav>
+          </div>
         </div>
 
         {/* Tab Content */}
         <div className="p-6">
-          {activeTab === 'ingredients' && <IngredientsTab />}
-          {activeTab === 'bases' && <BasesTab />}
-          {activeTab === 'products' && <ProductsTab />}
+          {activeTab === 'ingredients' && <IngredientsTab triggerModalOpen={triggerModalOpen} />}
+          {activeTab === 'bases' && <BasesTab triggerModalOpen={triggerModalOpen} />}
+          {activeTab === 'products' && <ProductsTab triggerModalOpen={triggerModalOpen} />}
         </div>
       </div>
     </div>
   )
 }
 
-function IngredientsTab() {
+function IngredientsTab({ triggerModalOpen }: { triggerModalOpen: number }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)
@@ -159,6 +191,14 @@ function IngredientsTab() {
   useEffect(() => {
     fetchIngredients()
   }, [])
+
+  useEffect(() => {
+    if (triggerModalOpen > 0) {
+      setEditingId(null)
+      setFormData({ name: '', volume: '', unit: 'gramas', average_cost: '', loss_factor: '2' })
+      setIsModalOpen(true)
+    }
+  }, [triggerModalOpen])
 
   const fetchIngredients = async () => {
     try {
@@ -263,16 +303,6 @@ function IngredientsTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Insumos / Matérias-Primas</h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-old-rose-dark)] transition font-semibold text-sm"
-        >
-          + Novo Insumo
-        </button>
-      </div>
-
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Insumo" : "Cadastrar Insumo"}>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
@@ -420,7 +450,7 @@ function IngredientsTab() {
   )
 }
 
-function BasesTab() {
+function BasesTab({ triggerModalOpen }: { triggerModalOpen: number }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [bases, setBases] = useState<BaseRecipe[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
@@ -438,6 +468,15 @@ function BasesTab() {
     fetchBases()
     fetchIngredients()
   }, [])
+
+  useEffect(() => {
+    if (triggerModalOpen > 0) {
+      setEditingId(null)
+      setFormData({ name: '', description: '', loss_factor: '2', items: [] })
+      setNewItem({ ingredient_id: '', quantity: '' })
+      setIsModalOpen(true)
+    }
+  }, [triggerModalOpen])
 
   const fetchBases = async () => {
     try {
@@ -571,16 +610,6 @@ function BasesTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Bases de Preparo</h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-old-rose-dark)] transition font-semibold text-sm"
-        >
-          + Nova Base
-        </button>
-      </div>
-
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Base de Preparo" : "Cadastrar Base de Preparo"}>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 mb-4">
@@ -794,7 +823,7 @@ function BasesTab() {
   )
 }
 
-function ProductsTab() {
+function ProductsTab({ triggerModalOpen }: { triggerModalOpen: number }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [products, setProducts] = useState<FinalProduct[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
@@ -817,6 +846,23 @@ function ProductsTab() {
     fetchIngredients()
     fetchBases()
   }, [])
+
+  useEffect(() => {
+    if (triggerModalOpen > 0) {
+      setEditingId(null)
+      setFormData({
+        name: '',
+        category: '',
+        description: '',
+        loss_factor: '2',
+        selling_price: '',
+        profit_margin: '',
+        items: []
+      })
+      setNewItem({ item_type: 'ingredient', item_id: '', quantity: '' })
+      setIsModalOpen(true)
+    }
+  }, [triggerModalOpen])
 
   const fetchProducts = async () => {
     try {
@@ -982,16 +1028,6 @@ function ProductsTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Produtos Finais</h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-old-rose-dark)] transition font-semibold text-sm"
-        >
-          + Novo Produto
-        </button>
-      </div>
-
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Produto Final" : "Cadastrar Produto Final"} maxWidth="625px">
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 mb-4">
@@ -1083,7 +1119,7 @@ function ProductsTab() {
                 {formData.items.map((item, index) => (
                   <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                     <span className="text-sm text-gray-900">
-                      {item.item_type === 'ingredient' ? '📦 Insumo' : '🥄 Base'}: {getItemName(item)} - {item.quantity}
+                      {item.item_type === 'ingredient' ? '📦 Matéria-prima' : '🥄 Base'}: {getItemName(item)} - {item.quantity}
                     </span>
                     <button
                       type="button"
@@ -1104,7 +1140,7 @@ function ProductsTab() {
                   onChange={(e) => setNewItem({ ...newItem, item_type: e.target.value, item_id: '' })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900"
                 >
-                  <option value="ingredient">Insumo</option>
+                  <option value="ingredient">Matéria-prima</option>
                   <option value="base_recipe">Base</option>
                 </select>
               </div>
@@ -1231,7 +1267,7 @@ function ProductsTab() {
                         {product.final_product_items.map((item: any) => (
                           <tr key={item.id} className="border-b border-gray-100">
                             <td className="py-2 px-2 text-gray-600">
-                              {item.item_type === 'ingredient' ? 'Insumo' : 'Base'}
+                              {item.item_type === 'ingredient' ? 'Matéria-prima' : 'Base'}
                             </td>
                             <td className="py-2 px-2 text-gray-900">
                               {item.item_type === 'ingredient' 

@@ -33,21 +33,19 @@ const bottomMenuItems = [
   { icon: MessageSquare, label: 'Feedback', href: '/feedback' },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+  position?: 'sidebar' | 'header' | 'footer' | 'right'
+}
+
+export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [showActivities, setShowActivities] = useState(() => {
-    // Inicializa do localStorage se disponível
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('showActivitiesInSidebar')
-      return saved === null ? true : saved === 'true'
-    }
-    return true
-  })
+  const [showActivities, setShowActivities] = useState(true)
+  const [menuPosition, setMenuPosition] = useState<'sidebar' | 'header' | 'footer' | 'right'>(position)
   const supabase = createClient()
 
   useEffect(() => {
@@ -83,12 +81,19 @@ export default function Sidebar() {
       setShowActivities(event.detail.show)
     }
 
+    // Listener para mudança de posição do menu
+    const handleMenuPositionChange = (event: CustomEvent) => {
+      setMenuPosition(event.detail.position)
+    }
+
     window.addEventListener('avatar-updated', handleAvatarUpdate as EventListener)
     window.addEventListener('toggle-activities-sidebar', handleActivitiesToggle as EventListener)
+    window.addEventListener('menu-position-changed', handleMenuPositionChange as EventListener)
 
     return () => {
       window.removeEventListener('avatar-updated', handleAvatarUpdate as EventListener)
       window.removeEventListener('toggle-activities-sidebar', handleActivitiesToggle as EventListener)
+      window.removeEventListener('menu-position-changed', handleMenuPositionChange as EventListener)
     }
   }, [])
 
@@ -154,9 +159,148 @@ export default function Sidebar() {
     return pathname.startsWith(href)
   }
 
+  // Layout Horizontal (Header/Footer)
+  if (menuPosition === 'header' || menuPosition === 'footer') {
+    return (
+      <nav className="w-full bg-[var(--color-snow)] shadow-lg flex items-center justify-between px-6 py-3">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-3">
+          <img src="/logo.svg" alt="CakeCloud" className="w-10 h-10" />
+        </Link>
+
+        {/* Main Menu - Horizontal */}
+        <div className="flex items-center gap-2">
+          {menuItems.map((item) => {
+            const Icon = item.icon
+            const active = isActive(item.href)
+            
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-[10px] transition-all group
+                  ${active 
+                    ? 'bg-gradient-to-r from-[var(--color-old-rose)] to-[var(--color-melon)] text-white shadow-lg shadow-[var(--color-old-rose)]/30' 
+                    : 'text-gray-600 hover:bg-[var(--color-lavender-blush)]'
+                  }
+                `}
+              >
+                <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-gray-500 group-hover:text-[var(--color-old-rose)]'}`} />
+                <span className="font-medium text-sm">{item.label}</span>
+              </Link>
+            )
+          })}
+
+          {showActivities && (
+            <Link
+              href="/activities"
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-[10px] transition-all group
+                ${isActive('/activities')
+                  ? 'bg-gradient-to-r from-[var(--color-old-rose)] to-[var(--color-melon)] text-white shadow-lg shadow-[var(--color-old-rose)]/30' 
+                  : 'text-gray-600 hover:bg-[var(--color-lavender-blush)]'
+                }
+              `}
+            >
+              <Activity className={`w-5 h-5 flex-shrink-0 ${isActive('/activities') ? 'text-white' : 'text-gray-500 group-hover:text-[var(--color-old-rose)]'}`} />
+              <span className="font-medium text-sm">Atividades</span>
+            </Link>
+          )}
+        </div>
+
+        {/* Right Section - User & Actions */}
+        <div className="flex items-center gap-3">
+          {/* Notifications */}
+          <button className="relative p-2 hover:bg-gray-50 rounded-lg transition-all">
+            <Bell className="w-5 h-5 text-gray-500" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+
+          {bottomMenuItems.map((item) => {
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="p-2 hover:bg-gray-50 rounded-lg transition-all"
+              >
+                <Icon className="w-5 h-5 text-gray-500 hover:text-[var(--color-old-rose)]" />
+              </Link>
+            )
+          })}
+
+          {/* User Menu */}
+          <div className="relative user-menu-container">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg transition-all"
+            >
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center shadow-md overflow-hidden">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-white text-xs font-semibold">{getUserInitials()}</span>
+                )}
+              </div>
+            </button>
+
+            {showUserMenu && (
+              <div className="absolute right-0 top-full mt-2 w-64 bg-[var(--color-snow)] rounded-xl shadow-xl border border-gray-100 py-2 z-[100]">
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <p className="text-sm font-semibold text-gray-900">
+                    {user?.user_metadata?.name || 'Usuário'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{user?.email}</p>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false)
+                    router.push('/settings/profile')
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[var(--color-lavender-blush)] flex items-center gap-3 transition-colors"
+                >
+                  <User className="w-4 h-4" />
+                  Meu Perfil
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false)
+                    router.push('/settings/preferences')
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[var(--color-lavender-blush)] flex items-center gap-3 transition-colors"
+                >
+                  <SettingsIcon className="w-4 h-4" />
+                  Configurações
+                </button>
+
+                <div className="border-t border-gray-100 my-2"></div>
+                
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sair
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+    )
+  }
+
+  // Layout Sidebar (Esquerda ou Direita)
+  const sidePosition = (menuPosition === 'sidebar' || menuPosition === 'right') 
+    ? (menuPosition === 'right' ? 'right' : 'left')
+    : 'left'
+
   return (
     <>
-      <aside className={`fixed left-0 top-0 h-screen bg-[var(--color-snow)] shadow-lg flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+      <aside className={`fixed ${sidePosition}-0 top-0 h-screen bg-[var(--color-snow)] shadow-lg flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
         {/* Logo & Toggle */}
         <div className="p-6 flex items-center justify-between">
           {!isCollapsed && (
@@ -172,7 +316,7 @@ export default function Sidebar() {
         {/* Collapse Button */}
         <button
           onClick={toggleSidebar}
-          className={`absolute -right-3 top-8 w-6 h-6 bg-[var(--color-old-rose)] hover:bg-[var(--color-rosy-brown)] rounded-full flex items-center justify-center shadow-lg transition-all ${isCollapsed ? 'rotate-180' : ''}`}
+          className={`absolute ${sidePosition === 'left' ? '-right-3' : '-left-3'} top-8 w-6 h-6 bg-[var(--color-old-rose)] hover:bg-[var(--color-rosy-brown)] rounded-full flex items-center justify-center shadow-lg transition-all ${isCollapsed ? (sidePosition === 'left' ? 'rotate-180' : '') : (sidePosition === 'right' ? 'rotate-180' : '')}`}
         >
           <ChevronLeft className="w-4 h-4 text-white" />
         </button>
@@ -248,7 +392,7 @@ export default function Sidebar() {
         </div>
 
         {/* Main Menu */}
-        <nav className="flex-1 overflow-y-auto px-3 py-2">
+        <div className="flex-1 overflow-y-auto px-3 py-2">
           <div className="space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon
@@ -270,9 +414,6 @@ export default function Sidebar() {
                 >
                   <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-gray-500 group-hover:text-[var(--color-old-rose)]'}`} />
                   {!isCollapsed && <span className="font-medium text-sm">{item.label}</span>}
-                  {active && !isCollapsed && (
-                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white"></div>
-                  )}
                 </Link>
               )
             })}
@@ -293,13 +434,10 @@ export default function Sidebar() {
               >
                 <Activity className={`w-5 h-5 flex-shrink-0 ${isActive('/activities') ? 'text-white' : 'text-gray-500 group-hover:text-[var(--color-old-rose)]'}`} />
                 {!isCollapsed && <span className="font-medium text-sm">Atividades</span>}
-                {isActive('/activities') && !isCollapsed && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white"></div>
-                )}
               </Link>
             )}
           </div>
-        </nav>
+        </div>
 
         {/* Bottom Menu */}
         <div className="border-t border-gray-100 p-3 space-y-2">

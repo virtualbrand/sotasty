@@ -5,7 +5,7 @@ import { CreditCard, Check } from 'lucide-react'
 export default function PlansPage() {
   const plans = [
     {
-      name: 'Plano Gratuito',
+      name: 'Cake Start',
       price: 'R$ 0',
       period: '/mês',
       features: [
@@ -17,7 +17,7 @@ export default function PlansPage() {
       current: true,
     },
     {
-      name: 'Plano Profissional',
+      name: 'Cake Grow',
       price: 'R$ 49',
       period: '/mês',
       features: [
@@ -31,7 +31,7 @@ export default function PlansPage() {
       recommended: true,
     },
     {
-      name: 'Plano Empresarial',
+      name: 'Cake Scale',
       price: 'R$ 149',
       period: '/mês',
       features: [
@@ -52,7 +52,7 @@ export default function PlansPage() {
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Plano Atual</h2>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-2xl font-bold text-gray-900">Plano Gratuito</p>
+            <p className="text-2xl font-bold text-gray-900">Cake Start</p>
             <p className="text-sm text-gray-600 mt-1">Você está usando o plano gratuito</p>
           </div>
           <button className="btn-primary">
@@ -112,7 +112,7 @@ export default function PlansPage() {
 
               <button
                 disabled={plan.current}
-                className={`w-full py-2 px-4 rounded-lg font-medium transition ${
+                className={`w-full py-2.5 px-4 rounded-full font-semibold transition ${
                   plan.current
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : plan.recommended

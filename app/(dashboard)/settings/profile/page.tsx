@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { User, Mail, Phone, MapPin, Camera, Save, X } from 'lucide-react'
+import { User, Mail, Phone, MapPin, Camera, Save, SwitchCamera, CircleX, CreditCard } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { showToast } from '@/app/(dashboard)/layout'
 
@@ -12,6 +12,7 @@ type ProfileData = {
   email: string
   full_name: string
   phone: string
+  cpf_cnpj: string
   address: string
   city: string
   state: string
@@ -56,12 +57,54 @@ const formatCEP = (value: string): string => {
   // Limita a 8 dígitos
   const limited = numbers.slice(0, 8)
   
-  // Formata: 00000-000
-  if (limited.length <= 5) {
+  // Formata: 00.000-000
+  if (limited.length <= 2) {
     return limited
   }
   
-  return `${limited.slice(0, 5)}-${limited.slice(5, 8)}`
+  if (limited.length <= 5) {
+    return `${limited.slice(0, 2)}.${limited.slice(2)}`
+  }
+  
+  return `${limited.slice(0, 2)}.${limited.slice(2, 5)}-${limited.slice(5, 8)}`
+}
+
+const formatCpfCnpj = (value: string): string => {
+  // Remove tudo que não é número
+  const numbers = value.replace(/\D/g, "")
+  
+  // Se não tem números, retorna vazio
+  if (!numbers) return ""
+  
+  // CPF: 000.000.000-00
+  if (numbers.length <= 11) {
+    if (numbers.length <= 3) {
+      return numbers
+    }
+    if (numbers.length <= 6) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3)}`
+    }
+    if (numbers.length <= 9) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`
+    }
+    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`
+  }
+  
+  // CNPJ: 00.000.000/0000-00
+  const cnpj = numbers.slice(0, 14)
+  if (cnpj.length <= 2) {
+    return cnpj
+  }
+  if (cnpj.length <= 5) {
+    return `${cnpj.slice(0, 2)}.${cnpj.slice(2)}`
+  }
+  if (cnpj.length <= 8) {
+    return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5)}`
+  }
+  if (cnpj.length <= 12) {
+    return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8)}`
+  }
+  return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8, 12)}-${cnpj.slice(12, 14)}`
 }
 
 export default function ProfilePage() {
@@ -72,6 +115,19 @@ export default function ProfilePage() {
     email: '',
     full_name: '',
     phone: '',
+    cpf_cnpj: '',
+    address: '',
+    city: '',
+    state: '',
+    zip_code: '',
+    avatar_url: null
+  })
+  const [originalProfileData, setOriginalProfileData] = useState<ProfileData>({
+    id: '',
+    email: '',
+    full_name: '',
+    phone: '',
+    cpf_cnpj: '',
     address: '',
     city: '',
     state: '',
@@ -80,10 +136,19 @@ export default function ProfilePage() {
   })
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [hasChanges, setHasChanges] = useState(false)
 
   useEffect(() => {
     loadProfile()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Detectar mudanças nos dados do perfil
+  useEffect(() => {
+    const dataChanged = JSON.stringify(profileData) !== JSON.stringify(originalProfileData)
+    const avatarChanged = avatarFile !== null
+    setHasChanges(dataChanged || avatarChanged)
+  }, [profileData, originalProfileData, avatarFile])
 
   const loadProfile = async () => {
     try {
@@ -112,17 +177,20 @@ export default function ProfilePage() {
       }
 
       if (data) {
-        setProfileData({
+        const loadedData = {
           id: user.id,
           email: user.email || '',
           full_name: data.full_name || '',
           phone: data.phone || '',
+          cpf_cnpj: data.cpf_cnpj || '',
           address: data.address || '',
           city: data.city || '',
           state: data.state || '',
           zip_code: data.zip_code || '',
           avatar_url: data.avatar_url || null
-        })
+        }
+        setProfileData(loadedData)
+        setOriginalProfileData(loadedData)
         
         if (data.avatar_url) {
           const { data: { publicUrl } } = supabase.storage
@@ -131,11 +199,13 @@ export default function ProfilePage() {
           setAvatarPreview(publicUrl)
         }
       } else {
-        setProfileData(prev => ({
-          ...prev,
+        const newData = {
+          ...profileData,
           id: user.id,
           email: user.email || ''
-        }))
+        }
+        setProfileData(newData)
+        setOriginalProfileData(newData)
       }
     } catch {
       console.error('Erro ao carregar perfil')
@@ -159,6 +229,9 @@ export default function ProfilePage() {
       setProfileData(prev => ({ ...prev, [name]: formatted }))
     } else if (name === 'zip_code') {
       const formatted = formatCEP(value)
+      setProfileData(prev => ({ ...prev, [name]: formatted }))
+    } else if (name === 'cpf_cnpj') {
+      const formatted = formatCpfCnpj(value)
       setProfileData(prev => ({ ...prev, [name]: formatted }))
     } else {
       setProfileData(prev => ({ ...prev, [name]: value }))
@@ -246,6 +319,7 @@ export default function ProfilePage() {
           id: user.id,
           full_name: profileData.full_name,
           phone: profileData.phone,
+          cpf_cnpj: profileData.cpf_cnpj,
           address: profileData.address,
           city: profileData.city,
           state: profileData.state,
@@ -273,6 +347,12 @@ export default function ProfilePage() {
         duration: 3000,
       })
       setAvatarFile(null)
+      
+      // Atualiza os dados originais após salvar
+      setOriginalProfileData({
+        ...profileData,
+        avatar_url: avatarUrl
+      })
       
       // Recarrega o perfil para pegar a URL pública atualizada
       await loadProfile()
@@ -316,40 +396,42 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+    <div className="rounded-lg shadow-sm border border-gray-200" style={{ backgroundColor: '#FFFBFB' }}>
       <form onSubmit={handleSubmit} className="p-6">
         {/* Avatar Section */}
         <div className="mb-8 pb-8 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Foto de Perfil</h2>
           <div className="flex items-center gap-6">
             <div className="relative">
-              <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                {avatarPreview ? (
-                  <Image 
-                    src={avatarPreview} 
-                    alt="Avatar" 
-                    width={128}
-                    height={128}
-                    className="w-full h-full object-cover" 
-                  />
-                ) : (
-                  <User className="w-16 h-16 text-gray-400" />
-                )}
-              </div>
-              {avatarPreview && (
-                <button
-                  type="button"
-                  onClick={removeAvatar}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-            <div>
-              <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
-                <Camera className="w-4 h-4" />
-                <span>Alterar Foto</span>
+              <label className="cursor-pointer group">
+                <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative">
+                  {avatarPreview ? (
+                    <>
+                      <Image 
+                        src={avatarPreview} 
+                        alt="Avatar" 
+                        width={128}
+                        height={128}
+                        className="w-full h-full object-cover" 
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="bg-white bg-opacity-90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                          <SwitchCamera className="w-6 h-6 text-gray-700" />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <User className="w-16 h-16 text-gray-400 group-hover:text-gray-500 transition-colors" />
+                      <div className="absolute inset-0 bg-gray-100 group-hover:bg-gray-200 transition-colors flex items-center justify-center">
+                        <div className="flex flex-col items-center">
+                          <Camera className="w-8 h-8 text-gray-400" />
+                          <span className="text-xs text-gray-500 mt-1">Adicionar</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
                 <input
                   type="file"
                   accept="image/*"
@@ -357,7 +439,19 @@ export default function ProfilePage() {
                   className="hidden"
                 />
               </label>
-              <p className="text-sm text-gray-500 mt-2">JPG, PNG ou GIF (máx. 2MB)</p>
+              {avatarPreview && (
+                <button
+                  type="button"
+                  onClick={removeAvatar}
+                  className="absolute -top-2 -right-2 hover:scale-110 transition-transform"
+                >
+                  <CircleX className="w-6 h-6 text-[#D67973] hover:text-[#C86561] transition-colors" />
+                </button>
+              )}
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
+              <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
             </div>
           </div>
         </div>
@@ -413,6 +507,23 @@ export default function ProfilePage() {
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
                   placeholder="(00) 00000-0000"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                CPF / CNPJ
+              </label>
+              <div className="relative">
+                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  name="cpf_cnpj"
+                  value={profileData.cpf_cnpj}
+                  onChange={handleInputChange}
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                  placeholder="000.000.000-00 ou 00.000.000/0000-00"
                 />
               </div>
             </div>
@@ -489,18 +600,25 @@ export default function ProfilePage() {
 
         {/* Action Buttons */}
         <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => loadProfile()}
-            disabled={saving}
-          >
-            Cancelar
-          </Button>
+          {hasChanges && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => loadProfile()}
+              disabled={saving}
+              className="rounded-full"
+            >
+              Cancelar
+            </Button>
+          )}
           <button
             type="submit"
-            disabled={saving}
-            className="btn-success inline-flex items-center gap-2"
+            disabled={saving || !hasChanges}
+            className={`inline-flex items-center gap-2 ${
+              !hasChanges 
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed px-6 py-2.5 rounded-full font-semibold text-sm'
+                : 'btn-success'
+            }`}
           >
             {saving ? (
               <>

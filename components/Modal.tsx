@@ -46,11 +46,11 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = '50
       
       {/* Modal */}
       <div 
-        className="relative bg-[var(--color-snow)] rounded-2xl shadow-2xl w-full max-h-[90vh] overflow-hidden"
+        className="relative bg-[var(--color-bg-modal)] rounded-2xl shadow-2xl w-full max-h-[90vh] overflow-hidden"
         style={{ maxWidth }}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-[var(--color-snow)] flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="sticky top-0 bg-[var(--color-bg-modal)] flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
           <button
             onClick={onClose}

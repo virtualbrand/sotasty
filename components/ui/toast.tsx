@@ -106,8 +106,9 @@ const Toaster = forwardRef<ToasterRef, { defaultPosition?: Position }>(
               animate="animate"
               exit="exit"
               transition={{ duration: 0.3, ease: 'easeOut' }}
+              style={{ fontFamily: 'var(--font-kumbh-sans), sans-serif' }}
               className={cn(
-                'flex items-center justify-between w-full max-w-xs p-3 rounded-xl border shadow-md',
+                'flex items-center justify-between w-full max-w-xs p-3 rounded-xl border shadow-md font-sans',
                 variantStyles[variant]
               )}
             >
@@ -174,7 +175,11 @@ const Toaster = forwardRef<ToasterRef, { defaultPosition?: Position }>(
     return (
       <SonnerToaster
         position={defaultPosition}
-        toastOptions={{ unstyled: true, className: 'flex justify-end' }}
+        toastOptions={{ 
+          unstyled: true, 
+          className: 'flex justify-end font-sans',
+          style: { fontFamily: 'var(--font-kumbh-sans), sans-serif' }
+        }}
       />
     );
   }

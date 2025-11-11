@@ -1,126 +1,117 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Save } from 'lucide-react'
+import { Save, Layout } from 'lucide-react'
+import { showToast } from '@/app/(dashboard)/layout'
+
+// Função para obter o valor inicial do localStorage
+const getInitialMenuPosition = (): 'sidebar' | 'header' | 'footer' | 'right' => {
+  if (typeof window === 'undefined') return 'sidebar'
+  const saved = localStorage.getItem('menuPosition')
+  return (saved as 'sidebar' | 'header' | 'footer' | 'right') || 'sidebar'
+}
+
+const getInitialShowDailyBalance = (): boolean => {
+  if (typeof window === 'undefined') return false
+  const saved = localStorage.getItem('showDailyBalance')
+  return saved === 'true'
+}
 
 export default function PreferencesPage() {
-  const [preferences, setPreferences] = useState({
-    orderSort: 'desc',
-    defaultView: 'monthly',
-    showDailyBalance: false,
-    startFromZero: false,
-  })
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [menuPosition, setMenuPosition] = useState<'sidebar' | 'header' | 'footer' | 'right'>(getInitialMenuPosition)
+  const [savedMenuPosition, setSavedMenuPosition] = useState<'sidebar' | 'header' | 'footer' | 'right'>(getInitialMenuPosition)
+  const [showDailyBalance, setShowDailyBalance] = useState(getInitialShowDailyBalance)
+  const [savedShowDailyBalance, setSavedShowDailyBalance] = useState(getInitialShowDailyBalance)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    setMessage(null)
+  const hasChanges = menuPosition !== savedMenuPosition || showDailyBalance !== savedShowDailyBalance
 
-    try {
-      // Aqui você salvaria as preferências no banco de dados
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setMessage({ type: 'success', text: 'Preferências salvas com sucesso!' })
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Erro ao salvar preferências. Tente novamente.' })
-    } finally {
-      setSaving(false)
+  const handleSave = () => {
+    localStorage.setItem('menuPosition', menuPosition)
+    localStorage.setItem('showDailyBalance', showDailyBalance.toString())
+    
+    setSavedMenuPosition(menuPosition)
+    setSavedShowDailyBalance(showDailyBalance)
+
+    // Disparar evento para atualizar o layout imediatamente
+    const event = new CustomEvent('menu-position-changed', {
+      detail: { position: menuPosition }
+    })
+    window.dispatchEvent(event)
+
+    const positionLabels = {
+      sidebar: 'Lateral Esquerda',
+      right: 'Lateral Direita',
+      header: 'Topo (Header)',
+      footer: 'Rodapé (Footer)'
     }
+
+    showToast({
+      title: 'Preferências salvas!',
+      message: `Menu posicionado em: ${positionLabels[menuPosition]}`,
+      variant: 'success',
+      duration: 3000,
+    })
   }
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      {message && (
-        <div className={`m-6 p-4 rounded-lg ${
-          message.type === 'success' 
-            ? 'bg-green-50 text-green-800 border border-green-200' 
-            : 'bg-red-50 text-red-800 border border-red-200'
-        }`}>
-          {message.text}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="p-6 space-y-6">
-        {/* Ordenação dos Lançamentos */}
+      <div className="p-6 space-y-6">
+        {/* Posição do Menu */}
         <div className="pb-6 border-b border-gray-200">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h3 className="text-base font-semibold text-gray-900">Ordenação dos seus Pedidos</h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Ordem (baseada na data) que suas transações serão listadas na tela de Pedidos
+              <div className="flex items-center gap-2 mb-2">
+                <Layout className="w-5 h-5 text-gray-700" />
+                <h3 className="text-base font-semibold text-gray-900">Posição do Menu</h3>
+              </div>
+              <p className="text-sm text-gray-600">
+                Escolha onde deseja visualizar o menu de navegação principal
               </p>
             </div>
             <div className="ml-6 flex items-center gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
-                  name="orderSort"
-                  value="desc"
-                  checked={preferences.orderSort === 'desc'}
-                  onChange={(e) => setPreferences(prev => ({ ...prev, orderSort: e.target.value }))}
-                  className="w-4 h-4 text-[var(--color-old-rose)] focus:ring-[var(--color-old-rose)]"
+                  name="menuPosition"
+                  value="sidebar"
+                  checked={menuPosition === 'sidebar'}
+                  onChange={(e) => setMenuPosition(e.target.value as 'sidebar' | 'header' | 'footer' | 'right')}
+                  className="w-4 h-4 text-pink-600 focus:ring-pink-500"
                 />
-                <span className="text-sm text-gray-700">Decrescente</span>
+                <span className="text-sm text-gray-700">Esquerda</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
-                  name="orderSort"
-                  value="asc"
-                  checked={preferences.orderSort === 'asc'}
-                  onChange={(e) => setPreferences(prev => ({ ...prev, orderSort: e.target.value }))}
-                  className="w-4 h-4 text-[var(--color-old-rose)] focus:ring-[var(--color-old-rose)]"
+                  name="menuPosition"
+                  value="right"
+                  checked={menuPosition === 'right'}
+                  onChange={(e) => setMenuPosition(e.target.value as 'sidebar' | 'header' | 'footer' | 'right')}
+                  className="w-4 h-4 text-pink-600 focus:ring-pink-500"
                 />
-                <span className="text-sm text-gray-700">Crescente</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Período de Navegação Padrão */}
-        <div className="pb-6 border-b border-gray-200">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h3 className="text-base font-semibold text-gray-900">Período de navegação padrão</h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Para quem faz muitos pedidos durante o mês, o ideal é escolher semanal ou diário
-              </p>
-            </div>
-            <div className="ml-6 flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="defaultView"
-                  value="daily"
-                  checked={preferences.defaultView === 'daily'}
-                  onChange={(e) => setPreferences(prev => ({ ...prev, defaultView: e.target.value }))}
-                  className="w-4 h-4 text-[var(--color-old-rose)] focus:ring-[var(--color-old-rose)]"
-                />
-                <span className="text-sm text-gray-700">Diário</span>
+                <span className="text-sm text-gray-700">Direita</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
-                  name="defaultView"
-                  value="weekly"
-                  checked={preferences.defaultView === 'weekly'}
-                  onChange={(e) => setPreferences(prev => ({ ...prev, defaultView: e.target.value }))}
-                  className="w-4 h-4 text-[var(--color-old-rose)] focus:ring-[var(--color-old-rose)]"
+                  name="menuPosition"
+                  value="header"
+                  checked={menuPosition === 'header'}
+                  onChange={(e) => setMenuPosition(e.target.value as 'sidebar' | 'header' | 'footer' | 'right')}
+                  className="w-4 h-4 text-pink-600 focus:ring-pink-500"
                 />
-                <span className="text-sm text-gray-700">Semanal</span>
+                <span className="text-sm text-gray-700">Topo</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
-                  name="defaultView"
-                  value="monthly"
-                  checked={preferences.defaultView === 'monthly'}
-                  onChange={(e) => setPreferences(prev => ({ ...prev, defaultView: e.target.value }))}
-                  className="w-4 h-4 text-[var(--color-old-rose)] focus:ring-[var(--color-old-rose)]"
+                  name="menuPosition"
+                  value="footer"
+                  checked={menuPosition === 'footer'}
+                  onChange={(e) => setMenuPosition(e.target.value as 'sidebar' | 'header' | 'footer' | 'right')}
+                  className="w-4 h-4 text-pink-600 focus:ring-pink-500"
                 />
-                <span className="text-sm text-gray-700">Mensal</span>
+                <span className="text-sm text-gray-700">Rodapé</span>
               </label>
             </div>
           </div>
@@ -141,9 +132,9 @@ export default function PreferencesPage() {
                   type="radio"
                   name="showDailyBalance"
                   value="yes"
-                  checked={preferences.showDailyBalance}
-                  onChange={() => setPreferences(prev => ({ ...prev, showDailyBalance: true }))}
-                  className="w-4 h-4 text-[var(--color-old-rose)] focus:ring-[var(--color-old-rose)]"
+                  checked={showDailyBalance}
+                  onChange={() => setShowDailyBalance(true)}
+                  className="w-4 h-4 text-pink-600 focus:ring-pink-500"
                 />
                 <span className="text-sm text-gray-700">Sim</span>
               </label>
@@ -152,9 +143,9 @@ export default function PreferencesPage() {
                   type="radio"
                   name="showDailyBalance"
                   value="no"
-                  checked={!preferences.showDailyBalance}
-                  onChange={() => setPreferences(prev => ({ ...prev, showDailyBalance: false }))}
-                  className="w-4 h-4 text-[var(--color-old-rose)] focus:ring-[var(--color-old-rose)]"
+                  checked={!showDailyBalance}
+                  onChange={() => setShowDailyBalance(false)}
+                  className="w-4 h-4 text-pink-600 focus:ring-pink-500"
                 />
                 <span className="text-sm text-gray-700">Não</span>
               </label>
@@ -163,7 +154,7 @@ export default function PreferencesPage() {
         </div>
 
         {/* Começar do Zero */}
-        <div className="pb-6">
+        <div className="pb-6 border-b border-gray-200">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <h3 className="text-base font-semibold text-gray-900">Começar do zero</h3>
@@ -175,8 +166,7 @@ export default function PreferencesPage() {
             <div className="ml-6">
               <button
                 type="button"
-                disabled={preferences.startFromZero}
-                className="px-4 py-2 text-sm font-medium text-[var(--color-old-rose)] hover:text-[var(--color-rosy-brown)] disabled:text-gray-400 disabled:cursor-not-allowed transition"
+                className="px-4 py-2 text-sm font-medium text-[var(--color-old-rose)] hover:text-[var(--color-rosy-brown)] transition"
               >
                 Excluir minhas transações
               </button>
@@ -185,7 +175,7 @@ export default function PreferencesPage() {
         </div>
 
         {/* Excluir Conta */}
-        <div className="pt-6 border-t border-gray-200">
+        <div className="pb-6">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <h3 className="text-base font-semibold text-gray-900">Excluir conta</h3>
@@ -207,24 +197,19 @@ export default function PreferencesPage() {
         {/* Action Buttons */}
         <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
           <button
-            type="submit"
-            disabled={saving}
-            className="btn-success inline-flex items-center gap-2"
+            onClick={handleSave}
+            disabled={!hasChanges}
+            className={`inline-flex items-center gap-2 ${
+              !hasChanges 
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed px-6 py-2.5 rounded-full font-semibold text-sm'
+                : 'btn-success'
+            }`}
           >
-            {saving ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Salvando...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Salvar alterações
-              </>
-            )}
+            <Save className="w-4 h-4" />
+            Salvar alterações
           </button>
         </div>
-      </form>
+      </div>
     </div>
   )
 }

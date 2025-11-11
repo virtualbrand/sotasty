@@ -72,7 +72,6 @@ export default function SettingsLayout({
   const pathname = usePathname()
 
   return (
-    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Configurações</h1>
@@ -107,9 +106,6 @@ export default function SettingsLayout({
                     }`}>
                       {item.name}
                     </span>
-                    {isActive && (
-                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white"></div>
-                    )}
                   </Link>
                 )
               })}
@@ -122,6 +118,5 @@ export default function SettingsLayout({
           </main>
         </div>
       </div>
-    </div>
   )
 }

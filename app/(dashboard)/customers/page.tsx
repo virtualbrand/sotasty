@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { User, Phone, Mail, ShoppingBag, X } from 'lucide-react'
+import { User, Phone, Mail, ShoppingBag, X, Search, Info } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 
 type Customer = {
   id: string
@@ -52,6 +53,7 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
   const [loading, setLoading] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -285,12 +287,24 @@ export default function CustomersPage() {
     return new Date(dateString).toLocaleDateString('pt-BR')
   }
 
+  // Filtrar clientes pela busca
+  const filteredCustomers = customers.filter(customer => 
+    customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    customer.phone.includes(searchQuery)
+  )
+
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
-        <div>
+        <div className="flex items-center gap-2">
           <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
-          <p className="text-gray-500 mt-1">Gerencie sua base de clientes</p>
+          <div className="group relative">
+            <Info className="w-5 h-5 text-gray-400 cursor-help" />
+            <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[330px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '25px 15px 30px 20px' }}>
+              Gerencie sua base de clientes. Cadastre novos clientes, edite informações de contato e acompanhe o histórico de pedidos de cada um.
+            </div>
+          </div>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
@@ -300,15 +314,28 @@ export default function CustomersPage() {
         </button>
       </div>
 
+      {/* Barra de Busca */}
+      <div className="mb-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Input
+            placeholder="Buscar clientes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
       {/* Lista de Clientes */}
       <div className="bg-[var(--color-snow)] rounded-xl border border-gray-200 overflow-hidden">
-        {customers.length === 0 ? (
+        {filteredCustomers.length === 0 ? (
           <p className="text-gray-600 text-center py-8">
-            Nenhum cliente cadastrado. Clique em "+ Novo Cliente" para começar.
+            {searchQuery ? 'Nenhum cliente encontrado.' : 'Nenhum cliente cadastrado. Clique em "+ Novo Cliente" para começar.'}
           </p>
         ) : (
           <div className="divide-y divide-gray-200">
-            {customers.map((customer) => (
+            {filteredCustomers.map((customer) => (
               <div
                 key={customer.id}
                 onClick={() => setSelectedCustomer(customer)}

@@ -36,7 +36,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  GripVertical,
+  Info,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Combobox } from '@/components/ui/combobox'
@@ -203,8 +203,6 @@ function DraggableCalendarOrder({ order, onClick }: { order: Order; onClick: () 
 // Componente de card draggable
 function SortableOrderCard({ order, onClick }: { order: Order; onClick: () => void }) {
   const {
-    attributes,
-    listeners,
     setNodeRef,
     transform,
     transition,
@@ -243,21 +241,13 @@ function SortableOrderCard({ order, onClick }: { order: Order; onClick: () => vo
     <div
       ref={setNodeRef}
       style={style}
-      className="group cursor-pointer rounded-lg bg-white border border-gray-200 p-4 transition-all hover:shadow-md hover:scale-[1.01] hover:border-pink-300"
+      className="group cursor-pointer bg-white border-b border-gray-200 p-6 transition-colors hover:bg-gray-50"
+      onClick={onClick}
     >
       <div className="flex items-start gap-4">
-        {/* Drag Handle */}
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 transition-colors pt-1"
-        >
-          <GripVertical className="h-5 w-5" />
-        </div>
-
         <div className="w-1 h-16 rounded-full bg-pink-500" />
         
-        <div className="flex-1 min-w-0" onClick={onClick}>
+        <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-4 mb-2">
             <div>
               <h3 className="font-medium text-gray-900 mb-1">{order.customer}</h3>
@@ -287,14 +277,23 @@ function SortableOrderCard({ order, onClick }: { order: Order; onClick: () => vo
 }
 
 export default function OrdersPage() {
+  // Função para obter a data atual no fuso de São Paulo
+  const getTodayInSaoPaulo = () => {
+    const now = new Date()
+    // Converte para o horário de São Paulo (UTC-3)
+    const saoPauloTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
+    return saoPauloTime
+  }
+
   const [view, setView] = useState<'month' | 'week' | 'day' | 'list'>('list')
+  const [dateFormat, setDateFormat] = useState<'short' | 'numeric' | 'long'>('numeric')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 10, 10))
+  const [currentDate, setCurrentDate] = useState(getTodayInSaoPaulo())
   const [activeFilters, setActiveFilters] = useState<string[]>([])
   const [showTagFilter, setShowTagFilter] = useState(false)
   const [showCategoryFilter, setShowCategoryFilter] = useState(false)
@@ -386,6 +385,18 @@ export default function OrdersPage() {
       })
     }
   }
+
+  // Carregar a view padrão do localStorage após montar
+  useEffect(() => {
+    const savedView = localStorage.getItem('ordersDefaultView')
+    const savedDateFormat = localStorage.getItem('ordersDateFormat')
+    if (savedView) {
+      setView(savedView as 'month' | 'week' | 'day' | 'list')
+    }
+    if (savedDateFormat) {
+      setDateFormat(savedDateFormat as 'short' | 'numeric' | 'long')
+    }
+  }, [])
 
   // Carregar clientes e produtos
   useEffect(() => {
@@ -763,22 +774,85 @@ export default function OrdersPage() {
     }
   }
 
+  // Função auxiliar para formatar datas de acordo com a preferência do usuário
+  const formatDateDisplay = (date: Date): string => {
+    const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const year = date.getFullYear()
+    const shortYear = String(year).slice(-2)
+    
+    if (dateFormat === 'short') {
+      return `${day}/${month}/${shortYear}`
+    } else if (dateFormat === 'numeric') {
+      return `${day}/${month}/${year}`
+    } else {
+      // long format
+      const monthName = date.toLocaleDateString('pt-BR', { month: 'long' })
+      return `${day} de ${monthName} de ${year}`
+    }
+  }
+
+  // Função auxiliar para capitalizar a primeira letra do dia da semana
+  const capitalizeWeekday = (date: Date): string => {
+    const weekday = date.toLocaleDateString('pt-BR', { weekday: 'long' })
+    return weekday.charAt(0).toUpperCase() + weekday.slice(1)
+  }
+
   const getViewTitle = () => {
     if (view === 'list') return 'Pedidos'
-    if (view === 'day') {
-      return currentDate.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      })
+    
+    const formatDate = (date: Date): string => {
+      const day = String(date.getDate()).padStart(2, '0')
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const year = date.getFullYear()
+      const shortYear = String(year).slice(-2)
+      
+      if (dateFormat === 'short') {
+        return `${day}/${month}/${shortYear}`
+      } else if (dateFormat === 'numeric') {
+        return `${day}/${month}/${year}`
+      } else {
+        // long format
+        const monthName = date.toLocaleDateString('pt-BR', { month: 'long' })
+        return `${day} de ${monthName} de ${year}`
+      }
     }
+    
+    if (view === 'day') {
+      return formatDate(currentDate)
+    }
+    
     if (view === 'week') {
       const weekEnd = new Date(currentDate)
       weekEnd.setDate(weekEnd.getDate() + 6)
-      return `${currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+      
+      if (dateFormat === 'long') {
+        // Para formato longo, usar formato curto na semana para não ficar muito extenso
+        const startDay = String(currentDate.getDate()).padStart(2, '0')
+        const startMonth = String(currentDate.getMonth() + 1).padStart(2, '0')
+        const startYear = currentDate.getFullYear()
+        const endDay = String(weekEnd.getDate()).padStart(2, '0')
+        const endMonth = String(weekEnd.getMonth() + 1).padStart(2, '0')
+        const endYear = weekEnd.getFullYear()
+        return `${startDay}/${startMonth}/${startYear} - ${endDay}/${endMonth}/${endYear}`
+      } else {
+        return `${formatDate(currentDate)} - ${formatDate(weekEnd)}`
+      }
     }
-    return currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    
+    // Formato para visualização mensal
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0')
+    const year = currentDate.getFullYear()
+    const shortYear = String(year).slice(-2)
+    
+    if (dateFormat === 'short') {
+      return `${month}/${shortYear}`
+    } else if (dateFormat === 'long') {
+      const monthName = currentDate.toLocaleDateString('pt-BR', { month: 'long' })
+      return `${monthName} de ${year}`
+    } else {
+      return `${month}/${year}`
+    }
   }
 
   const handlePrevious = () => {
@@ -810,7 +884,7 @@ export default function OrdersPage() {
   }
 
   const handleToday = () => {
-    setCurrentDate(new Date(2025, 10, 10))
+    setCurrentDate(getTodayInSaoPaulo())
   }
 
   const toggleFilter = (filter: string) => {
@@ -859,87 +933,26 @@ export default function OrdersPage() {
     <div className="p-8">
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-bold text-gray-900">{getViewTitle()}</h1>
-            
-            {view !== 'list' && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handlePrevious}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleToday}
-                  className="h-8"
-                >
-                  Hoje
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleNext}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-gray-900">Pedidos</h1>
+            <div className="group relative">
+              <Info className="w-5 h-5 text-gray-400 cursor-help" />
+              <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[330px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '25px 15px 30px 20px' }}>
+                Gerencie todos os pedidos da sua confeitaria. Visualize, organize e acompanhe o status de cada pedido em diferentes formatos: lista, calendário mensal, semanal ou diário.
               </div>
-            )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant={view === 'month' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setView('month')}
-              className="h-9"
-            >
-              <Calendar className="h-4 w-4 mr-2" />
-              Mês
-            </Button>
-            <Button
-              variant={view === 'week' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setView('week')}
-              className="h-9"
-            >
-              <Grid3x3 className="h-4 w-4 mr-2" />
-              Semana
-            </Button>
-            <Button
-              variant={view === 'day' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setView('day')}
-              className="h-9"
-            >
-              <Clock className="h-4 w-4 mr-2" />
-              Dia
-            </Button>
-            <Button
-              variant={view === 'list' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setView('list')}
-              className="h-9"
-            >
-              <ListIcon className="h-4 w-4 mr-2" />
-              Lista
-            </Button>
-            <button 
-              onClick={handleNewOrder}
-              className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Novo Pedido
-            </button>
-          </div>
+          <button 
+            onClick={handleNewOrder}
+            className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Novo Pedido
+          </button>
         </div>
 
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
@@ -949,41 +962,39 @@ export default function OrdersPage() {
               className="pl-10"
             />
           </div>
-        </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
           <div className="relative">
             <Button
               variant="outline"
               size="sm"
-              className="filter-button"
+              className="filter-button h-10 cursor-pointer"
               onClick={() => {
-                setShowTagFilter(!showTagFilter)
+                setShowStatusFilter(!showStatusFilter)
+                setShowTagFilter(false)
                 setShowCategoryFilter(false)
-                setShowStatusFilter(false)
               }}
             >
               <Filter className="h-4 w-4 mr-2" />
-              Tags
-              {allTags.filter(t => activeFilters.includes(t.name)).length > 0 && (
+              Status
+              {allStatus.filter(s => activeFilters.includes(s.id)).length > 0 && (
                 <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
-                  {allTags.filter(t => activeFilters.includes(t.name)).length}
+                  {allStatus.filter(s => activeFilters.includes(s.id)).length}
                 </Badge>
               )}
             </Button>
             
-            {showTagFilter && (
-              <div className="filter-dropdown absolute top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10 min-w-[200px]">
-                {allTags.map(tag => (
+            {showStatusFilter && (
+              <div className="filter-dropdown absolute top-full mt-2 bg-[var(--color-bg-modal)] border border-gray-200 rounded-lg shadow-lg p-2 z-10 min-w-[200px]">
+                {allStatus.map(status => (
                   <button
-                    key={tag.id}
-                    onClick={() => toggleFilter(tag.name)}
+                    key={status.id}
+                    onClick={() => toggleFilter(status.id)}
                     className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left cursor-pointer"
                   >
-                    <Badge className={`${getColorClass(tag.color)} border text-xs px-2 py-1`}>
-                      {tag.name}
+                    <Badge className={`${getColorClass(status.color)} border text-xs px-2 py-1`}>
+                      {status.name}
                     </Badge>
-                    {activeFilters.includes(tag.name) && (
+                    {activeFilters.includes(status.id) && (
                       <span className="text-xs text-green-600 font-semibold">✓</span>
                     )}
                   </button>
@@ -996,7 +1007,7 @@ export default function OrdersPage() {
             <Button
               variant="outline"
               size="sm"
-              className="filter-button"
+              className="filter-button h-10 cursor-pointer"
               onClick={() => {
                 setShowCategoryFilter(!showCategoryFilter)
                 setShowTagFilter(false)
@@ -1013,7 +1024,7 @@ export default function OrdersPage() {
             </Button>
             
             {showCategoryFilter && (
-              <div className="filter-dropdown absolute top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10 min-w-[200px]">
+              <div className="filter-dropdown absolute top-full mt-2 bg-[var(--color-bg-modal)] border border-gray-200 rounded-lg shadow-lg p-2 z-10 min-w-[200px]">
                 {allCategories.map(category => (
                   <button
                     key={category.id}
@@ -1036,34 +1047,34 @@ export default function OrdersPage() {
             <Button
               variant="outline"
               size="sm"
-              className="filter-button"
+              className="filter-button h-10 cursor-pointer"
               onClick={() => {
-                setShowStatusFilter(!showStatusFilter)
-                setShowTagFilter(false)
+                setShowTagFilter(!showTagFilter)
                 setShowCategoryFilter(false)
+                setShowStatusFilter(false)
               }}
             >
               <Filter className="h-4 w-4 mr-2" />
-              Status
-              {allStatus.filter(s => activeFilters.includes(s.id)).length > 0 && (
+              Tags
+              {allTags.filter(t => activeFilters.includes(t.name)).length > 0 && (
                 <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
-                  {allStatus.filter(s => activeFilters.includes(s.id)).length}
+                  {allTags.filter(t => activeFilters.includes(t.name)).length}
                 </Badge>
               )}
             </Button>
             
-            {showStatusFilter && (
-              <div className="filter-dropdown absolute top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10 min-w-[200px]">
-                {allStatus.map(status => (
+            {showTagFilter && (
+              <div className="filter-dropdown absolute top-full mt-2 bg-[var(--color-bg-modal)] border border-gray-200 rounded-lg shadow-lg p-2 z-10 min-w-[200px]">
+                {allTags.map(tag => (
                   <button
-                    key={status.id}
-                    onClick={() => toggleFilter(status.id)}
+                    key={tag.id}
+                    onClick={() => toggleFilter(tag.name)}
                     className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left cursor-pointer"
                   >
-                    <Badge className={`${getColorClass(status.color)} border text-xs px-2 py-1`}>
-                      {status.name}
+                    <Badge className={`${getColorClass(tag.color)} border text-xs px-2 py-1`}>
+                      {tag.name}
                     </Badge>
-                    {activeFilters.includes(status.id) && (
+                    {activeFilters.includes(tag.name) && (
                       <span className="text-xs text-green-600 font-semibold">✓</span>
                     )}
                   </button>
@@ -1076,6 +1087,7 @@ export default function OrdersPage() {
             <Button
               variant="ghost"
               size="sm"
+              className="h-10 cursor-pointer"
               onClick={clearFilters}
             >
               Limpar
@@ -1096,12 +1108,12 @@ export default function OrdersPage() {
                 <Badge
                   key={filter}
                   variant="secondary"
-                  className={item ? getColorClass(item.color) : 'bg-gray-100 text-gray-800'}
+                  className={`${item ? getColorClass(item.color) : 'bg-gray-100 text-gray-800'} cursor-pointer hover:opacity-80 transition-opacity`}
                 >
                   {status ? status.name : filter}
                   <button
                     onClick={() => toggleFilter(filter)}
-                    className="ml-2"
+                    className="ml-2 cursor-pointer"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -1109,6 +1121,78 @@ export default function OrdersPage() {
               )
             })}
           </div>
+        )}
+      </div>
+
+      {/* View Selection Buttons */}
+      <div className="flex items-center gap-2 mb-4">
+        <Button 
+          variant={view === 'list' ? 'secondary' : 'ghost'} 
+          size="sm"
+          onClick={() => setView('list')}
+          className={view === 'list' ? 'bg-white shadow-sm' : 'hover:bg-white/80 hover:shadow-sm cursor-pointer transition-all'}
+        >
+          <ListIcon className="h-4 w-4 mr-2" />
+          Lista
+        </Button>
+        <Button 
+          variant={view === 'day' ? 'secondary' : 'ghost'} 
+          size="sm"
+          onClick={() => setView('day')}
+          className={view === 'day' ? 'bg-white shadow-sm' : 'hover:bg-white/80 hover:shadow-sm cursor-pointer transition-all'}
+        >
+          <Clock className="h-4 w-4 mr-2" />
+          Dia
+        </Button>
+        <Button 
+          variant={view === 'week' ? 'secondary' : 'ghost'} 
+          size="sm"
+          onClick={() => setView('week')}
+          className={view === 'week' ? 'bg-white shadow-sm' : 'hover:bg-white/80 hover:shadow-sm cursor-pointer transition-all'}
+        >
+          <Grid3x3 className="h-4 w-4 mr-2" />
+          Semana
+        </Button>
+        <Button 
+          variant={view === 'month' ? 'secondary' : 'ghost'} 
+          size="sm"
+          onClick={() => setView('month')}
+          className={view === 'month' ? 'bg-white shadow-sm' : 'hover:bg-white/80 hover:shadow-sm cursor-pointer transition-all'}
+        >
+          <Calendar className="h-4 w-4 mr-2" />
+          Mês
+        </Button>
+
+        {view !== 'list' && (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handlePrevious}
+              className="h-8 w-8 p-0 ml-4"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm font-semibold text-gray-700 text-center">
+              {getViewTitle()}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleToday}
+              className="h-8"
+            >
+              Hoje
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleNext}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </>
         )}
       </div>
 
@@ -1133,7 +1217,7 @@ export default function OrdersPage() {
                 return (
                   <div key={dateString}>
                     <h3 className="text-sm font-medium text-gray-500 mb-3">
-                      {date.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                      {capitalizeWeekday(date)}, {formatDateDisplay(date)}
                     </h3>
                     
                     <DndContext
@@ -1145,14 +1229,16 @@ export default function OrdersPage() {
                         items={ordersForDate.map(o => o.id)}
                         strategy={verticalListSortingStrategy}
                       >
-                        <div className="space-y-3">
-                          {ordersForDate.map(order => (
-                            <SortableOrderCard
-                              key={order.id}
-                              order={order}
-                              onClick={() => handleOrderClick(order)}
-                            />
-                          ))}
+                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                          <div className="divide-y divide-gray-200">
+                            {ordersForDate.map(order => (
+                              <SortableOrderCard
+                                key={order.id}
+                                order={order}
+                                onClick={() => handleOrderClick(order)}
+                              />
+                            ))}
+                          </div>
                         </div>
                       </SortableContext>
                     </DndContext>
@@ -1260,7 +1346,7 @@ export default function OrdersPage() {
                         {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][i]}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {day.getDate()}/{day.getMonth() + 1}
+                        {formatDateDisplay(day)}
                       </div>
                     </div>
                   )
@@ -1323,12 +1409,7 @@ export default function OrdersPage() {
         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
           <div className="p-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">
-              {currentDate.toLocaleDateString('pt-BR', { 
-                weekday: 'long', 
-                day: 'numeric', 
-                month: 'long', 
-                year: 'numeric' 
-              })}
+              {capitalizeWeekday(currentDate)}, {formatDateDisplay(currentDate)}
             </h3>
           </div>
           
