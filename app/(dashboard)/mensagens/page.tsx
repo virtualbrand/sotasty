@@ -14,6 +14,7 @@ type Contact = {
   avatar?: string
   lastMessage?: string
   lastMessageTime?: string
+  lastMessageTimestamp?: number
   unreadCount?: number
   isOnline?: boolean
 }

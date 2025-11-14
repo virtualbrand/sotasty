@@ -158,6 +158,7 @@ export async function GET(request: NextRequest) {
         const lastMsg = chat.lastMessage as Record<string, unknown> | undefined;
         let lastMessageText = '';
         let lastMessageTime = '';
+        let lastMessageTimestamp = 0;
         
         if (lastMsg) {
           const msg = lastMsg.message as Record<string, unknown> | undefined;
@@ -176,9 +177,16 @@ export async function GET(request: NextRequest) {
           }
           
           const timestamp = lastMsg.messageTimestamp as number | undefined;
-          lastMessageTime = timestamp
-            ? new Date(timestamp * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-            : '';
+          if (timestamp) {
+            lastMessageTimestamp = timestamp;
+            // Converter para horário de Brasília (UTC-3)
+            const date = new Date(timestamp * 1000);
+            lastMessageTime = date.toLocaleTimeString('pt-BR', { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              timeZone: 'America/Sao_Paulo'
+            });
+          }
         }
         
         // Nome: para grupos usar o nome do chat, para contatos usar pushName
@@ -226,6 +234,7 @@ export async function GET(request: NextRequest) {
           avatar: (contactInfo?.profilePictureUrl || chat.profilePictureUrl as string) || null,
           lastMessage: lastMessageText,
           lastMessageTime: lastMessageTime,
+          lastMessageTimestamp: lastMessageTimestamp,
           unreadCount: (chat.unreadCount as number) || 0,
           isOnline: false,
           isGroup: isGroup || isCommunityOrNewsletter
@@ -233,10 +242,10 @@ export async function GET(request: NextRequest) {
       })
       .filter((contact: Record<string, unknown>) => contact.lastMessage) // Apenas contatos com mensagens
       .sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
-        // Ordenar por horário da última mensagem (mais recente primeiro)
-        const timeA = (a.lastMessageTime || '') as string;
-        const timeB = (b.lastMessageTime || '') as string;
-        return timeB.localeCompare(timeA);
+        // Ordenar por timestamp numérico (mais recente primeiro)
+        const timestampA = (a.lastMessageTimestamp || 0) as number;
+        const timestampB = (b.lastMessageTimestamp || 0) as number;
+        return timestampB - timestampA;
       });
 
     console.log('Contatos formatados:', formattedContacts.length);
