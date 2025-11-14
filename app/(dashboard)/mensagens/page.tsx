@@ -212,6 +212,13 @@ export default function MensagensPage() {
   const formatWhatsAppText = (text: string) => {
     let formatted = text
     
+    // Detectar e formatar URLs (http, https, www)
+    const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/g
+    formatted = formatted.replace(urlRegex, (url) => {
+      const href = url.startsWith('http') ? url : `https://${url}`
+      return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="underline hover:opacity-80 transition-opacity">${url}</a>`
+    })
+    
     // *negrito* -> <strong>
     formatted = formatted.replace(/\*([^*]+)\*/g, '<strong>$1</strong>')
     

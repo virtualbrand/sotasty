@@ -419,3 +419,13 @@ input[type="radio"]:focus:not(:focus-visible) {
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.9em;
 }
+
+.text-sm a {
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.text-sm a:hover {
+  opacity: 0.8;
+}
