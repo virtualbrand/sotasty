@@ -1,7 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import { Activity, User, Package, ShoppingCart, Settings, Filter, Search, Calendar, Download, LucideIcon } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Activity, User, Package, ShoppingCart, Settings, Filter, Search, Calendar, Download, LucideIcon, X, Info } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { CalendarWithRangePresets } from '@/components/ui/calendar-with-range-presets'
+import { DateRange } from 'react-day-picker'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 type ActivityType = {
   id: string
@@ -16,6 +23,10 @@ type ActivityType = {
 
 export default function ActivitiesPage() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [activeFilters, setActiveFilters] = useState<string[]>([])
+  const [showCategoryFilter, setShowCategoryFilter] = useState(false)
+  const [showDateFilter, setShowDateFilter] = useState(false)
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
 
   const activities: ActivityType[] = [
     {
@@ -120,77 +131,244 @@ export default function ActivitiesPage() {
     return labels[category]
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <Activity className="w-8 h-8 text-[var(--color-old-rose)]" />
-                Atividades
-              </h1>
-              <p className="text-gray-600 mt-2">Histórico completo de ações realizadas no sistema</p>
-            </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <Download className="w-4 h-4" />
-              Exportar
-            </button>
-          </div>
-        </div>
+  // Categorias disponíveis para filtro
+  const allCategories = [
+    { id: 'pedido', name: 'Pedido', color: 'blue' },
+    { id: 'produto', name: 'Produto', color: 'purple' },
+    { id: 'cliente', name: 'Cliente', color: 'green' },
+    { id: 'configuracao', name: 'Configuração', color: 'orange' },
+  ]
 
-        {/* Filtros */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Busca */}
-            <div className="md:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar atividades..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
-                />
+  const getColorClass = (color: string) => {
+    const colorMap: Record<string, string> = {
+      blue: 'bg-blue-100 text-blue-800 border-blue-200',
+      purple: 'bg-purple-100 text-purple-800 border-purple-200',
+      green: 'bg-green-100 text-green-800 border-green-200',
+      orange: 'bg-orange-100 text-orange-800 border-orange-200',
+    }
+    return colorMap[color] || 'bg-gray-100 text-gray-800 border-gray-200'
+  }
+
+  const toggleFilter = (filter: string) => {
+    setActiveFilters(prev => 
+      prev.includes(filter) 
+        ? prev.filter(f => f !== filter)
+        : [...prev, filter]
+    )
+  }
+
+  const clearFilters = () => {
+    setActiveFilters([])
+  }
+
+  // Fechar filtros ao clicar fora ou pressionar ESC
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (!target.closest('.filter-dropdown') && !target.closest('.filter-button')) {
+        setShowCategoryFilter(false)
+        setShowDateFilter(false)
+      }
+    }
+
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowCategoryFilter(false)
+        setShowDateFilter(false)
+      }
+    }
+
+    if (showCategoryFilter || showDateFilter) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleEscKey)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscKey)
+    }
+  }, [showCategoryFilter, showDateFilter])
+
+  // Filtrar atividades
+  const filteredActivities = activities.filter(activity => {
+    const matchesSearch = activity.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         activity.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         activity.user.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesCategory = activeFilters.length === 0 || activeFilters.includes(activity.category)
+    
+    return matchesSearch && matchesCategory
+  })
+
+  return (
+    <div className="p-8">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-gray-900">Atividades</h1>
+            <div className="group relative">
+              <Info className="w-4 h-4 text-gray-400 cursor-help" />
+              <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[330px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '25px 15px 30px 20px' }}>
+                Histórico completo de ações realizadas no sistema. Acompanhe todas as atividades relacionadas a pedidos, produtos, clientes e configurações.
               </div>
             </div>
-
-            {/* Filtro de Data */}
-            <div>
-              <button className="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                <span className="flex items-center gap-2 text-gray-700">
-                  <Calendar className="w-4 h-4" />
-                  Período
-                </span>
-                <span className="text-gray-400">▼</span>
-              </button>
-            </div>
-
-            {/* Filtro de Categoria */}
-            <div>
-              <button className="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                <span className="flex items-center gap-2 text-gray-700">
-                  <Filter className="w-4 h-4" />
-                  Categoria
-                </span>
-                <span className="text-gray-400">▼</span>
-              </button>
-            </div>
           </div>
-
-          {/* Chips de Filtros Ativos (para futuro) */}
-          <div className="mt-4 flex items-center gap-2">
-            <span className="text-sm text-gray-500">Filtros ativos:</span>
-            <span className="text-sm text-gray-400">Nenhum</span>
-          </div>
+          <button className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Exportar
+          </button>
         </div>
 
-        {/* Lista de Atividades */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="divide-y divide-gray-200">
-            {activities.map((activity) => {
+        {/* Search and Filters */}
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              placeholder="Buscar atividades..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              className="filter-button h-10 cursor-pointer"
+              onClick={() => {
+                setShowCategoryFilter(!showCategoryFilter)
+                setShowDateFilter(false)
+              }}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Categoria
+              {allCategories.filter(c => activeFilters.includes(c.id)).length > 0 && (
+                <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                  {allCategories.filter(c => activeFilters.includes(c.id)).length}
+                </Badge>
+              )}
+            </Button>
+            
+            {showCategoryFilter && (
+              <div className="filter-dropdown absolute top-full mt-2 bg-[var(--color-bg-modal)] border border-gray-200 rounded-lg shadow-lg p-2 z-10 min-w-[200px]">
+                {allCategories.map(category => (
+                  <button
+                    key={category.id}
+                    onClick={() => toggleFilter(category.id)}
+                    className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left cursor-pointer hover:bg-gray-50 rounded"
+                  >
+                    <Badge className={`${getColorClass(category.color)} border text-xs px-2 py-1`}>
+                      {category.name}
+                    </Badge>
+                    {activeFilters.includes(category.id) && (
+                      <span className="text-xs text-green-600 font-semibold">✓</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              className="filter-button h-10 cursor-pointer"
+              onClick={() => {
+                setShowDateFilter(!showDateFilter)
+                setShowCategoryFilter(false)
+              }}
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Período
+              {dateRange?.from && (
+                <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                  {dateRange.from && dateRange.to 
+                    ? `${format(dateRange.from, 'dd/MM', { locale: ptBR })} - ${format(dateRange.to, 'dd/MM', { locale: ptBR })}`
+                    : format(dateRange.from, 'dd/MM', { locale: ptBR })}
+                </Badge>
+              )}
+            </Button>
+            
+            {showDateFilter && (
+              <div className="filter-dropdown absolute top-full mt-2 right-0 z-50">
+                <CalendarWithRangePresets 
+                  onDateChange={setDateRange}
+                  defaultDate={dateRange}
+                />
+              </div>
+            )}
+          </div>
+
+          {(activeFilters.length > 0 || dateRange?.from) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-10 cursor-pointer"
+              onClick={() => {
+                clearFilters()
+                setDateRange(undefined)
+              }}
+            >
+              Limpar
+            </Button>
+          )}
+        </div>
+
+        {(activeFilters.length > 0 || dateRange?.from) && (
+          <div className="flex items-center gap-2 mt-3">
+            <span className="text-sm text-gray-600">Filtros ativos:</span>
+            {dateRange?.from && (
+              <Badge
+                variant="secondary"
+                className="bg-gray-100 text-gray-800 cursor-pointer hover:opacity-80 transition-opacity"
+              >
+                {dateRange.from && dateRange.to 
+                  ? `${format(dateRange.from, 'dd/MM/yy', { locale: ptBR })} - ${format(dateRange.to, 'dd/MM/yy', { locale: ptBR })}`
+                  : format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })}
+                <button
+                  onClick={() => setDateRange(undefined)}
+                  className="ml-2 cursor-pointer"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {activeFilters.map(filter => {
+              const category = allCategories.find(c => c.id === filter)
+              
+              return (
+                <Badge
+                  key={filter}
+                  variant="secondary"
+                  className={`${category ? getColorClass(category.color) : 'bg-gray-100 text-gray-800'} cursor-pointer hover:opacity-80 transition-opacity`}
+                >
+                  {category?.name || filter}
+                  <button
+                    onClick={() => toggleFilter(filter)}
+                    className="ml-2 cursor-pointer"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Lista de Atividades */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="divide-y divide-gray-200">
+          {filteredActivities.length === 0 ? (
+            <div className="p-12 text-center text-gray-500">
+              <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>{searchTerm || activeFilters.length > 0 ? 'Nenhuma atividade encontrada' : 'Nenhuma atividade registrada'}</p>
+            </div>
+          ) : (
+            filteredActivities.map((activity) => {
               const Icon = activity.icon
               return (
                 <div key={activity.id} className="p-6 hover:bg-gray-50 transition-colors">
@@ -238,26 +416,28 @@ export default function ActivitiesPage() {
                   </div>
                 </div>
               )
-            })}
-          </div>
+            })
+          )}
+        </div>
 
-          {/* Paginação */}
+        {/* Paginação */}
+        {filteredActivities.length > 0 && (
           <div className="p-6 border-t border-gray-200">
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-600">
-                Mostrando <span className="font-semibold">1-8</span> de <span className="font-semibold">24</span> atividades
+                Mostrando <span className="font-semibold">1-{filteredActivities.length}</span> de <span className="font-semibold">{filteredActivities.length}</span> atividades
               </p>
               <div className="flex items-center gap-2">
                 <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                   Anterior
                 </button>
-                <button className="px-4 py-2 bg-[var(--color-old-rose)] text-white rounded-lg hover:bg-[var(--color-rosy-brown)] transition-colors">
+                <button className="px-4 py-2 bg-[var(--color-old-rose)] text-white rounded-lg hover:bg-[var(--color-rosy-brown)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                   Próxima
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { User, Phone, Mail, ShoppingBag, X, Search, Info } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
+import { User, Phone, Mail, ShoppingBag, X, Search, Info, ArrowDownAZ, ArrowDownZA, Camera, SwitchCamera, CircleX } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 
 type Customer = {
@@ -9,8 +10,33 @@ type Customer = {
   name: string
   phone: string
   email: string
+  avatar_url?: string
+  cpf_cnpj?: string
+  notes?: string
   created_at: string
   orders_count?: number
+}
+
+// Função para formatar CPF/CNPJ
+const formatCpfCnpj = (value: string): string => {
+  const numbers = value.replace(/\D/g, "")
+  
+  if (!numbers) return ""
+  
+  // CPF: 000.000.000-00
+  if (numbers.length <= 11) {
+    if (numbers.length <= 3) return numbers
+    if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`
+    if (numbers.length <= 9) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`
+    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`
+  }
+  
+  // CNPJ: 00.000.000/0000-00
+  if (numbers.length <= 2) return numbers
+  if (numbers.length <= 5) return `${numbers.slice(0, 2)}.${numbers.slice(2)}`
+  if (numbers.length <= 8) return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5)}`
+  if (numbers.length <= 12) return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5, 8)}/${numbers.slice(8)}`
+  return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5, 8)}/${numbers.slice(8, 12)}-${numbers.slice(12, 14)}`
 }
 
 // Função para formatar telefone
@@ -54,20 +80,30 @@ export default function CustomersPage() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    email: ''
+    email: '',
+    cpf_cnpj: '',
+    notes: '',
+    avatar: null as File | null
   })
   const [touched, setTouched] = useState({
     name: false,
     phone: false,
-    email: false
+    email: false,
+    cpf_cnpj: false,
+    notes: false
   })
   const [errors, setErrors] = useState({
     name: '',
     phone: '',
-    email: ''
+    email: '',
+    cpf_cnpj: '',
+    notes: ''
   })
 
   // Mock data para demonstração
@@ -91,10 +127,7 @@ export default function CustomersPage() {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (isModalOpen) {
-          setIsModalOpen(false)
-          setFormData({ name: '', phone: '', email: '' })
-          setTouched({ name: false, phone: false, email: false })
-          setErrors({ name: '', phone: '', email: '' })
+          closeModal()
         }
         if (selectedCustomer) {
           setSelectedCustomer(null)
@@ -106,11 +139,35 @@ export default function CustomersPage() {
     return () => window.removeEventListener('keydown', handleEsc)
   }, [isModalOpen, selectedCustomer])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const closeModal = () => {
+    setIsModalOpen(false)
+    setEditingCustomer(null)
+    setFormData({ name: '', phone: '', email: '', cpf_cnpj: '', notes: '', avatar: null })
+    setTouched({ name: false, phone: false, email: false, cpf_cnpj: false, notes: false })
+    setErrors({ name: '', phone: '', email: '', cpf_cnpj: '', notes: '' })
+    setAvatarPreview(null)
+  }
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setFormData(prev => ({ ...prev, avatar: file }))
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     
     if (name === 'phone') {
       const formatted = formatPhone(value)
+      setFormData(prev => ({ ...prev, [name]: formatted }))
+    } else if (name === 'cpf_cnpj') {
+      const formatted = formatCpfCnpj(value)
       setFormData(prev => ({ ...prev, [name]: formatted }))
     } else {
       setFormData(prev => ({ ...prev, [name]: value }))
@@ -118,13 +175,16 @@ export default function CustomersPage() {
 
     // Validação em tempo real após o campo ser tocado
     if (touched[name as keyof typeof touched]) {
-      validateField(name, name === 'phone' ? formatPhone(value) : value)
+      validateField(name, name === 'phone' ? formatPhone(value) : name === 'cpf_cnpj' ? formatCpfCnpj(value) : value)
     }
   }
 
   const handleBlur = (fieldName: string) => {
     setTouched(prev => ({ ...prev, [fieldName]: true }))
-    validateField(fieldName, formData[fieldName as keyof typeof formData])
+    const value = formData[fieldName as keyof typeof formData]
+    if (typeof value === 'string') {
+      validateField(fieldName, value)
+    }
   }
 
   const validateField = (fieldName: string, value: string) => {
@@ -143,6 +203,13 @@ export default function CustomersPage() {
           error = 'Telefone inválido'
         }
         break
+      case 'cpf_cnpj':
+        const cpfCnpjDigits = value.replace(/\D/g, '')
+        // CPF/CNPJ é opcional, mas se preenchido deve ser válido
+        if (cpfCnpjDigits && cpfCnpjDigits.length !== 11 && cpfCnpjDigits.length !== 14) {
+          error = 'CPF (11 dígitos) ou CNPJ (14 dígitos) inválido'
+        }
+        break
       case 'email':
         // E-mail é opcional, mas se preenchido deve ser válido
         if (value.trim() && !validateEmail(value)) {
@@ -159,10 +226,11 @@ export default function CustomersPage() {
     const nameValid = validateField('name', formData.name)
     const phoneValid = validateField('phone', formData.phone)
     const emailValid = validateField('email', formData.email)
+    const cpfCnpjValid = validateField('cpf_cnpj', formData.cpf_cnpj)
     
-    setTouched({ name: true, phone: true, email: true })
+    setTouched({ name: true, phone: true, email: true, cpf_cnpj: true, notes: true })
     
-    return nameValid && phoneValid && emailValid
+    return nameValid && phoneValid && emailValid && cpfCnpjValid
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -175,12 +243,22 @@ export default function CustomersPage() {
     setLoading(true)
 
     try {
+      // Preparar dados para envio
+      const dataToSend = {
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        cpf_cnpj: formData.cpf_cnpj,
+        notes: formData.notes,
+        avatar_url: avatarPreview // Usar o preview que já está em base64
+      }
+
       const response = await fetch('/api/customers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSend),
       })
 
       if (!response.ok) throw new Error('Failed to create customer')
@@ -194,10 +272,7 @@ export default function CustomersPage() {
       }
 
       setCustomers(prev => [customerWithCount, ...prev])
-      setIsModalOpen(false)
-      setFormData({ name: '', phone: '', email: '' })
-      setTouched({ name: false, phone: false, email: false })
-      setErrors({ name: '', phone: '', email: '' })
+      closeModal()
     } catch (error) {
       console.error('Erro ao criar cliente:', error)
       alert('Erro ao criar cliente. Tente novamente.')
@@ -210,8 +285,14 @@ export default function CustomersPage() {
     setFormData({
       name: customer.name,
       phone: customer.phone,
-      email: customer.email
+      email: customer.email,
+      cpf_cnpj: customer.cpf_cnpj || '',
+      notes: customer.notes || '',
+      avatar: null
     })
+    if (customer.avatar_url) {
+      setAvatarPreview(customer.avatar_url)
+    }
     setEditingCustomer(customer)
     setSelectedCustomer(null)
     setIsModalOpen(true)
@@ -227,15 +308,23 @@ export default function CustomersPage() {
     setLoading(true)
 
     try {
+      // Preparar dados para envio
+      const dataToSend = {
+        id: editingCustomer.id,
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        cpf_cnpj: formData.cpf_cnpj,
+        notes: formData.notes,
+        avatar_url: avatarPreview // Usar o preview que já está em base64
+      }
+
       const response = await fetch('/api/customers', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          id: editingCustomer.id,
-          ...formData
-        }),
+        body: JSON.stringify(dataToSend),
       })
 
       if (!response.ok) throw new Error('Failed to update customer')
@@ -248,11 +337,7 @@ export default function CustomersPage() {
           : c
       ))
       
-      setIsModalOpen(false)
-      setEditingCustomer(null)
-      setFormData({ name: '', phone: '', email: '' })
-      setTouched({ name: false, phone: false, email: false })
-      setErrors({ name: '', phone: '', email: '' })
+      closeModal()
     } catch (error) {
       console.error('Erro ao atualizar cliente:', error)
       alert('Erro ao atualizar cliente. Tente novamente.')
@@ -285,12 +370,28 @@ export default function CustomersPage() {
     return new Date(dateString).toLocaleDateString('pt-BR')
   }
 
-  // Filtrar clientes pela busca
-  const filteredCustomers = customers.filter(customer => 
+  // Filtrar e ordenar clientes
+  let filteredCustomers = customers.filter(customer => 
     customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     customer.phone.includes(searchQuery)
   )
+
+  // Ordena somente se sortOrder foi definido
+  if (sortOrder !== null) {
+    filteredCustomers = filteredCustomers.sort((a, b) => {
+      const comparison = a.name.localeCompare(b.name, 'pt-BR')
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
+  }
+
+  const toggleSortOrder = () => {
+    setSortOrder(prev => {
+      if (prev === null) return 'asc'
+      if (prev === 'asc') return 'desc'
+      return null
+    })
+  }
 
   return (
     <div className="p-8">
@@ -298,7 +399,7 @@ export default function CustomersPage() {
         <div className="flex items-center gap-2">
           <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
           <div className="group relative">
-            <Info className="w-5 h-5 text-gray-400 cursor-help" />
+            <Info className="w-4 h-4 text-gray-400 cursor-help" />
             <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[330px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '25px 15px 30px 20px' }}>
               Gerencie sua base de clientes. Cadastre novos clientes, edite informações de contato e acompanhe o histórico de pedidos de cada um.
             </div>
@@ -306,14 +407,14 @@ export default function CustomersPage() {
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold"
+          className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold cursor-pointer"
         >
           + Novo Cliente
         </button>
       </div>
 
-      {/* Barra de Busca */}
-      <div className="mb-4">
+      {/* Barra de Busca e Ordenação */}
+      <div className="mb-4 flex items-center gap-2">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
@@ -322,6 +423,23 @@ export default function CustomersPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
+        </div>
+        <div className="group relative">
+          <button
+            onClick={toggleSortOrder}
+            className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md px-3 filter-button h-10 cursor-pointer"
+          >
+            {sortOrder === null ? (
+              <ArrowDownAZ className="w-5 h-5 text-gray-400" />
+            ) : sortOrder === 'asc' ? (
+              <ArrowDownAZ className="w-5 h-5 text-gray-600" />
+            ) : (
+              <ArrowDownZA className="w-5 h-5 text-gray-600" />
+            )}
+          </button>
+          <div className="invisible group-hover:visible absolute right-0 top-full mt-2 bg-white text-[var(--color-licorice)] text-xs rounded-lg shadow-lg z-50 border border-gray-200 px-2 py-1 whitespace-nowrap">
+            {sortOrder === null ? 'Ordenar A-Z' : sortOrder === 'asc' ? 'Ordenar Z-A' : 'Remover ordenação'}
+          </div>
         </div>
       </div>
 
@@ -341,8 +459,17 @@ export default function CustomersPage() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center">
-                      <User className="w-6 h-6 text-white" />
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center overflow-hidden relative">
+                      {customer.avatar_url ? (
+                        <Image
+                          src={customer.avatar_url}
+                          alt={customer.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <User className="w-6 h-6 text-white" />
+                      )}
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">{customer.name}</h3>
@@ -384,11 +511,7 @@ export default function CustomersPage() {
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              setIsModalOpen(false)
-              setEditingCustomer(null)
-              setFormData({ name: '', phone: '', email: '' })
-              setTouched({ name: false, phone: false, email: false })
-              setErrors({ name: '', phone: '', email: '' })
+              closeModal()
             }
           }}
         >
@@ -398,13 +521,7 @@ export default function CustomersPage() {
                 {editingCustomer ? 'Editar Cliente' : 'Novo Cliente'}
               </h2>
               <button
-                onClick={() => {
-                  setIsModalOpen(false)
-                  setEditingCustomer(null)
-                  setFormData({ name: '', phone: '', email: '' })
-                  setTouched({ name: false, phone: false, email: false })
-                  setErrors({ name: '', phone: '', email: '' })
-                }}
+                onClick={closeModal}
                 className="text-gray-400 hover:text-gray-600 transition"
               >
                 <X className="w-5 h-5" />
@@ -412,9 +529,70 @@ export default function CustomersPage() {
             </div>
 
             <form onSubmit={editingCustomer ? handleUpdateCustomer : handleSubmit} className="p-6 space-y-4">
+              {/* Foto do Cliente */}
+              <div className="mb-6 pb-6 border-b border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Foto do Cliente</h3>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <label className="cursor-pointer group">
+                      <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative">
+                        {avatarPreview ? (
+                          <>
+                            <Image 
+                              src={avatarPreview} 
+                              alt="Preview" 
+                              fill
+                              className="object-cover" 
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <div className="bg-white bg-opacity-90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                                <SwitchCamera className="w-5 h-5 text-gray-700" />
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <User className="w-12 h-12 text-gray-400 group-hover:text-gray-500 transition-colors" />
+                            <div className="absolute inset-0 bg-gray-100 group-hover:bg-gray-200 transition-colors flex items-center justify-center">
+                              <div className="flex flex-col items-center">
+                                <Camera className="w-6 h-6 text-gray-400" />
+                                <span className="text-xs text-gray-500 mt-1">Adicionar</span>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                    </label>
+                    {avatarPreview && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAvatarPreview(null)
+                          setFormData(prev => ({ ...prev, avatar: null }))
+                        }}
+                        className="absolute -top-1 -right-1 hover:scale-110 transition-transform"
+                      >
+                        <CircleX className="w-5 h-5 text-[#D67973] hover:text-[#C86561] transition-colors" />
+                      </button>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
+                    <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nome Completo *
+                  Nome *
                 </label>
                 <input
                   type="text"
@@ -425,10 +603,31 @@ export default function CustomersPage() {
                   className={`w-full px-3 py-2 border ${
                     touched.name && errors.name ? 'border-[#D67973]' : 'border-gray-300'
                   } rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors`}
-                  placeholder="Digite o nome completo"
+                  placeholder="Digite o nome"
                 />
                 {touched.name && errors.name && (
                   <p className="text-sm text-[#D67973] mt-1">{errors.name}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  CPF/CNPJ
+                </label>
+                <input
+                  type="text"
+                  name="cpf_cnpj"
+                  value={formData.cpf_cnpj}
+                  onChange={handleInputChange}
+                  onBlur={() => handleBlur('cpf_cnpj')}
+                  maxLength={18}
+                  className={`w-full px-3 py-2 border ${
+                    touched.cpf_cnpj && errors.cpf_cnpj ? 'border-[#D67973]' : 'border-gray-300'
+                  } rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors`}
+                  placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                />
+                {touched.cpf_cnpj && errors.cpf_cnpj && (
+                  <p className="text-sm text-[#D67973] mt-1">{errors.cpf_cnpj}</p>
                 )}
               </div>
 
@@ -473,16 +672,25 @@ export default function CustomersPage() {
                 )}
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Observações
+                </label>
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  onBlur={() => handleBlur('notes')}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors resize-none"
+                  placeholder="Adicione observações sobre o cliente..."
+                />
+              </div>
+
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsModalOpen(false)
-                    setEditingCustomer(null)
-                    setFormData({ name: '', phone: '', email: '' })
-                    setTouched({ name: false, phone: false, email: false })
-                    setErrors({ name: '', phone: '', email: '' })
-                  }}
+                  onClick={closeModal}
                   className="btn-outline-grey flex-1"
                 >
                   Cancelar
@@ -524,8 +732,17 @@ export default function CustomersPage() {
             <div className="p-6 space-y-6">
               {/* Avatar e Info Básica */}
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center">
-                  <User className="w-8 h-8 text-white" />
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center overflow-hidden relative">
+                  {selectedCustomer.avatar_url ? (
+                    <Image
+                      src={selectedCustomer.avatar_url}
+                      alt={selectedCustomer.name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <User className="w-8 h-8 text-white" />
+                  )}
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">{selectedCustomer.name}</h3>
@@ -534,47 +751,50 @@ export default function CustomersPage() {
               </div>
 
               {/* Informações de Contato */}
-              <div className="space-y-3">
-                <h4 className="font-semibold text-gray-900">Informações de Contato</h4>
-                <div className="space-y-2">
-                  {selectedCustomer.phone && (
-                    <div className="flex items-center gap-3 text-gray-700">
-                      <Phone className="w-4 h-4 text-[var(--color-old-rose)]" />
-                      <span>{selectedCustomer.phone}</span>
-                    </div>
-                  )}
-                  {selectedCustomer.email && (
-                    <div className="flex items-center gap-3 text-gray-700">
-                      <Mail className="w-4 h-4 text-[var(--color-old-rose)]" />
-                      <span>{selectedCustomer.email}</span>
-                    </div>
-                  )}
-                  {!selectedCustomer.phone && !selectedCustomer.email && (
-                    <p className="text-sm text-gray-500 italic">Nenhuma informação de contato cadastrada</p>
-                  )}
+              {(selectedCustomer.phone || selectedCustomer.email) ? (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-900">Informações de Contato</h4>
+                  <div className="space-y-2">
+                    {selectedCustomer.phone && (
+                      <div className="flex items-center gap-3 text-gray-700">
+                        <Phone className="w-4 h-4 text-[var(--color-old-rose)]" />
+                        <span>{selectedCustomer.phone}</span>
+                      </div>
+                    )}
+                    {selectedCustomer.email && (
+                      <div className="flex items-center gap-3 text-gray-700">
+                        <Mail className="w-4 h-4 text-[var(--color-old-rose)]" />
+                        <span>{selectedCustomer.email}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              ) : null}
 
               {/* Estatísticas */}
-              <div className="bg-[var(--color-lavender-blush)] rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <ShoppingBag className="w-6 h-6 text-[var(--color-old-rose)]" />
-                    <div>
-                      <p className="text-sm text-gray-600">Total de Pedidos</p>
-                      <p className="text-2xl font-bold text-[var(--color-old-rose)]">
-                        {selectedCustomer.orders_count || 0}
-                      </p>
+              {(selectedCustomer.orders_count && selectedCustomer.orders_count > 0) ? (
+                <div className="bg-[var(--color-lavender-blush)] rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <ShoppingBag className="w-6 h-6 text-[var(--color-old-rose)]" />
+                      <div>
+                        <p className="text-sm text-gray-600">Total de Pedidos</p>
+                        <p className="text-2xl font-bold text-[var(--color-old-rose)]">
+                          {selectedCustomer.orders_count}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : null}
 
               {/* Botões de Ação */}
               <div className="flex gap-3 pt-4 border-t border-gray-200">
-                <button className="btn-info flex-1">
-                  Ver Pedidos
-                </button>
+                {(selectedCustomer.orders_count && selectedCustomer.orders_count > 0) ? (
+                  <button className="btn-info flex-1">
+                    Ver Pedidos
+                  </button>
+                ) : null}
                 <button 
                   onClick={() => handleEditCustomer(selectedCustomer)}
                   className="btn-warning flex-1"

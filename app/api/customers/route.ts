@@ -12,10 +12,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    // Buscar clientes do usuário
+    // Buscar clientes do usuário com contagem de pedidos
     const { data: customers, error } = await supabase
       .from('customers')
-      .select('*')
+      .select(`
+        *,
+        orders:orders(count)
+      `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
@@ -24,7 +27,14 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(customers || [])
+    // Formatar dados para incluir orders_count
+    const customersWithCount = customers?.map(customer => ({
+      ...customer,
+      orders_count: customer.orders?.[0]?.count || 0,
+      orders: undefined // Remove o objeto orders temporário
+    })) || []
+
+    return NextResponse.json(customersWithCount)
   } catch (error) {
     console.error('Error fetching customers:', error)
     return NextResponse.json({ error: 'Failed to fetch customers' }, { status: 500 })
@@ -52,6 +62,9 @@ export async function POST(request: Request) {
           name: body.name,
           email: body.email,
           phone: body.phone,
+          avatar_url: body.avatar_url,
+          cpf_cnpj: body.cpf_cnpj,
+          notes: body.notes,
         }
       ])
       .select()

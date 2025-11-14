@@ -53,8 +53,6 @@ export default function OrdersSettingsPage() {
   const [savedDefaultView, setSavedDefaultView] = useState<'list' | 'day' | 'week' | 'month'>('list')
   const [dateFormat, setDateFormat] = useState<'short' | 'numeric' | 'long'>('numeric')
   const [savedDateFormat, setSavedDateFormat] = useState<'short' | 'numeric' | 'long'>('numeric')
-  const [menuPosition, setMenuPosition] = useState<'sidebar' | 'header' | 'footer'>('sidebar')
-  const [savedMenuPosition, setSavedMenuPosition] = useState<'sidebar' | 'header' | 'footer'>('sidebar')
 
   const [newStatusName, setNewStatusName] = useState('')
   const [newStatusColor, setNewStatusColor] = useState('blue')
@@ -74,7 +72,6 @@ export default function OrdersSettingsPage() {
     const savedTags = localStorage.getItem('orderTags')
     const savedDefaultView = localStorage.getItem('ordersDefaultView')
     const savedDateFormat = localStorage.getItem('ordersDateFormat')
-    const savedMenuPosition = localStorage.getItem('menuPosition')
 
     /* eslint-disable */
     if (savedStatuses) setStatuses(JSON.parse(savedStatuses))
@@ -87,10 +84,6 @@ export default function OrdersSettingsPage() {
     if (savedDateFormat) {
       setDateFormat(savedDateFormat as 'short' | 'numeric' | 'long')
       setSavedDateFormat(savedDateFormat as 'short' | 'numeric' | 'long')
-    }
-    if (savedMenuPosition) {
-      setMenuPosition(savedMenuPosition as 'sidebar' | 'header' | 'footer')
-      setSavedMenuPosition(savedMenuPosition as 'sidebar' | 'header' | 'footer')
     }
     /* eslint-enable */
     
@@ -420,87 +413,6 @@ export default function OrdersSettingsPage() {
         </div>
       </div>
 
-      {/* Posição do Menu */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Eye className="w-5 h-5 text-gray-700" />
-          <h2 className="text-lg font-semibold text-gray-900">Posição do Menu</h2>
-        </div>
-        <p className="text-sm text-gray-600 mb-6">
-          Escolha onde deseja visualizar o menu de navegação principal.
-        </p>
-
-        <div className="space-y-4">
-          <div className="flex items-center gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="menuPosition"
-                value="sidebar"
-                checked={menuPosition === 'sidebar'}
-                onChange={(e) => setMenuPosition(e.target.value as 'sidebar' | 'header' | 'footer')}
-                className="w-4 h-4 text-pink-600 focus:ring-pink-500"
-              />
-              <span className="text-sm font-medium text-gray-900">Lateral (Sidebar)</span>
-            </label>
-            
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="menuPosition"
-                value="header"
-                checked={menuPosition === 'header'}
-                onChange={(e) => setMenuPosition(e.target.value as 'sidebar' | 'header' | 'footer')}
-                className="w-4 h-4 text-pink-600 focus:ring-pink-500"
-              />
-              <span className="text-sm font-medium text-gray-900">Topo (Header)</span>
-            </label>
-            
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="menuPosition"
-                value="footer"
-                checked={menuPosition === 'footer'}
-                onChange={(e) => setMenuPosition(e.target.value as 'sidebar' | 'header' | 'footer')}
-                className="w-4 h-4 text-pink-600 focus:ring-pink-500"
-              />
-              <span className="text-sm font-medium text-gray-900">Rodapé (Footer)</span>
-            </label>
-
-            {menuPosition !== savedMenuPosition && (
-              <button 
-                onClick={() => {
-                  localStorage.setItem('menuPosition', menuPosition)
-                  setSavedMenuPosition(menuPosition)
-                  
-                  // Disparar evento para atualizar o layout imediatamente
-                  const event = new CustomEvent('menu-position-changed', {
-                    detail: { position: menuPosition }
-                  })
-                  window.dispatchEvent(event)
-                  
-                  const positionLabels = {
-                    sidebar: 'Lateral (Sidebar)',
-                    header: 'Topo (Header)',
-                    footer: 'Rodapé (Footer)'
-                  }
-                  showToast({
-                    title: 'Preferência salva!',
-                    message: `Menu posicionado em: ${positionLabels[menuPosition]}`,
-                    variant: 'success',
-                    duration: 3000,
-                  })
-                }}
-                className="btn-outline-success ml-4"
-              >
-                Salvar Alterações
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Status */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center gap-2 mb-4">
@@ -516,10 +428,10 @@ export default function OrdersSettingsPage() {
           {statuses.map(status => (
             <div
               key={status.id}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${getColorClass(status.color)} cursor-pointer hover:opacity-80 transition-opacity`}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${getColorClass(status.color)} cursor-pointer hover:opacity-80 transition-opacity`}
             >
               <span 
-                className="text-sm font-medium"
+                className="text-xs font-medium"
                 onClick={() => editStatus(status)}
               >
                 {status.name}
@@ -531,7 +443,7 @@ export default function OrdersSettingsPage() {
                 }}
                 className="hover:opacity-70"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
               </button>
             </div>
           ))}
@@ -605,10 +517,10 @@ export default function OrdersSettingsPage() {
           {categories.map(category => (
             <div
               key={category.id}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${getColorClass(category.color)} cursor-pointer hover:opacity-80 transition-opacity`}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${getColorClass(category.color)} cursor-pointer hover:opacity-80 transition-opacity`}
             >
               <span 
-                className="text-sm font-medium"
+                className="text-xs font-medium"
                 onClick={() => editCategory(category)}
               >
                 {category.name}
@@ -620,7 +532,7 @@ export default function OrdersSettingsPage() {
                 }}
                 className="hover:opacity-70"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
               </button>
             </div>
           ))}
@@ -694,10 +606,10 @@ export default function OrdersSettingsPage() {
           {tags.map(tag => (
             <div
               key={tag.id}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${getColorClass(tag.color)} cursor-pointer hover:opacity-80 transition-opacity`}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${getColorClass(tag.color)} cursor-pointer hover:opacity-80 transition-opacity`}
             >
               <span 
-                className="text-sm font-medium"
+                className="text-xs font-medium"
                 onClick={() => editTag(tag)}
               >
                 {tag.name}
@@ -709,7 +621,7 @@ export default function OrdersSettingsPage() {
                 }}
                 className="hover:opacity-70"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
               </button>
             </div>
           ))}

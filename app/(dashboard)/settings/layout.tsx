@@ -10,7 +10,8 @@ import {
   CakeSlice, 
   ShoppingCart, 
   Bell, 
-  Activity 
+  Activity,
+  MessageCircle
 } from 'lucide-react'
 
 const settingsNavigation = [
@@ -25,6 +26,12 @@ const settingsNavigation = [
     href: '/settings/preferences', 
     icon: SettingsIcon,
     description: 'Configure suas preferências do sistema'
+  },
+  { 
+    name: 'Atendimento', 
+    href: '/settings/atendimento', 
+    icon: MessageCircle,
+    description: 'Base de conhecimento do assistente'
   },
   { 
     name: 'Planos', 

@@ -76,7 +76,7 @@ export default function PreferencesPage() {
                   value="sidebar"
                   checked={menuPosition === 'sidebar'}
                   onChange={(e) => setMenuPosition(e.target.value as 'sidebar' | 'header' | 'footer' | 'right')}
-                  className="w-4 h-4 text-pink-600 focus:ring-pink-500"
+                  className="w-4 h-4 text-[#BE9089] focus:ring-[#BE9089]"
                 />
                 <span className="text-sm text-gray-700">Esquerda</span>
               </label>
@@ -87,7 +87,7 @@ export default function PreferencesPage() {
                   value="right"
                   checked={menuPosition === 'right'}
                   onChange={(e) => setMenuPosition(e.target.value as 'sidebar' | 'header' | 'footer' | 'right')}
-                  className="w-4 h-4 text-pink-600 focus:ring-pink-500"
+                  className="w-4 h-4 text-[#BE9089] focus:ring-[#BE9089]"
                 />
                 <span className="text-sm text-gray-700">Direita</span>
               </label>
@@ -98,7 +98,7 @@ export default function PreferencesPage() {
                   value="header"
                   checked={menuPosition === 'header'}
                   onChange={(e) => setMenuPosition(e.target.value as 'sidebar' | 'header' | 'footer' | 'right')}
-                  className="w-4 h-4 text-pink-600 focus:ring-pink-500"
+                  className="w-4 h-4 text-[#BE9089] focus:ring-[#BE9089]"
                 />
                 <span className="text-sm text-gray-700">Topo</span>
               </label>
@@ -109,7 +109,7 @@ export default function PreferencesPage() {
                   value="footer"
                   checked={menuPosition === 'footer'}
                   onChange={(e) => setMenuPosition(e.target.value as 'sidebar' | 'header' | 'footer' | 'right')}
-                  className="w-4 h-4 text-pink-600 focus:ring-pink-500"
+                  className="w-4 h-4 text-[#BE9089] focus:ring-[#BE9089]"
                 />
                 <span className="text-sm text-gray-700">Rodapé</span>
               </label>
@@ -134,7 +134,7 @@ export default function PreferencesPage() {
                   value="yes"
                   checked={showDailyBalance}
                   onChange={() => setShowDailyBalance(true)}
-                  className="w-4 h-4 text-pink-600 focus:ring-pink-500"
+                  className="w-4 h-4 text-[#BE9089] focus:ring-[#BE9089]"
                 />
                 <span className="text-sm text-gray-700">Sim</span>
               </label>
@@ -145,7 +145,7 @@ export default function PreferencesPage() {
                   value="no"
                   checked={!showDailyBalance}
                   onChange={() => setShowDailyBalance(false)}
-                  className="w-4 h-4 text-pink-600 focus:ring-pink-500"
+                  className="w-4 h-4 text-[#BE9089] focus:ring-[#BE9089]"
                 />
                 <span className="text-sm text-gray-700">Não</span>
               </label>
@@ -201,9 +201,10 @@ export default function PreferencesPage() {
             disabled={!hasChanges}
             className={`inline-flex items-center gap-2 ${
               !hasChanges 
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed px-6 py-2.5 rounded-full font-semibold text-sm'
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed rounded-full font-semibold text-sm'
                 : 'btn-success'
             }`}
+            style={!hasChanges ? { padding: '8px 22px' } : undefined}
           >
             <Save className="w-4 h-4" />
             Salvar alterações

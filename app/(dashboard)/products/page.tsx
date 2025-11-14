@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Modal from '@/components/Modal'
-import { Info } from 'lucide-react'
+import { Info, Package, Layers, ShoppingBag, Search, ArrowDownAZ, ArrowDownZA } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 
 // Função para formatar números no padrão brasileiro
 const formatBRL = (value: number, decimals: number = 2): string => {
@@ -87,10 +88,20 @@ type FinalProduct = {
 
 export default function ProductsPage() {
   const [activeTab, setActiveTab] = useState<'ingredients' | 'bases' | 'products'>('ingredients')
-  const [triggerModalOpen, setTriggerModalOpen] = useState(0)
+  const [openModalForTab, setOpenModalForTab] = useState<'ingredients' | 'bases' | 'products' | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null)
 
   const handleNewButtonClick = () => {
-    setTriggerModalOpen(prev => prev + 1)
+    setOpenModalForTab(activeTab)
+  }
+
+  const toggleSortOrder = () => {
+    setSortOrder(prev => {
+      if (prev === null) return 'asc'
+      if (prev === 'asc') return 'desc'
+      return null
+    })
   }
 
   return (
@@ -101,7 +112,7 @@ export default function ProductsPage() {
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-bold text-gray-900">Produtos</h1>
             <div className="group relative">
-              <Info className="w-5 h-5 text-gray-400 cursor-help" />
+              <Info className="w-4 h-4 text-gray-400 cursor-help" />
               <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[330px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '25px 15px 30px 20px' }}>
                 Gerencie todos os produtos da sua confeitaria. Cadastre insumos/matérias-primas, crie bases de preparo e monte produtos finais com precificação automática.
               </div>
@@ -110,7 +121,7 @@ export default function ProductsPage() {
         </div>
         <button
           onClick={handleNewButtonClick}
-          className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold"
+          className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold cursor-pointer"
         >
           {activeTab === 'ingredients' && '+ Novo Insumo'}
           {activeTab === 'bases' && '+ Nova Base'}
@@ -118,64 +129,86 @@ export default function ProductsPage() {
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-[var(--color-snow)] rounded-xl border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200 bg-white">
-          <div className="flex gap-1 px-4">
-            <button
-              onClick={() => setActiveTab('ingredients')}
-              className={`px-4 py-3 text-sm font-semibold transition-colors relative ${
-                activeTab === 'ingredients'
-                  ? 'text-gray-900'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Insumos / Matérias-Primas
-              {activeTab === 'ingredients' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-old-rose)]" />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('bases')}
-              className={`px-4 py-3 text-sm font-semibold transition-colors relative ${
-                activeTab === 'bases'
-                  ? 'text-gray-900'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Bases de Preparo
-              {activeTab === 'bases' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-old-rose)]" />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('products')}
-              className={`px-4 py-3 text-sm font-semibold transition-colors relative ${
-                activeTab === 'products'
-                  ? 'text-gray-900'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Produtos Finais
-              {activeTab === 'products' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-old-rose)]" />
-              )}
-            </button>
+      {/* Search Bar */}
+      <div className="mb-4 flex items-center gap-2">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Input
+            placeholder="Buscar produtos..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="group relative">
+          <button
+            onClick={toggleSortOrder}
+            className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md px-3 filter-button h-10 cursor-pointer"
+          >
+            {sortOrder === null ? (
+              <ArrowDownAZ className="w-5 h-5 text-gray-400" />
+            ) : sortOrder === 'asc' ? (
+              <ArrowDownAZ className="w-5 h-5 text-gray-600" />
+            ) : (
+              <ArrowDownZA className="w-5 h-5 text-gray-600" />
+            )}
+          </button>
+          <div className="invisible group-hover:visible absolute right-0 top-full mt-2 bg-white text-[var(--color-licorice)] text-xs rounded-lg shadow-lg z-50 border border-gray-200 px-2 py-1 whitespace-nowrap">
+            {sortOrder === null ? 'Ordenar A-Z' : sortOrder === 'asc' ? 'Ordenar Z-A' : 'Remover ordenação'}
           </div>
         </div>
+      </div>
 
-        {/* Tab Content */}
+      {/* Tabs */}
+      <div className="flex gap-2 mb-3">
+        <button
+          onClick={() => setActiveTab('ingredients')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md h-9 text-sm font-medium transition-all cursor-pointer ${
+            activeTab === 'ingredients'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'bg-transparent text-gray-600 hover:bg-white'
+          }`}
+        >
+          <Package className="w-4 h-4" />
+          Insumos / Matérias-Primas
+        </button>
+        <button
+          onClick={() => setActiveTab('bases')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md h-9 text-sm font-medium transition-all cursor-pointer ${
+            activeTab === 'bases'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'bg-transparent text-gray-600 hover:bg-white'
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          Bases de Preparo
+        </button>
+        <button
+          onClick={() => setActiveTab('products')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md h-9 text-sm font-medium transition-all cursor-pointer ${
+            activeTab === 'products'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'bg-transparent text-gray-600 hover:bg-white'
+          }`}
+        >
+          <ShoppingBag className="w-4 h-4" />
+          Produtos Finais
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      <div className="bg-[var(--color-snow)] rounded-xl border border-gray-200 overflow-hidden">
         <div className="p-6">
-          {activeTab === 'ingredients' && <IngredientsTab triggerModalOpen={triggerModalOpen} />}
-          {activeTab === 'bases' && <BasesTab triggerModalOpen={triggerModalOpen} />}
-          {activeTab === 'products' && <ProductsTab triggerModalOpen={triggerModalOpen} />}
+          {activeTab === 'ingredients' && <IngredientsTab shouldOpenModal={openModalForTab === 'ingredients'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} />}
+          {activeTab === 'bases' && <BasesTab shouldOpenModal={openModalForTab === 'bases'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} />}
+          {activeTab === 'products' && <ProductsTab shouldOpenModal={openModalForTab === 'products'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} />}
         </div>
       </div>
     </div>
   )
 }
 
-function IngredientsTab({ triggerModalOpen }: { triggerModalOpen: number }) {
+function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { shouldOpenModal: boolean; onModalClose: () => void; searchQuery: string; sortOrder: 'asc' | 'desc' | null }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)
@@ -193,12 +226,13 @@ function IngredientsTab({ triggerModalOpen }: { triggerModalOpen: number }) {
   }, [])
 
   useEffect(() => {
-    if (triggerModalOpen > 0) {
+    if (shouldOpenModal) {
       setEditingId(null)
       setFormData({ name: '', volume: '', unit: 'gramas', average_cost: '', loss_factor: '2' })
       setIsModalOpen(true)
+      onModalClose()
     }
-  }, [triggerModalOpen])
+  }, [shouldOpenModal, onModalClose])
 
   const fetchIngredients = async () => {
     try {
@@ -212,6 +246,18 @@ function IngredientsTab({ triggerModalOpen }: { triggerModalOpen: number }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  let filteredIngredients = ingredients.filter(ingredient =>
+    ingredient.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  // Ordena somente se sortOrder foi definido
+  if (sortOrder !== null) {
+    filteredIngredients = filteredIngredients.sort((a, b) => {
+      const comparison = a.name.localeCompare(b.name, 'pt-BR')
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -402,8 +448,10 @@ function IngredientsTab({ triggerModalOpen }: { triggerModalOpen: number }) {
       <div className="overflow-x-auto">
         {loading ? (
           <div className="text-center py-8 text-gray-500">Carregando...</div>
-        ) : ingredients.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">Nenhum insumo cadastrado. Clique em "+ Novo Insumo" para começar.</div>
+        ) : filteredIngredients.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            {searchQuery ? 'Nenhum insumo encontrado' : 'Nenhum insumo cadastrado. Clique em "+ Novo Insumo" para começar.'}
+          </div>
         ) : (
           <table className="w-full">
             <thead>
@@ -418,7 +466,7 @@ function IngredientsTab({ triggerModalOpen }: { triggerModalOpen: number }) {
               </tr>
             </thead>
             <tbody>
-              {ingredients.map((ingredient) => (
+              {filteredIngredients.map((ingredient) => (
                 <tr key={ingredient.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-3 px-4 text-sm text-gray-900">{ingredient.name}</td>
                   <td className="py-3 px-4 text-sm text-gray-600">{formatInteger(ingredient.volume)}</td>
@@ -428,13 +476,13 @@ function IngredientsTab({ triggerModalOpen }: { triggerModalOpen: number }) {
                   <td className="py-3 px-4 text-sm text-gray-600">{formatBRL(ingredient.loss_factor, 2)}%</td>
                   <td className="py-3 px-4 text-sm">
                     <button 
-                      className="text-blue-600 hover:text-blue-800 mr-3" 
+                      className="text-blue-600 hover:text-blue-800 mr-3 cursor-pointer" 
                       onClick={() => handleEdit(ingredient)}
                     >
                       Editar
                     </button>
                     <button 
-                      className="text-red-600 hover:text-red-800" 
+                      className="text-red-600 hover:text-red-800 cursor-pointer" 
                       onClick={() => handleDelete(ingredient.id)}
                     >
                       Excluir
@@ -450,7 +498,7 @@ function IngredientsTab({ triggerModalOpen }: { triggerModalOpen: number }) {
   )
 }
 
-function BasesTab({ triggerModalOpen }: { triggerModalOpen: number }) {
+function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { shouldOpenModal: boolean; onModalClose: () => void; searchQuery: string; sortOrder: 'asc' | 'desc' | null }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [bases, setBases] = useState<BaseRecipe[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
@@ -470,13 +518,14 @@ function BasesTab({ triggerModalOpen }: { triggerModalOpen: number }) {
   }, [])
 
   useEffect(() => {
-    if (triggerModalOpen > 0) {
+    if (shouldOpenModal) {
       setEditingId(null)
       setFormData({ name: '', description: '', loss_factor: '2', items: [] })
       setNewItem({ ingredient_id: '', quantity: '' })
       setIsModalOpen(true)
+      onModalClose()
     }
-  }, [triggerModalOpen])
+  }, [shouldOpenModal, onModalClose])
 
   const fetchBases = async () => {
     try {
@@ -490,6 +539,19 @@ function BasesTab({ triggerModalOpen }: { triggerModalOpen: number }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  let filteredBases = bases.filter(base =>
+    base.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    base.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  // Ordena somente se sortOrder foi definido
+  if (sortOrder !== null) {
+    filteredBases = filteredBases.sort((a, b) => {
+      const comparison = a.name.localeCompare(b.name, 'pt-BR')
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
   }
 
   const fetchIngredients = async () => {
@@ -729,10 +791,12 @@ function BasesTab({ triggerModalOpen }: { triggerModalOpen: number }) {
       <div className="space-y-4">
         {loading ? (
           <div className="text-center py-8 text-gray-500">Carregando...</div>
-        ) : bases.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">Nenhuma base cadastrada. Clique em "+ Nova Base" para começar.</div>
+        ) : filteredBases.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            {searchQuery ? 'Nenhuma base encontrada' : 'Nenhuma base cadastrada. Clique em "+ Nova Base" para começar.'}
+          </div>
         ) : (
-          bases.map((base) => (
+          filteredBases.map((base) => (
             <div key={base.id} className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="flex justify-between items-start mb-3">
                 <div>
@@ -804,13 +868,13 @@ function BasesTab({ triggerModalOpen }: { triggerModalOpen: number }) {
               <div className="flex justify-end gap-2 mt-3">
                 <button 
                   onClick={() => handleEdit(base)}
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium mr-3"
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium mr-3 cursor-pointer"
                 >
                   Editar
                 </button>
                 <button 
                   onClick={() => handleDelete(base.id)}
-                  className="text-red-600 hover:text-red-800 text-sm font-medium"
+                  className="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
                 >
                   Excluir
                 </button>
@@ -823,7 +887,7 @@ function BasesTab({ triggerModalOpen }: { triggerModalOpen: number }) {
   )
 }
 
-function ProductsTab({ triggerModalOpen }: { triggerModalOpen: number }) {
+function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { shouldOpenModal: boolean; onModalClose: () => void; searchQuery: string; sortOrder: 'asc' | 'desc' | null }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [products, setProducts] = useState<FinalProduct[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
@@ -848,7 +912,7 @@ function ProductsTab({ triggerModalOpen }: { triggerModalOpen: number }) {
   }, [])
 
   useEffect(() => {
-    if (triggerModalOpen > 0) {
+    if (shouldOpenModal) {
       setEditingId(null)
       setFormData({
         name: '',
@@ -861,8 +925,9 @@ function ProductsTab({ triggerModalOpen }: { triggerModalOpen: number }) {
       })
       setNewItem({ item_type: 'ingredient', item_id: '', quantity: '' })
       setIsModalOpen(true)
+      onModalClose()
     }
-  }, [triggerModalOpen])
+  }, [shouldOpenModal, onModalClose])
 
   const fetchProducts = async () => {
     try {
@@ -876,6 +941,20 @@ function ProductsTab({ triggerModalOpen }: { triggerModalOpen: number }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  let filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.category.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  // Ordena somente se sortOrder foi definido
+  if (sortOrder !== null) {
+    filteredProducts = filteredProducts.sort((a, b) => {
+      const comparison = a.name.localeCompare(b.name, 'pt-BR')
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
   }
 
   const fetchIngredients = async () => {
@@ -1205,10 +1284,12 @@ function ProductsTab({ triggerModalOpen }: { triggerModalOpen: number }) {
       <div className="space-y-4">
         {loading ? (
           <div className="text-center py-8 text-gray-500">Carregando...</div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">Nenhum produto cadastrado. Clique em "+ Novo Produto" para começar.</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            {searchQuery ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado. Clique em "+ Novo Produto" para começar.'}
+          </div>
         ) : (
-          products.map((product) => {
+          filteredProducts.map((product) => {
             const profit = product.selling_price && product.total_cost 
               ? product.selling_price - product.total_cost 
               : 0
@@ -1284,13 +1365,13 @@ function ProductsTab({ triggerModalOpen }: { triggerModalOpen: number }) {
                 <div className="flex justify-end gap-2 mt-3">
                   <button 
                     onClick={() => handleEdit(product)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium mr-3"
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium mr-3 cursor-pointer"
                   >
                     Editar
                   </button>
                   <button 
                     onClick={() => handleDelete(product.id)}
-                    className="text-red-600 hover:text-red-800 text-sm font-medium"
+                    className="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
                   >
                     Excluir
                   </button>

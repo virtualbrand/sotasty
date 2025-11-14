@@ -8,7 +8,9 @@ import {
   CakeSlice,
   ShoppingCart, 
   Users, 
-  TrendingUp,
+  MessageCircle,
+  Calendar,
+  DollarSign,
   Activity,
   HelpCircle,
   MessageSquare,
@@ -25,7 +27,9 @@ const menuItems = [
   { icon: CakeSlice, label: 'Produtos', href: '/products' },
   { icon: ShoppingCart, label: 'Pedidos', href: '/orders' },
   { icon: Users, label: 'Clientes', href: '/customers' },
-  { icon: TrendingUp, label: 'Performance', href: '/performance' },
+  { icon: MessageCircle, label: 'Atendimento', href: '/atendimento' },
+  { icon: Calendar, label: 'Agenda', href: '/agenda' },
+  { icon: DollarSign, label: 'Financeiro', href: '/financeiro' },
 ]
 
 const bottomMenuItems = [
@@ -72,30 +76,44 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
     getUser()
 
     // Listener para atualizar o avatar quando houver mudança
-    const handleAvatarUpdate = (event: CustomEvent) => {
-      setAvatarUrl(event.detail.avatarUrl)
+    const handleAvatarUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent
+      setAvatarUrl(customEvent.detail.avatarUrl)
+    }
+
+    // Listener para atualizar o nome quando houver mudança
+    const handleNameUpdate = async () => {
+      // Recarrega o usuário para pegar o user_metadata.name atualizado
+      const { data: { user: updatedUser } } = await supabase.auth.getUser()
+      if (updatedUser) {
+        setUser(updatedUser)
+      }
     }
 
     // Listener para toggle de atividades na sidebar
-    const handleActivitiesToggle = (event: CustomEvent) => {
-      setShowActivities(event.detail.show)
+    const handleActivitiesToggle = (event: Event) => {
+      const customEvent = event as CustomEvent
+      setShowActivities(customEvent.detail.show)
     }
 
     // Listener para mudança de posição do menu
-    const handleMenuPositionChange = (event: CustomEvent) => {
-      setMenuPosition(event.detail.position)
+    const handleMenuPositionChange = (event: Event) => {
+      const customEvent = event as CustomEvent
+      setMenuPosition(customEvent.detail.position)
     }
 
-    window.addEventListener('avatar-updated', handleAvatarUpdate as EventListener)
-    window.addEventListener('toggle-activities-sidebar', handleActivitiesToggle as EventListener)
-    window.addEventListener('menu-position-changed', handleMenuPositionChange as EventListener)
+    window.addEventListener('avatar-updated', handleAvatarUpdate)
+    window.addEventListener('profile-name-updated', handleNameUpdate)
+    window.addEventListener('toggle-activities-sidebar', handleActivitiesToggle)
+    window.addEventListener('menu-position-changed', handleMenuPositionChange)
 
     return () => {
-      window.removeEventListener('avatar-updated', handleAvatarUpdate as EventListener)
-      window.removeEventListener('toggle-activities-sidebar', handleActivitiesToggle as EventListener)
-      window.removeEventListener('menu-position-changed', handleMenuPositionChange as EventListener)
+      window.removeEventListener('avatar-updated', handleAvatarUpdate)
+      window.removeEventListener('profile-name-updated', handleNameUpdate)
+      window.removeEventListener('toggle-activities-sidebar', handleActivitiesToggle)
+      window.removeEventListener('menu-position-changed', handleMenuPositionChange)
     }
-  }, [])
+  }, [supabase])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -234,7 +252,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
           <div className="relative user-menu-container">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg transition-all"
+              className="flex items-center gap-2 p-2 hover:bg-[var(--color-lavender-blush)] rounded-lg transition-all cursor-pointer"
             >
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center shadow-md overflow-hidden">
                 {avatarUrl ? (
@@ -259,7 +277,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                     setShowUserMenu(false)
                     router.push('/settings/profile')
                   }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[var(--color-lavender-blush)] flex items-center gap-3 transition-colors"
+                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[var(--color-lavender-blush)] flex items-center gap-3 transition-colors cursor-pointer"
                 >
                   <User className="w-4 h-4" />
                   Meu Perfil
@@ -270,7 +288,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                     setShowUserMenu(false)
                     router.push('/settings/preferences')
                   }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[var(--color-lavender-blush)] flex items-center gap-3 transition-colors"
+                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[var(--color-lavender-blush)] flex items-center gap-3 transition-colors cursor-pointer"
                 >
                   <SettingsIcon className="w-4 h-4" />
                   Configurações
@@ -280,7 +298,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                 
                 <button
                   onClick={handleLogout}
-                  className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                  className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   Sair
@@ -316,7 +334,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
         {/* Collapse Button */}
         <button
           onClick={toggleSidebar}
-          className={`absolute ${sidePosition === 'left' ? '-right-3' : '-left-3'} top-8 w-6 h-6 bg-[var(--color-old-rose)] hover:bg-[var(--color-rosy-brown)] rounded-full flex items-center justify-center shadow-lg transition-all ${isCollapsed ? (sidePosition === 'left' ? 'rotate-180' : '') : (sidePosition === 'right' ? 'rotate-180' : '')}`}
+          className={`absolute ${sidePosition === 'left' ? '-right-3' : '-left-3'} top-8 w-6 h-6 bg-[var(--color-old-rose)] hover:bg-[var(--color-rosy-brown)] rounded-full flex items-center justify-center shadow-lg transition-all cursor-pointer ${isCollapsed ? (sidePosition === 'left' ? 'rotate-180' : '') : (sidePosition === 'right' ? 'rotate-180' : '')}`}
         >
           <ChevronLeft className="w-4 h-4 text-white" />
         </button>
@@ -326,7 +344,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
           <div className="relative user-menu-container">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className={`flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-all w-full ${isCollapsed ? 'justify-center' : ''}`}
+              className={`flex items-center gap-3 p-3 hover:bg-[var(--color-lavender-blush)] rounded-xl transition-all w-full cursor-pointer ${isCollapsed ? 'justify-center' : ''}`}
             >
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center shadow-md flex-shrink-0 overflow-hidden">
                 {avatarUrl ? (
@@ -337,10 +355,12 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
               </div>
               {!isCollapsed && (
                 <div className="flex-1 text-left">
+                  <p className="text-xs text-gray-600">
+                    Olá,
+                  </p>
                   <p className="text-sm font-semibold text-gray-900">
                     {user?.user_metadata?.name || 'Usuário'}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                 </div>
               )}
             </button>
@@ -360,7 +380,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                     setShowUserMenu(false)
                     router.push('/settings/profile')
                   }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[var(--color-lavender-blush)] flex items-center gap-3 transition-colors"
+                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[var(--color-lavender-blush)] flex items-center gap-3 transition-colors cursor-pointer"
                 >
                   <User className="w-4 h-4" />
                   Meu Perfil
@@ -371,7 +391,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                     setShowUserMenu(false)
                     router.push('/settings/preferences')
                   }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[var(--color-lavender-blush)] flex items-center gap-3 transition-colors"
+                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[var(--color-lavender-blush)] flex items-center gap-3 transition-colors cursor-pointer"
                 >
                   <SettingsIcon className="w-4 h-4" />
                   Configurações
@@ -381,7 +401,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                 
                 <button
                   onClick={handleLogout}
-                  className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                  className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   Sair

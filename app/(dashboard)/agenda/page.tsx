@@ -276,7 +276,7 @@ function SortableOrderCard({ order, onClick }: { order: Order; onClick: () => vo
   )
 }
 
-export default function OrdersPage() {
+export default function AgendaPage() {
   // Função para obter a data atual no fuso de São Paulo
   const getTodayInSaoPaulo = () => {
     const now = new Date()
@@ -799,7 +799,7 @@ export default function OrdersPage() {
   }
 
   const getViewTitle = () => {
-    if (view === 'list') return 'Pedidos'
+    if (view === 'list') return 'Agenda'
     
     const formatDate = (date: Date): string => {
       const day = String(date.getDate()).padStart(2, '0')
@@ -934,11 +934,11 @@ export default function OrdersPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold text-gray-900">Pedidos</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Agenda</h1>
             <div className="group relative">
               <Info className="w-4 h-4 text-gray-400 cursor-help" />
               <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[330px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '25px 15px 30px 20px' }}>
-                Gerencie todos os pedidos da sua confeitaria. Visualize, organize e acompanhe o status de cada pedido em diferentes formatos: lista, calendário mensal, semanal ou diário.
+                Gerencie sua agenda de produção. Organize tarefas, notas e lembretes para manter tudo sob controle.
               </div>
             </div>
           </div>
@@ -948,7 +948,7 @@ export default function OrdersPage() {
             className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold flex items-center gap-2 cursor-pointer"
           >
             <Plus className="h-4 w-4" />
-            Novo Pedido
+            Nova Tarefa
           </button>
         </div>
 
@@ -956,7 +956,7 @@ export default function OrdersPage() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
-              placeholder="Buscar pedidos..."
+              placeholder="Buscar tarefas..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -991,7 +991,7 @@ export default function OrdersPage() {
                     onClick={() => toggleFilter(status.id)}
                     className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left cursor-pointer"
                   >
-                    <Badge className={`${getColorClass(status.color)} border text-xs font-medium px-2 py-1`}>
+                    <Badge className={`${getColorClass(status.color)} border text-xs px-2 py-1`}>
                       {status.name}
                     </Badge>
                     {activeFilters.includes(status.id) && (
@@ -1031,7 +1031,7 @@ export default function OrdersPage() {
                     onClick={() => toggleFilter(category.name)}
                     className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left cursor-pointer"
                   >
-                    <Badge className={`${getColorClass(category.color)} border text-xs font-medium px-2 py-1`}>
+                    <Badge className={`${getColorClass(category.color)} border text-xs px-2 py-1`}>
                       {category.name}
                     </Badge>
                     {activeFilters.includes(category.name) && (
@@ -1071,7 +1071,7 @@ export default function OrdersPage() {
                     onClick={() => toggleFilter(tag.name)}
                     className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left cursor-pointer"
                   >
-                    <Badge className={`${getColorClass(tag.color)} border text-xs font-medium px-2 py-1`}>
+                    <Badge className={`${getColorClass(tag.color)} border text-xs px-2 py-1`}>
                       {tag.name}
                     </Badge>
                     {activeFilters.includes(tag.name) && (
@@ -1108,7 +1108,7 @@ export default function OrdersPage() {
                 <Badge
                   key={filter}
                   variant="secondary"
-                  className={`${item ? getColorClass(item.color) : 'bg-gray-100 text-gray-800'} text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity`}
+                  className={`${item ? getColorClass(item.color) : 'bg-gray-100 text-gray-800'} cursor-pointer hover:opacity-80 transition-opacity`}
                 >
                   {status ? status.name : filter}
                   <button
@@ -1201,7 +1201,7 @@ export default function OrdersPage() {
           {filteredOrders.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>{searchQuery || activeFilters.length > 0 ? 'Nenhum pedido encontrado' : 'Nenhum pedido'}</p>
+              <p>{searchQuery || activeFilters.length > 0 ? 'Nenhuma tarefa encontrada' : 'Nenhuma tarefa'}</p>
             </div>
           ) : (
             <>
@@ -1493,7 +1493,7 @@ export default function OrdersPage() {
         <Modal
           isOpen={isModalOpen}
           onClose={handleCloseModal}
-          title={isEditing ? 'Editar Pedido' : 'Novo Pedido'}
+          title={isEditing ? 'Editar Tarefa' : 'Nova Tarefa'}
         >
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -1670,7 +1670,7 @@ export default function OrdersPage() {
                 className="btn-success flex-1"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Salvando...' : (isEditing ? 'Atualizar' : 'Salvar Pedido')}
+                {isSubmitting ? 'Salvando...' : (isEditing ? 'Atualizar' : 'Salvar Tarefa')}
               </button>
             </div>
           </form>

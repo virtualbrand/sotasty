@@ -312,6 +312,23 @@ export default function ProfilePage() {
         avatarUrl = fileName
       }
 
+      // Atualiza o nome no user_metadata do auth para sincronizar com o sidebar
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { name: profileData.full_name }
+      })
+
+      if (authError) {
+        console.error('Erro ao atualizar metadados do usuário:', authError)
+        showToast({
+          title: 'Erro',
+          message: `Erro ao atualizar nome de exibição: ${authError.message}`,
+          variant: 'error',
+          duration: 4000,
+        })
+        setSaving(false)
+        return
+      }
+
       // Atualiza ou insere o perfil
       const { error } = await supabase
         .from('profiles')
@@ -368,6 +385,12 @@ export default function ProfilePage() {
         })
         window.dispatchEvent(event)
       }
+      
+      // Dispara evento para atualizar o nome na sidebar
+      const nameEvent = new CustomEvent('profile-name-updated', { 
+        detail: { name: profileData.full_name } 
+      })
+      window.dispatchEvent(nameEvent)
     } catch (error) {
       console.error('Erro ao salvar perfil:', error)
       showToast({
@@ -616,9 +639,10 @@ export default function ProfilePage() {
             disabled={saving || !hasChanges}
             className={`inline-flex items-center gap-2 ${
               !hasChanges 
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed px-6 py-2.5 rounded-full font-semibold text-sm'
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed rounded-full font-semibold text-sm'
                 : 'btn-success'
             }`}
+            style={!hasChanges ? { padding: '8px 22px' } : undefined}
           >
             {saving ? (
               <>

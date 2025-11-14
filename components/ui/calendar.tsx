@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import * as React from "react";
 import { DayPicker } from "react-day-picker";
+import { ptBR } from "date-fns/locale";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -58,7 +59,7 @@ function Calendar({
   );
 
   const defaultComponents = {
-    Chevron: (props: any) => {
+    Chevron: (props: React.SVGProps<SVGSVGElement> & { orientation?: string }) => {
       if (props.orientation === "left") {
         return <ChevronLeft size={16} strokeWidth={2} {...props} aria-hidden="true" />;
       }
@@ -77,6 +78,7 @@ function Calendar({
       className={cn("w-fit", className)}
       classNames={mergedClassNames}
       components={mergedComponents}
+      locale={ptBR}
       {...props}
     />
   );
