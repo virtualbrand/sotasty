@@ -27,6 +27,7 @@ const menuItems = [
   { icon: CakeSlice, label: 'Produtos', href: '/products' },
   { icon: ShoppingCart, label: 'Pedidos', href: '/orders' },
   { icon: Users, label: 'Clientes', href: '/customers' },
+  { icon: MessageSquare, label: 'Mensagens', href: '/mensagens' },
   { icon: MessageCircle, label: 'Atendimento', href: '/atendimento' },
   { icon: Calendar, label: 'Agenda', href: '/agenda' },
   { icon: DollarSign, label: 'Financeiro', href: '/financeiro' },

@@ -11,7 +11,8 @@ import {
   ShoppingCart, 
   Bell, 
   Activity,
-  MessageCircle
+  MessageCircle,
+  MessageSquare
 } from 'lucide-react'
 
 const settingsNavigation = [
@@ -26,6 +27,12 @@ const settingsNavigation = [
     href: '/settings/preferences', 
     icon: SettingsIcon,
     description: 'Configure suas preferências do sistema'
+  },
+  { 
+    name: 'WhatsApp', 
+    href: '/settings/whatsapp', 
+    icon: MessageSquare,
+    description: 'Conecte e configure seu WhatsApp'
   },
   { 
     name: 'Atendimento', 
