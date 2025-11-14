@@ -65,21 +65,25 @@ export async function GET(request: NextRequest) {
     }
     
     // Formatar mensagens para o frontend
-    const messages = messagesArray.map((msg: any) => {
+    const messages = messagesArray.map((msg: Record<string, unknown>) => {
       // Extrair conteúdo da mensagem baseado no tipo
       let content = '';
       
-      if (msg.message?.conversation) {
-        content = msg.message.conversation;
-      } else if (msg.message?.extendedTextMessage?.text) {
-        content = msg.message.extendedTextMessage.text;
-      } else if (msg.message?.imageMessage) {
-        content = msg.message.imageMessage.caption || '📷 Imagem';
-      } else if (msg.message?.audioMessage) {
+      const message = msg.message as Record<string, unknown> | undefined;
+      
+      if (message?.conversation) {
+        content = message.conversation as string;
+      } else if (message?.extendedTextMessage) {
+        const extText = message.extendedTextMessage as Record<string, unknown>;
+        content = extText.text as string;
+      } else if (message?.imageMessage) {
+        const imgMsg = message.imageMessage as Record<string, unknown>;
+        content = (imgMsg.caption as string) || '📷 Imagem';
+      } else if (message?.audioMessage) {
         content = '🎵 Áudio';
-      } else if (msg.message?.documentMessage) {
+      } else if (message?.documentMessage) {
         content = '📄 Documento';
-      } else if (msg.message?.videoMessage) {
+      } else if (message?.videoMessage) {
         content = '🎥 Vídeo';
       } else if (msg.messageType === 'imageMessage') {
         content = '📷 Imagem';
@@ -87,14 +91,21 @@ export async function GET(request: NextRequest) {
         content = '🎵 Áudio';
       }
       
+      const key = msg.key as Record<string, unknown> | undefined;
+      
       return {
-        id: msg.key?.id || msg.id,
+        id: (key?.id || msg.id) as string,
         content: content,
-        timestamp: new Date((msg.messageTimestamp || 0) * 1000).toISOString(),
-        fromMe: msg.key?.fromMe || false,
-        status: msg.status === 3 ? 'read' : msg.status === 2 ? 'delivered' : 'sent'
+        timestamp: new Date(((msg.messageTimestamp as number) || 0) * 1000).toISOString(),
+        fromMe: (key?.fromMe || false) as boolean,
+        status: (msg.status as number) === 3 ? 'read' : (msg.status as number) === 2 ? 'delivered' : 'sent',
+        messageTimestamp: (msg.messageTimestamp as number) || 0
       };
-    }).filter((msg: any) => msg.content); // Filtrar mensagens sem conteúdo
+    })
+    .filter((msg: { content: string }) => msg.content) // Filtrar mensagens sem conteúdo
+    .sort((a: { messageTimestamp: number }, b: { messageTimestamp: number }) => 
+      a.messageTimestamp - b.messageTimestamp
+    ); // Ordenar por timestamp (mais antigas primeiro)
 
     console.log('Mensagens formatadas:', messages.length);
 

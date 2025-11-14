@@ -401,3 +401,21 @@ input[type="radio"]:focus {
 input[type="radio"]:focus:not(:focus-visible) {
   box-shadow: none;
 }
+
+/* WhatsApp Text Formatting */
+.text-sm strong {
+  font-weight: 700;
+}
+
+.text-sm em {
+  font-style: italic;
+}
+
+.text-sm del {
+  text-decoration: line-through;
+}
+
+.text-sm code {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9em;
+}

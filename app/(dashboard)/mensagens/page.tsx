@@ -176,6 +176,57 @@ export default function MensagensPage() {
     return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
   }
 
+  const formatDateLabel = (timestamp: string) => {
+    const date = new Date(timestamp)
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    
+    // Resetar horas para comparação apenas de data
+    const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    const yesterdayDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate())
+    
+    if (messageDate.getTime() === todayDate.getTime()) {
+      return 'Hoje'
+    } else if (messageDate.getTime() === yesterdayDate.getTime()) {
+      return 'Ontem'
+    } else {
+      return date.toLocaleDateString('pt-BR', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+      })
+    }
+  }
+
+  const shouldShowDateSeparator = (currentMessage: Message, previousMessage: Message | null) => {
+    if (!previousMessage) return true
+    
+    const currentDate = new Date(currentMessage.timestamp)
+    const previousDate = new Date(previousMessage.timestamp)
+    
+    return currentDate.toDateString() !== previousDate.toDateString()
+  }
+
+  const formatWhatsAppText = (text: string) => {
+    let formatted = text
+    
+    // *negrito* -> <strong>
+    formatted = formatted.replace(/\*([^*]+)\*/g, '<strong>$1</strong>')
+    
+    // _itálico_ -> <em>
+    formatted = formatted.replace(/_([^_]+)_/g, '<em>$1</em>')
+    
+    // ~tachado~ -> <del>
+    formatted = formatted.replace(/~([^~]+)~/g, '<del>$1</del>')
+    
+    // ```código``` -> <code>
+    formatted = formatted.replace(/```([^`]+)```/g, '<code class="bg-gray-200 px-1 rounded">$1</code>')
+    
+    return formatted
+  }
+
   return (
     <div className="flex flex-col overflow-hidden -m-8 p-8" style={{ height: '100vh' }}>
       {/* Header */}
@@ -340,7 +391,7 @@ export default function MensagensPage() {
               </div>
 
               {/* Mensagens */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+              <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
                 {loading ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-old-rose)]"></div>
@@ -353,36 +404,52 @@ export default function MensagensPage() {
                   </div>
                 ) : (
                   <>
-                    {messages.map((message, index) => (
-                      <div
-                        key={message.id || `message-${index}`}
-                        className={`flex ${message.fromMe ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-[70%] px-4 py-2 ${
-                            message.fromMe
-                              ? 'bg-[var(--color-old-rose)] text-white rounded-lg rounded-br-sm'
-                              : 'bg-white text-gray-900 border border-gray-200 rounded-lg rounded-bl-sm'
-                          }`}
-                        >
-                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                          <div className={`flex items-center gap-1 justify-end mt-1 ${
-                            message.fromMe ? 'text-white/70' : 'text-gray-400'
-                          }`}>
-                            <span className="text-xs">{formatTime(message.timestamp)}</span>
-                            {message.fromMe && message.status === 'read' && (
-                              <span className="text-xs">✓✓</span>
-                            )}
-                            {message.fromMe && message.status === 'delivered' && (
-                              <span className="text-xs">✓✓</span>
-                            )}
-                            {message.fromMe && message.status === 'sent' && (
-                              <span className="text-xs">✓</span>
-                            )}
+                    {messages.map((message, index) => {
+                      const previousMessage = index > 0 ? messages[index - 1] : null
+                      const showDateSeparator = shouldShowDateSeparator(message, previousMessage)
+                      
+                      return (
+                        <div key={message.id || `message-${index}`} className="mb-2">
+                          {showDateSeparator && (
+                            <div className="flex items-center justify-center my-6">
+                              <div className="bg-white/90 backdrop-blur-sm shadow-sm px-4 py-1.5 rounded-lg text-xs font-medium text-gray-700 border border-gray-100">
+                                {formatDateLabel(message.timestamp)}
+                              </div>
+                            </div>
+                          )}
+                          <div
+                            className={`flex ${message.fromMe ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div
+                              className={`max-w-[70%] px-4 py-2 ${
+                                message.fromMe
+                                  ? 'bg-[var(--color-old-rose)] text-white rounded-lg rounded-br-sm'
+                                  : 'bg-white text-gray-900 border border-gray-200 rounded-lg rounded-bl-sm'
+                              }`}
+                            >
+                              <div 
+                                className="text-sm whitespace-pre-wrap"
+                                dangerouslySetInnerHTML={{ __html: formatWhatsAppText(message.content) }}
+                              />
+                              <div className={`flex items-center gap-1 justify-end mt-1 ${
+                                message.fromMe ? 'text-white/70' : 'text-gray-400'
+                              }`}>
+                                <span className="text-xs">{formatTime(message.timestamp)}</span>
+                                {message.fromMe && message.status === 'read' && (
+                                  <span className="text-xs">✓✓</span>
+                                )}
+                                {message.fromMe && message.status === 'delivered' && (
+                                  <span className="text-xs">✓✓</span>
+                                )}
+                                {message.fromMe && message.status === 'sent' && (
+                                  <span className="text-xs">✓</span>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                     <div ref={messagesEndRef} />
                   </>
                 )}
