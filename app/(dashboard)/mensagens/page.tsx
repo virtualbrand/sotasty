@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { MessageCircle, Send, Phone, Search, Info, AlertCircle, Settings, RefreshCw } from 'lucide-react'
+import { MessageCircle, Send, Phone, Search, Info, AlertCircle, Settings, RefreshCw, Mic } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -596,7 +596,12 @@ export default function MensagensPage() {
                           {contact.lastMessageTime || ''}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-500 truncate">{contact.lastMessage || contact.phone}</p>
+                      <p className="text-sm text-gray-500 truncate flex items-center gap-1">
+                        {contact.lastMessage?.includes('🎵') && (
+                          <Mic className="w-3.5 h-3.5 flex-shrink-0" />
+                        )}
+                        {contact.lastMessage?.replace('🎵 ', '') || contact.phone}
+                      </p>
                     </div>
 
                     {/* Badge de não lidas */}
