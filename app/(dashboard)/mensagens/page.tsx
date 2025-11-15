@@ -309,6 +309,172 @@ export default function MensagensPage() {
     )
   }
 
+  const WhatsAppAudio = ({ messageId, fromMe }: { messageId: string; fromMe: boolean }) => {
+    const [audioSrc, setAudioSrc] = useState<string | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [isPlaying, setIsPlaying] = useState(false)
+    const [currentTime, setCurrentTime] = useState(0)
+    const [duration, setDuration] = useState(0)
+    const [playbackRate, setPlaybackRate] = useState(1)
+    const audioRef = useRef<HTMLAudioElement>(null)
+    
+    // Gerar alturas fixas das barras uma única vez
+    const waveformHeights = useRef<number[]>(
+      [...Array(40)].map(() => Math.random() * 16 + 8)
+    )
+
+    useEffect(() => {
+      let isMounted = true
+      
+      loadImageBase64(messageId).then(src => {
+        if (isMounted) {
+          setAudioSrc(src)
+          setLoading(false)
+        }
+      })
+      
+      return () => {
+        isMounted = false
+      }
+    }, [messageId])
+
+    useEffect(() => {
+      const audio = audioRef.current
+      if (!audio) return
+
+      const updateTime = () => setCurrentTime(audio.currentTime)
+      const updateDuration = () => setDuration(audio.duration)
+      const handleEnded = () => setIsPlaying(false)
+
+      audio.addEventListener('timeupdate', updateTime)
+      audio.addEventListener('loadedmetadata', updateDuration)
+      audio.addEventListener('ended', handleEnded)
+
+      return () => {
+        audio.removeEventListener('timeupdate', updateTime)
+        audio.removeEventListener('loadedmetadata', updateDuration)
+        audio.removeEventListener('ended', handleEnded)
+      }
+    }, [audioSrc])
+
+    // Atualizar velocidade do áudio quando playbackRate mudar
+    useEffect(() => {
+      if (audioRef.current) {
+        audioRef.current.playbackRate = playbackRate
+      }
+    }, [playbackRate])
+
+    const togglePlay = () => {
+      if (!audioRef.current) return
+      
+      if (isPlaying) {
+        audioRef.current.pause()
+      } else {
+        audioRef.current.play()
+      }
+      setIsPlaying(!isPlaying)
+    }
+
+    const togglePlaybackRate = () => {
+      setPlaybackRate(current => {
+        if (current === 1) return 1.5
+        if (current === 1.5) return 2
+        return 1
+      })
+    }
+
+    const formatTime = (seconds: number) => {
+      if (!seconds || isNaN(seconds)) return '0:00'
+      const mins = Math.floor(seconds / 60)
+      const secs = Math.floor(seconds % 60)
+      return `${mins}:${secs.toString().padStart(2, '0')}`
+    }
+
+    if (loading) {
+      return (
+        <div className="flex items-center gap-2 min-w-[200px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-old-rose)]"></div>
+          <span className="text-sm">Carregando áudio...</span>
+        </div>
+      )
+    }
+
+    if (!audioSrc) {
+      return (
+        <div className="flex items-center gap-2 text-gray-400 text-sm">
+          Áudio não disponível
+        </div>
+      )
+    }
+
+    return (
+      <div className="flex items-center gap-2 min-w-[200px]">
+        {/* Botão Play/Pause */}
+        <button
+          onClick={togglePlay}
+          className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+            fromMe 
+              ? 'bg-white/20 hover:bg-white/30' 
+              : 'bg-gray-200 hover:bg-gray-300'
+          }`}
+        >
+          {isPlaying ? (
+            <svg className={`w-4 h-4 ${fromMe ? 'text-white' : 'text-gray-700'}`} fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+            </svg>
+          ) : (
+            <svg className={`w-4 h-4 ${fromMe ? 'text-white' : 'text-gray-700'}`} fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+        </button>
+
+        {/* Waveform visual */}
+        <div className="flex-1 flex items-center gap-0.5 h-8">
+          {waveformHeights.current.map((height, i) => {
+            const progress = duration > 0 ? currentTime / duration : 0
+            const barProgress = i / waveformHeights.current.length
+            const isActive = barProgress <= progress
+            
+            return (
+              <div
+                key={i}
+                className={`w-0.5 rounded-full transition-colors ${
+                  isActive 
+                    ? fromMe ? 'bg-white' : 'bg-[var(--color-old-rose)]'
+                    : fromMe ? 'bg-white/30' : 'bg-gray-300'
+                }`}
+                style={{ height: `${height}px` }}
+              />
+            )
+          })}
+        </div>
+
+        {/* Duração */}
+        <span className={`text-xs font-mono ${fromMe ? 'text-white/90' : 'text-gray-600'}`}>
+          {formatTime(isPlaying ? currentTime : duration)}
+        </span>
+
+        {/* Botão de velocidade */}
+        <button
+          onClick={togglePlaybackRate}
+          className={`text-xs font-semibold px-1.5 py-0.5 rounded transition-colors ${
+            fromMe 
+              ? 'text-white/90 hover:bg-white/10' 
+              : 'text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          {playbackRate}x
+        </button>
+
+        {/* Audio element (hidden) */}
+        {audioSrc && (
+          <audio ref={audioRef} src={audioSrc} />
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col overflow-hidden -m-8 p-8" style={{ height: '100vh' }}>
       {/* Header */}
@@ -503,10 +669,10 @@ export default function MensagensPage() {
                             className={`flex ${message.fromMe ? 'justify-end' : 'justify-start'}`}
                           >
                             <div
-                              className={`${
+                              className={`inline-block ${
                                 message.mediaType === 'image' ? 'max-w-sm' : 'max-w-[70%]'
                               } ${
-                                message.mediaType === 'image' ? 'px-1 py-1' : 'px-4 py-2'
+                                message.mediaType === 'image' || message.mediaType === 'audio' ? 'px-1 py-1' : 'px-4 py-2'
                               } ${
                                 message.fromMe
                                   ? 'bg-[var(--color-old-rose)] text-white rounded-lg rounded-br-sm'
@@ -518,8 +684,14 @@ export default function MensagensPage() {
                                   <WhatsAppImage messageId={message.id} />
                                 </div>
                               )}
+
+                              {message.mediaType === 'audio' && message.id && (
+                                <div className="mb-2">
+                                  <WhatsAppAudio messageId={message.id} fromMe={message.fromMe} />
+                                </div>
+                              )}
                               
-                              {message.content !== '📷 Imagem' && (
+                              {message.content !== '📷 Imagem' && message.content !== '🎵 Áudio' && (
                                 <div 
                                   className={`text-sm whitespace-pre-wrap ${message.mediaType === 'image' ? 'px-3 py-2' : ''}`}
                                   dangerouslySetInnerHTML={{ __html: formatWhatsAppText(message.content) }}
@@ -527,7 +699,7 @@ export default function MensagensPage() {
                               )}
                               
                               <div className={`flex items-center gap-1 justify-end mt-1 ${
-                                message.mediaType === 'image' ? 'px-3 pb-2' : ''
+                                message.mediaType === 'image' || message.mediaType === 'audio' ? 'px-3 pb-2' : ''
                               } ${
                                 message.fromMe ? 'text-white/70' : 'text-gray-400'
                               }`}>
