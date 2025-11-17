@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Modal from '@/components/Modal'
 import { Spinner } from '@/components/ui/spinner'
-import { Info, Package, Layers, ShoppingBag, Search, ArrowDownAZ, ArrowDownZA } from 'lucide-react'
+import { Info, Package, Layers, ShoppingBag, Search, ArrowDownAZ, ArrowDownZA, Filter } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { useProductSettings } from '@/hooks/useProductSettings'
 
 // Função para formatar números no padrão brasileiro
@@ -112,6 +114,7 @@ type Ingredient = {
   average_cost: number
   unit_cost: number
   loss_factor: number
+  type?: string // 'ingredientes' ou 'materiais'
 }
 
 type BaseRecipe = {
@@ -140,6 +143,34 @@ export default function ProductsPage() {
   const [openModalForTab, setOpenModalForTab] = useState<'ingredients' | 'bases' | 'products' | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null)
+  const [typeFilter, setTypeFilter] = useState<string[]>([]) // Filtro de tipo de insumo
+  const [showTypeFilter, setShowTypeFilter] = useState(false) // Dropdown do filtro
+  const typeFilterRef = useRef<HTMLDivElement>(null) // Ref para o dropdown
+
+  // Fechar dropdown ao clicar fora ou pressionar ESC
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (typeFilterRef.current && !typeFilterRef.current.contains(event.target as Node)) {
+        setShowTypeFilter(false)
+      }
+    }
+
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowTypeFilter(false)
+      }
+    }
+
+    if (showTypeFilter) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleEscKey)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscKey)
+    }
+  }, [showTypeFilter])
 
   const handleNewButtonClick = () => {
     setOpenModalForTab(activeTab)
@@ -151,6 +182,16 @@ export default function ProductsPage() {
       if (prev === 'asc') return 'desc'
       return null
     })
+  }
+
+  const toggleTypeFilter = (type: string) => {
+    setTypeFilter(prev =>
+      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+    )
+  }
+
+  const clearTypeFilter = () => {
+    setTypeFilter([])
   }
 
   return (
@@ -189,24 +230,101 @@ export default function ProductsPage() {
             className="pl-10"
           />
         </div>
-        <div className="group relative">
-          <button
-            onClick={toggleSortOrder}
-            className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md px-3 filter-button h-10 cursor-pointer"
-          >
-            {sortOrder === null ? (
-              <ArrowDownAZ className="w-5 h-5 text-gray-400" />
-            ) : sortOrder === 'asc' ? (
-              <ArrowDownAZ className="w-5 h-5 text-gray-600" />
-            ) : (
-              <ArrowDownZA className="w-5 h-5 text-gray-600" />
-            )}
-          </button>
+        
+        {/* Botão de Ordenação */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="filter-button h-10 cursor-pointer group relative"
+          onClick={toggleSortOrder}
+        >
+          {sortOrder === null ? (
+            <ArrowDownAZ className="w-5 h-5 opacity-80" />
+          ) : sortOrder === 'asc' ? (
+            <ArrowDownAZ className="w-5 h-5 opacity-80" />
+          ) : (
+            <ArrowDownZA className="w-5 h-5 opacity-80" />
+          )}
           <div className="invisible group-hover:visible absolute right-0 top-full mt-2 bg-white text-[var(--color-licorice)] text-xs rounded-lg shadow-lg z-50 border border-gray-200 px-2 py-1 whitespace-nowrap">
             {sortOrder === null ? 'Ordenar A-Z' : sortOrder === 'asc' ? 'Ordenar Z-A' : 'Remover ordenação'}
           </div>
-        </div>
+        </Button>
+
+        {/* Filtro de Tipo - só aparece na aba de Insumos */}
+        {activeTab === 'ingredients' && (
+          <div className="relative" ref={typeFilterRef}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="filter-button h-10 cursor-pointer"
+              onClick={() => {
+                setShowTypeFilter(!showTypeFilter)
+              }}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Tipo de insumo
+              {typeFilter.length > 0 && (
+                <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                  {typeFilter.length}
+                </Badge>
+              )}
+            </Button>
+            
+            {showTypeFilter && (
+              <div className="filter-dropdown absolute top-full mt-2 right-0 bg-[var(--color-bg-modal)] border border-gray-200 rounded-lg shadow-lg p-2 z-10 min-w-[180px]">
+                <button
+                  onClick={() => toggleTypeFilter('ingredientes')}
+                  className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left cursor-pointer hover:bg-gray-50 rounded"
+                >
+                  <span className="text-sm">Ingredientes</span>
+                  {typeFilter.includes('ingredientes') && (
+                    <span className="text-xs text-green-600 font-semibold">✓</span>
+                  )}
+                </button>
+                <button
+                  onClick={() => toggleTypeFilter('materiais')}
+                  className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left cursor-pointer hover:bg-gray-50 rounded"
+                >
+                  <span className="text-sm">Materiais</span>
+                  {typeFilter.includes('materiais') && (
+                    <span className="text-xs text-green-600 font-semibold">✓</span>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Botão Limpar Filtros */}
+        {typeFilter.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-10 cursor-pointer"
+            onClick={clearTypeFilter}
+          >
+            Limpar
+          </Button>
+        )}
       </div>
+
+      {/* Filtros Ativos */}
+      {typeFilter.length > 0 && (
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-sm text-gray-600">Filtros ativos:</span>
+          {typeFilter.map(filter => (
+            <Badge key={filter} variant="secondary" className="gap-1.5">
+              {filter === 'ingredientes' ? 'Ingredientes' : 'Materiais'}
+              <button
+                onClick={() => toggleTypeFilter(filter)}
+                className="ml-1 hover:text-red-600"
+              >
+                ×
+              </button>
+            </Badge>
+          ))}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2 mb-3">
@@ -246,9 +364,9 @@ export default function ProductsPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-[var(--color-snow)] rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="p-6">
-          {activeTab === 'ingredients' && <IngredientsTab shouldOpenModal={openModalForTab === 'ingredients'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} />}
+          {activeTab === 'ingredients' && <IngredientsTab shouldOpenModal={openModalForTab === 'ingredients'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} typeFilter={typeFilter} />}
           {activeTab === 'bases' && <BasesTab shouldOpenModal={openModalForTab === 'bases'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} />}
           {activeTab === 'products' && <ProductsTab shouldOpenModal={openModalForTab === 'products'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} />}
         </div>
@@ -257,7 +375,7 @@ export default function ProductsPage() {
   )
 }
 
-function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { shouldOpenModal: boolean; onModalClose: () => void; searchQuery: string; sortOrder: 'asc' | 'desc' | null }) {
+function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, typeFilter }: { shouldOpenModal: boolean; onModalClose: () => void; searchQuery: string; sortOrder: 'asc' | 'desc' | null; typeFilter: string[] }) {
   const settings = useProductSettings()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
@@ -327,9 +445,15 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder 
     }
   }
 
-  let filteredIngredients = ingredients.filter(ingredient =>
-    ingredient.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  let filteredIngredients = ingredients.filter(ingredient => {
+    // Filtro por nome
+    const matchesSearch = ingredient.name.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    // Filtro por tipo
+    const matchesType = typeFilter.length === 0 || typeFilter.includes(ingredient.type || 'ingredientes')
+    
+    return matchesSearch && matchesType
+  })
 
   // Ordena somente se sortOrder foi definido
   if (sortOrder !== null) {
@@ -384,19 +508,6 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder 
     }
   }
 
-  const handleEdit = (ingredient: Ingredient) => {
-    setEditingId(ingredient.id)
-    setFormData({
-      type: 'ingredientes', // Valor padrão ao editar
-      name: ingredient.name,
-      volume: ingredient.volume.toString(),
-      unit: ingredient.unit,
-      average_cost: ingredient.average_cost.toString(),
-      loss_factor: ingredient.loss_factor.toString()
-    })
-    setIsModalOpen(true)
-  }
-
   const handleCloseModal = () => {
     setIsModalOpen(false)
     setEditingId(null)
@@ -410,28 +521,9 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder 
     })
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Deseja realmente excluir este insumo?')) return
-
-    try {
-      const response = await fetch(`/api/products/ingredients?id=${id}`, {
-        method: 'DELETE'
-      })
-
-      if (response.ok) {
-        setIngredients(ingredients.filter(ing => ing.id !== id))
-      } else {
-        alert('Erro ao excluir insumo')
-      }
-    } catch (error) {
-      console.error('Erro ao excluir insumo:', error)
-      alert('Erro ao excluir insumo')
-    }
-  }
-
   return (
     <div>
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Insumo" : "Cadastrar Insumo"}>
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Insumo" : "Novo Insumo"}>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
@@ -567,12 +659,11 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder 
                 <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Custo Médio</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Custo Unitário</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Fator de Perda</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Ações</th>
               </tr>
             </thead>
             <tbody>
               {filteredIngredients.map((ingredient) => (
-                <tr key={ingredient.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <tr key={ingredient.id} className="border-b border-gray-200 hover:bg-gray-50">
                   <td className="py-3 px-4 text-sm text-gray-900">{ingredient.name}</td>
                   <td className="py-3 px-4 text-sm text-gray-600">
                     {formatSmartNumber(ingredient.volume)} {getUnitAbbreviation(ingredient.unit)}
@@ -580,20 +671,6 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder 
                   <td className="py-3 px-4 text-sm text-gray-600">R$ {formatSmartNumber(ingredient.average_cost, 2, true)}</td>
                   <td className="py-3 px-4 text-sm text-gray-900 font-medium">R$ {formatSmartNumber(ingredient.unit_cost, 5, true)}</td>
                   <td className="py-3 px-4 text-sm text-gray-600">{formatSmartNumber(ingredient.loss_factor, 2, true)}%</td>
-                  <td className="py-3 px-4 text-sm">
-                    <button 
-                      className="text-blue-600 hover:text-blue-800 mr-3 cursor-pointer" 
-                      onClick={() => handleEdit(ingredient)}
-                    >
-                      Editar
-                    </button>
-                    <button 
-                      className="text-red-600 hover:text-red-800 cursor-pointer" 
-                      onClick={() => handleDelete(ingredient.id)}
-                    >
-                      Excluir
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -787,7 +864,7 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
 
   return (
     <div>
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Base de Preparo" : "Cadastrar Base de Preparo"}>
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Base de Preparo" : "Nova Base de Preparo"}>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 mb-4">
             <div>
@@ -1261,7 +1338,7 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
 
   return (
     <div>
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Produto Final" : "Cadastrar Produto Final"} maxWidth="625px">
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Produto Final" : "Novo Produto Final"} maxWidth="625px">
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 mb-4">
             <div>

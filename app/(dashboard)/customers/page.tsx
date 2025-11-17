@@ -430,11 +430,11 @@ export default function CustomersPage() {
             className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md px-3 filter-button h-10 cursor-pointer"
           >
             {sortOrder === null ? (
-              <ArrowDownAZ className="w-5 h-5 text-gray-400" />
+              <ArrowDownAZ className="w-5 h-5 opacity-80" />
             ) : sortOrder === 'asc' ? (
-              <ArrowDownAZ className="w-5 h-5 text-gray-600" />
+              <ArrowDownAZ className="w-5 h-5 opacity-80" />
             ) : (
-              <ArrowDownZA className="w-5 h-5 text-gray-600" />
+              <ArrowDownZA className="w-5 h-5 opacity-80" />
             )}
           </button>
           <div className="invisible group-hover:visible absolute right-0 top-full mt-2 bg-white text-[var(--color-licorice)] text-xs rounded-lg shadow-lg z-50 border border-gray-200 px-2 py-1 whitespace-nowrap">
