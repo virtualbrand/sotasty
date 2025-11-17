@@ -19,6 +19,8 @@ export async function GET() {
           id,
           quantity,
           item_type,
+          ingredient_id,
+          base_recipe_id,
           ingredients (
             id,
             name,
@@ -113,6 +115,8 @@ export async function POST(request: NextRequest) {
           id,
           quantity,
           item_type,
+          ingredient_id,
+          base_recipe_id,
           ingredients (
             id,
             name,

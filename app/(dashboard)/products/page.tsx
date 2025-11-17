@@ -364,8 +364,8 @@ export default function ProductsPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="p-6">
+      <div className="overflow-hidden">
+        <div>
           {activeTab === 'ingredients' && <IngredientsTab shouldOpenModal={openModalForTab === 'ingredients'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} typeFilter={typeFilter} />}
           {activeTab === 'bases' && <BasesTab shouldOpenModal={openModalForTab === 'bases'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} />}
           {activeTab === 'products' && <ProductsTab shouldOpenModal={openModalForTab === 'products'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} />}
@@ -521,6 +521,19 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
     })
   }
 
+  const handleEdit = (ingredient: Ingredient) => {
+    setEditingId(ingredient.id)
+    setFormData({
+      type: ingredient.type || 'ingredientes',
+      name: ingredient.name,
+      volume: ingredient.volume.toString(),
+      unit: ingredient.unit,
+      average_cost: ingredient.average_cost.toString(),
+      loss_factor: ingredient.loss_factor.toString()
+    })
+    setIsModalOpen(true)
+  }
+
   return (
     <div>
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Insumo" : "Novo Insumo"}>
@@ -641,7 +654,7 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
       </Modal>
 
       {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="bg-white border border-gray-200 rounded-lg p-6 overflow-x-auto">
         {loading ? (
           <div className="flex justify-center py-8">
             <Spinner size="large" className="text-[var(--color-old-rose)]" />
@@ -663,7 +676,11 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
             </thead>
             <tbody>
               {filteredIngredients.map((ingredient) => (
-                <tr key={ingredient.id} className="border-b border-gray-200 hover:bg-gray-50">
+                <tr 
+                  key={ingredient.id} 
+                  className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => handleEdit(ingredient)}
+                >
                   <td className="py-3 px-4 text-sm text-gray-900">{ingredient.name}</td>
                   <td className="py-3 px-4 text-sm text-gray-600">
                     {formatSmartNumber(ingredient.volume)} {getUnitAbbreviation(ingredient.unit)}
@@ -1275,24 +1292,6 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
     }
   }
 
-  const handleEdit = (product: FinalProduct) => {
-    setEditingId(product.id)
-    setFormData({
-      name: product.name,
-      category: product.category,
-      description: product.description || '',
-      loss_factor: product.loss_factor.toString(),
-      selling_price: product.selling_price?.toString() || '',
-      profit_margin: product.profit_margin?.toString() || '',
-      items: (product.final_product_items || []).map(item => ({
-        item_type: item.item_type,
-        item_id: item.item_type === 'ingredient' ? item.ingredient_id : item.base_recipe_id,
-        quantity: item.quantity.toString()
-      }))
-    })
-    setIsModalOpen(true)
-  }
-
   const handleCloseModal = () => {
     setIsModalOpen(false)
     setEditingId(null)
@@ -1305,6 +1304,34 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
       profit_margin: '',
       items: []
     })
+  }
+
+  const getItemName = (item: any) => {
+    if (item.item_type === 'ingredient') {
+      const ing = ingredients.find(i => i.id === item.item_id)
+      return ing?.name || 'Item não encontrado'
+    } else {
+      const base = bases.find(b => b.id === item.item_id)
+      return base?.name || 'Item não encontrado'
+    }
+  }
+
+  const handleEdit = (product: FinalProduct) => {
+    setEditingId(product.id)
+    setFormData({
+      name: product.name,
+      category: product.category,
+      description: product.description || '',
+      loss_factor: product.loss_factor.toString(),
+      selling_price: product.selling_price?.toString() || '',
+      profit_margin: product.profit_margin?.toString() || '',
+      items: (product.final_product_items || []).map(item => ({
+        item_type: item.item_type,
+        item_id: item.item_type === 'ingredient' ? item.ingredients?.id || item.ingredient_id : item.base_recipes?.id || item.base_recipe_id,
+        quantity: item.quantity.toString()
+      }))
+    })
+    setIsModalOpen(true)
   }
 
   const handleDelete = async (id: string) => {
@@ -1323,16 +1350,6 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
     } catch (error) {
       console.error('Erro ao excluir produto:', error)
       alert('Erro ao excluir produto')
-    }
-  }
-
-  const getItemName = (item: any) => {
-    if (item.item_type === 'ingredient') {
-      const ing = ingredients.find(i => i.id === item.item_id)
-      return ing?.name || 'Item não encontrado'
-    } else {
-      const base = bases.find(b => b.id === item.item_id)
-      return base?.name || 'Item não encontrado'
     }
   }
 
@@ -1533,79 +1550,96 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
               : 0
 
             return (
-              <div key={product.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{product.name}</h3>
+              <div 
+                key={product.id} 
+                className="bg-white border border-gray-200 rounded-lg p-5 mb-4 cursor-pointer hover:shadow-md transition-shadow duration-200"
+                onClick={() => handleEdit(product)}
+              >
+                <div className="flex justify-between items-start gap-6">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900 text-lg mb-1">{product.name}</h3>
                     <p className="text-sm text-gray-500">
                       Categoria: {product.category} | Perda: {formatSmartNumber(product.loss_factor, 2, true)}%
                     </p>
                     {product.description && <p className="text-sm text-gray-600 mt-1">{product.description}</p>}
+                    
+                    {/* Tabela de itens integrada */}
+                    {product.final_product_items && product.final_product_items.length > 0 && (
+                      <div className="mt-4">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-gray-200">
+                              <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Tipo</th>
+                              <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Item</th>
+                              <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Qtde</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {product.final_product_items.map((item: any) => (
+                              <tr key={item.id} className="border-b border-gray-100">
+                                <td className="py-2 px-2 text-gray-600">
+                                  {item.item_type === 'ingredient' ? 'Matéria-prima' : 'Base'}
+                                </td>
+                                <td className="py-2 px-2 text-gray-900">
+                                  {item.item_type === 'ingredient' 
+                                    ? item.ingredients?.name 
+                                    : item.base_recipes?.name}
+                                </td>
+                                <td className="py-2 px-2 text-gray-600">{item.quantity}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-right">
+                  
+                  {/* Coluna consolidada de valores */}
+                  <div className="bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-200 rounded-lg p-4 min-w-[240px] self-start">
                     {product.selling_price ? (
-                      <>
-                        <p className="text-lg font-bold text-pink-600">R$ {formatBRL(product.selling_price, 2)}</p>
-                        <p className="text-xs text-gray-500">Preço de Venda</p>
-                      </>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center pb-2 border-b border-pink-200">
+                          <span className="text-xs font-medium text-gray-600">Preço de Venda</span>
+                          <span className="text-lg font-bold text-pink-600">R$ {formatBRL(product.selling_price, 2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600">Custo Total</span>
+                          <span className="font-semibold text-gray-900">R$ {formatBRL(product.total_cost || 0, 2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm pt-2 border-t border-pink-100">
+                          <span className="text-gray-600">Lucro</span>
+                          <span className="font-semibold text-green-600">R$ {formatBRL(profit, 2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600">Margem</span>
+                          <span className="font-bold text-blue-600">{formatBRL(margin, 1)}%</span>
+                        </div>
+                      </div>
                     ) : (
-                      <p className="text-sm text-gray-500">Sem preço definido</p>
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500">Sem preço definido</p>
+                        <p className="text-xs text-gray-400 mt-1">Configure o preço para ver os dados</p>
+                      </div>
                     )}
                   </div>
                 </div>
-                {product.selling_price && (
-                  <div className="grid grid-cols-3 gap-4 mb-3 p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="text-xs text-gray-500">Custo Total</p>
-                      <p className="font-semibold text-gray-900">R$ {formatBRL(product.total_cost || 0, 2)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Lucro</p>
-                      <p className="font-semibold text-green-600">R$ {formatBRL(profit, 2)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Margem</p>
-                      <p className="font-semibold text-blue-600">{formatBRL(margin, 1)}%</p>
-                    </div>
-                  </div>
-                )}
-                {product.final_product_items && product.final_product_items.length > 0 && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Tipo</th>
-                          <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Item</th>
-                          <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Qtde</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {product.final_product_items.map((item: any) => (
-                          <tr key={item.id} className="border-b border-gray-100">
-                            <td className="py-2 px-2 text-gray-600">
-                              {item.item_type === 'ingredient' ? 'Matéria-prima' : 'Base'}
-                            </td>
-                            <td className="py-2 px-2 text-gray-900">
-                              {item.item_type === 'ingredient' 
-                                ? item.ingredients?.name 
-                                : item.base_recipes?.name}
-                            </td>
-                            <td className="py-2 px-2 text-gray-600">{item.quantity}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-                <div className="flex justify-end gap-2 mt-3">
+                
+                {/* Botões de ação */}
+                <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
                   <button 
-                    onClick={() => handleEdit(product)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium mr-3 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleEdit(product)
+                    }}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer"
                   >
                     Editar
                   </button>
                   <button 
-                    onClick={() => handleDelete(product.id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete(product.id)
+                    }}
                     className="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
                   >
                     Excluir
