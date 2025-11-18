@@ -1106,7 +1106,7 @@ export default function AgendaPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="filter-button h-10 cursor-pointer"
+                className="filter-button h-10 cursor-pointer font-normal"
                 onClick={() => {
                   setShowStatusFilter(!showStatusFilter)
                   setShowTagFilter(false)
@@ -1148,7 +1148,7 @@ export default function AgendaPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="filter-button h-10 cursor-pointer"
+                className="filter-button h-10 cursor-pointer font-normal"
                 onClick={() => {
                   setShowCategoryFilter(!showCategoryFilter)
                   setShowTagFilter(false)
@@ -1190,7 +1190,7 @@ export default function AgendaPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="filter-button h-10 cursor-pointer"
+                className="filter-button h-10 cursor-pointer font-normal"
                 onClick={() => {
                   setShowTagFilter(!showTagFilter)
                   setShowCategoryFilter(false)
@@ -1252,7 +1252,7 @@ export default function AgendaPage() {
                 <Badge
                   key={filter}
                   variant="secondary"
-                  className={`${item ? getColorClass(item.color) : 'bg-gray-100 text-gray-800'} cursor-pointer hover:opacity-80 transition-opacity`}
+                  className={`${item ? getColorClass(item.color) : 'bg-gray-100 text-gray-800 border-gray-200'} border text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity`}
                 >
                   {status ? status.name : filter}
                   <button

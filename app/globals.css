@@ -112,6 +112,13 @@ h1, h2, h3, h4, h5, h6 {
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+:root {
+  --chart-mrr: 220 70% 50%;
+  --chart-customers: 160 60% 50%;
+  --chart-churn: 10 80% 50%;
+  --chart-arr: 280 65% 50%;
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

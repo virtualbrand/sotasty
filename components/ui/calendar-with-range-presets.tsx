@@ -56,104 +56,83 @@ export function CalendarWithRangePresets({ onDateChange, defaultDate }: Calendar
 
   const handleDateSelect = (newDate: DateRange | undefined) => {
     setDate(newDate)
+    // Notifica sempre, deixa o componente pai decidir quando fechar
     onDateChange?.(newDate)
   }
 
+  const handlePresetClick = (preset: DateRange) => {
+    setDate(preset)
+    setMonth(preset.to!)
+    onDateChange?.(preset)
+  }
+
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-lg">
+    <div className="rounded-lg border border-border bg-background shadow-lg">
       <div className="flex max-sm:flex-col">
-        <div className="relative border-gray-200 py-4 max-sm:order-1 max-sm:border-t sm:w-40">
-          <div className="h-full border-gray-200 sm:border-e">
+        <div className="relative border-border py-4 max-sm:order-1 max-sm:border-t sm:w-40">
+          <div className="h-full border-border sm:border-e">
             <div className="flex flex-col px-2">
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start text-sm hover:bg-gray-100"
-                onClick={() => {
-                  const newDate = {
-                    from: today,
-                    to: today,
-                  }
-                  handleDateSelect(newDate)
-                  setMonth(today)
-                }}
+                className="w-full justify-start"
+                onClick={() => handlePresetClick({ from: today, to: today })}
               >
                 Hoje
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start text-sm hover:bg-gray-100"
-                onClick={() => {
-                  handleDateSelect(yesterday)
-                  setMonth(yesterday.to)
-                }}
+                className="w-full justify-start"
+                onClick={() => handlePresetClick(yesterday)}
               >
                 Ontem
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start text-sm hover:bg-gray-100"
-                onClick={() => {
-                  handleDateSelect(last7Days)
-                  setMonth(last7Days.to)
-                }}
+                className="w-full justify-start"
+                onClick={() => handlePresetClick(last7Days)}
               >
                 Últimos 7 dias
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start text-sm hover:bg-gray-100"
-                onClick={() => {
-                  handleDateSelect(last30Days)
-                  setMonth(last30Days.to)
-                }}
+                className="w-full justify-start"
+                onClick={() => handlePresetClick(last30Days)}
               >
                 Últimos 30 dias
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start text-sm hover:bg-gray-100"
-                onClick={() => {
-                  handleDateSelect(monthToDate)
-                  setMonth(monthToDate.to)
-                }}
+                className="w-full justify-start"
+                onClick={() => handlePresetClick(monthToDate)}
               >
                 Mês atual
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start text-sm hover:bg-gray-100"
-                onClick={() => {
-                  handleDateSelect(lastMonth)
-                  setMonth(lastMonth.to)
-                }}
+                className="w-full justify-start"
+                onClick={() => handlePresetClick(lastMonth)}
               >
                 Mês passado
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start text-sm hover:bg-gray-100"
-                onClick={() => {
-                  handleDateSelect(yearToDate)
-                  setMonth(yearToDate.to)
-                }}
+                className="w-full justify-start"
+                onClick={() => handlePresetClick(yearToDate)}
               >
                 Ano atual
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start text-sm hover:bg-gray-100"
-                onClick={() => {
-                  handleDateSelect(lastYear)
-                  setMonth(lastYear.to)
-                }}
+                className="w-full justify-start"
+                onClick={() => handlePresetClick(lastYear)}
               >
                 Ano passado
               </Button>
@@ -166,7 +145,7 @@ export function CalendarWithRangePresets({ onDateChange, defaultDate }: Calendar
           onSelect={handleDateSelect}
           month={month}
           onMonthChange={setMonth}
-          className="p-2 bg-white"
+          className="p-2 bg-background"
           disabled={[
             { after: today },
           ]}

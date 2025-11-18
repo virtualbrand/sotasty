@@ -527,70 +527,74 @@ export default function CustomersPage() {
       </div>
 
       {/* Lista de Clientes */}
-      <div className="space-y-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-6">
         {filteredCustomers.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-12 text-gray-500">
             {searchQuery ? 'Nenhum cliente encontrado.' : 'Nenhum cliente cadastrado. Clique em "+ Novo Cliente" para começar.'}
           </div>
         ) : (
-          filteredCustomers.map((customer) => (
-            <div
-              key={customer.id}
-              onClick={() => handleEditCustomer(customer)}
-              className="bg-white border border-gray-200 rounded-lg p-5 mb-4 cursor-pointer hover:shadow-md transition-shadow duration-200"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                {customerSettings.showPhoto && <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm w-20"></th>}
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Cliente</th>
+                {customerSettings.showCpfCnpj && <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">CPF/CNPJ</th>}
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Telefone</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">E-mail</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Pedidos</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Cliente desde</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCustomers.map((customer) => (
+                <tr 
+                  key={customer.id} 
+                  className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => handleEditCustomer(customer)}
+                >
                   {customerSettings.showPhoto && (
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center overflow-hidden relative">
+                    <td className="py-3 px-4">
                       {customer.avatar_url ? (
-                        <Image
-                          src={customer.avatar_url}
-                          alt={customer.name}
-                          fill
-                          className="object-cover"
-                        />
+                        <div className="relative w-12 h-12 rounded-full overflow-hidden border border-gray-200">
+                          <Image
+                            src={customer.avatar_url}
+                            alt={customer.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
                       ) : (
-                        <User className="w-6 h-6 text-white" />
+                        <div className="w-12 h-12 rounded-full border border-gray-200 bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center">
+                          <User className="w-5 h-5 text-white" />
+                        </div>
                       )}
-                    </div>
+                    </td>
                   )}
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{customer.name}</h3>
-                    <div className="flex items-center gap-4 mt-1">
-                      {customer.phone && (
-                        <span className="text-sm text-gray-600 flex items-center gap-1">
-                          <Phone className="w-3 h-3" />
-                          {customer.phone}
-                        </span>
-                      )}
-                      {customer.email && (
-                        <span className="text-sm text-gray-600 flex items-center gap-1">
-                          <Mail className="w-3 h-3" />
-                          {customer.email}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  {customer.orders_count && customer.orders_count > 0 ? (
-                    <Link 
-                      href={`/orders?customer=${encodeURIComponent(customer.name)}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center gap-2 text-[var(--color-old-rose)] font-semibold hover:text-[var(--color-rosy-brown)] transition-colors"
-                    >
-                      <ShoppingBag className="w-4 h-4" />
-                      {customer.orders_count} pedidos
-                    </Link>
-                  ) : null}
-                  <span className="text-xs text-gray-500 mt-1 block">
-                    Cliente desde {formatDate(customer.created_at)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))
+                  <td className="py-3 px-4 text-sm text-gray-900 font-medium">{customer.name}</td>
+                  {customerSettings.showCpfCnpj && (
+                    <td className="py-3 px-4 text-sm text-gray-600">{customer.cpf_cnpj || '-'}</td>
+                  )}
+                  <td className="py-3 px-4 text-sm text-gray-600">{customer.phone || '-'}</td>
+                  <td className="py-3 px-4 text-sm text-gray-600">{customer.email || '-'}</td>
+                  <td className="py-3 px-4 text-sm text-gray-600">
+                    {customer.orders_count && customer.orders_count > 0 ? (
+                      <Link 
+                        href={`/orders?customer=${encodeURIComponent(customer.name)}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1 text-[var(--color-old-rose)] font-semibold hover:text-[var(--color-rosy-brown)] transition-colors"
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        {customer.orders_count}
+                      </Link>
+                    ) : (
+                      <span className="text-gray-400">0</span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4 text-sm text-gray-600">{formatDate(customer.created_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 

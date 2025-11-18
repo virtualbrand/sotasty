@@ -17,6 +17,7 @@ type SaaSCustomer = {
   trial_end: string
   conversion_date: string | null
   mrr: number
+  total_revenue: number
   payment_status: 'paid' | 'pending' | 'failed'
   next_billing: string
   last_access: string
@@ -43,6 +44,7 @@ const mockCustomers: SaaSCustomer[] = [
     trial_end: '2025-11-15',
     conversion_date: '2025-11-14',
     mrr: 197,
+    total_revenue: 591,
     payment_status: 'paid',
     next_billing: '2025-12-14',
     last_access: '2025-11-17T10:30:00',
@@ -66,6 +68,7 @@ const mockCustomers: SaaSCustomer[] = [
     trial_end: '2025-11-24',
     conversion_date: null,
     mrr: 0,
+    total_revenue: 0,
     payment_status: 'pending',
     next_billing: '2025-11-24',
     last_access: '2025-11-16T15:20:00',
@@ -89,6 +92,7 @@ const mockCustomers: SaaSCustomer[] = [
     trial_end: '2025-11-26',
     conversion_date: null,
     mrr: 0,
+    total_revenue: 0,
     payment_status: 'pending',
     next_billing: '2025-11-26',
     last_access: '2025-11-12T09:15:00',
@@ -112,6 +116,7 @@ const mockCustomers: SaaSCustomer[] = [
     trial_end: '2025-10-29',
     conversion_date: '2025-10-28',
     mrr: 397,
+    total_revenue: 794,
     payment_status: 'paid',
     next_billing: '2025-12-28',
     last_access: '2025-11-17T08:45:00',
@@ -237,6 +242,27 @@ export default function SuperAdminCustomers() {
     return `${Math.floor(diffMinutes / 1440)}d atrás`
   }
 
+  const getCustomerSince = (createdAt: string) => {
+    const created = new Date(createdAt)
+    const now = new Date()
+    const diffTime = now.getTime() - created.getTime()
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays === 0) return 'Cliente há hoje'
+    if (diffDays === 1) return 'Cliente há 1 dia'
+    if (diffDays < 30) return `Cliente há ${diffDays} dias`
+    
+    const diffMonths = Math.floor(diffDays / 30)
+    if (diffMonths === 1) return 'Cliente há 1 mês'
+    if (diffMonths < 12) return `Cliente há ${diffMonths} meses`
+    
+    const diffYears = Math.floor(diffMonths / 12)
+    const remainingMonths = diffMonths % 12
+    if (diffYears === 1 && remainingMonths === 0) return 'Cliente há 1 ano'
+    if (remainingMonths === 0) return `Cliente há ${diffYears} anos`
+    return `Cliente há ${diffYears} ano${diffYears > 1 ? 's' : ''} e ${remainingMonths} ${remainingMonths === 1 ? 'mês' : 'meses'}`
+  }
+
   const toggleFilter = (filter: string) => {
     setActiveFilters(prev => 
       prev.includes(filter) ? prev.filter(f => f !== filter) : [...prev, filter]
@@ -252,23 +278,23 @@ export default function SuperAdminCustomers() {
   }
 
   const allStatus = [
-    { id: 'trial', name: 'Trial', color: 'bg-blue-100 text-blue-700' },
-    { id: 'active', name: 'Ativo', color: 'bg-green-100 text-green-700' },
-    { id: 'canceled', name: 'Cancelado', color: 'bg-gray-100 text-gray-700' },
-    { id: 'past_due', name: 'Inadimplente', color: 'bg-red-100 text-red-700' },
-    { id: 'expired', name: 'Expirado', color: 'bg-orange-100 text-orange-700' }
+    { id: 'trial', name: 'Trial', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+    { id: 'active', name: 'Ativo', color: 'bg-green-100 text-green-800 border-green-200' },
+    { id: 'canceled', name: 'Cancelado', color: 'bg-gray-100 text-gray-800 border-gray-200' },
+    { id: 'past_due', name: 'Inadimplente', color: 'bg-red-100 text-red-800 border-red-200' },
+    { id: 'expired', name: 'Expirado', color: 'bg-orange-100 text-orange-800 border-orange-200' }
   ]
 
   const allPlans = [
-    { id: 'start', name: 'Start', color: 'bg-purple-100 text-purple-700' },
-    { id: 'grow', name: 'Grow', color: 'bg-pink-100 text-pink-700' },
-    { id: 'scale', name: 'Scale', color: 'bg-indigo-100 text-indigo-700' }
+    { id: 'start', name: 'Start', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+    { id: 'grow', name: 'Grow', color: 'bg-pink-100 text-pink-800 border-pink-200' },
+    { id: 'scale', name: 'Scale', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' }
   ]
 
   const allHealth = [
-    { id: 'green', name: '🟢 Saudável', color: 'bg-green-100 text-green-700' },
-    { id: 'yellow', name: '🟡 Atenção', color: 'bg-yellow-100 text-yellow-700' },
-    { id: 'red', name: '🔴 Risco', color: 'bg-red-100 text-red-700' }
+    { id: 'green', name: '🟢 Saudável', color: 'bg-green-100 text-green-800 border-green-200' },
+    { id: 'yellow', name: '🟡 Atenção', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    { id: 'red', name: '🔴 Risco', color: 'bg-red-100 text-red-800 border-red-200' }
   ]
 
   const filteredCustomers = customers.filter(customer => {
@@ -492,7 +518,7 @@ export default function SuperAdminCustomers() {
 
       {/* Tabela de Clientes */}
       <div className="bg-white rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto p-6">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
@@ -509,6 +535,9 @@ export default function SuperAdminCustomers() {
                 </th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">
                   MRR
+                </th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">
+                  Receita total
                 </th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">
                   Último acesso
@@ -533,10 +562,10 @@ export default function SuperAdminCustomers() {
                       <User className="w-5 h-5 text-gray-400" />
                     </div>
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-6 py-3">
                     <div>
                       <div className="font-medium text-gray-900 mb-0.5">{customer.company_name}</div>
-                      <div className="text-sm text-gray-500">{customer.email}</div>
+                      <div className="text-xs text-gray-500">{getCustomerSince(customer.created_at)}</div>
                       {customer.status === 'trial' && (
                         <div className="text-xs text-blue-600 font-medium mt-1">
                           {getDaysRemaining(customer.trial_end)} dias restantes
@@ -544,23 +573,28 @@ export default function SuperAdminCustomers() {
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-6 py-3">
                     {getStatusBadge(customer.status)}
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-6 py-3">
                     {getPlanBadge(customer.plan)}
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-6 py-3">
                     <div className="font-medium text-gray-900">
                       {customer.mrr > 0 ? `R$ ${customer.mrr}` : '-'}
                     </div>
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-6 py-3">
+                    <div className="font-medium text-gray-900">
+                      {customer.total_revenue > 0 ? `R$ ${customer.total_revenue}` : '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-3">
                     <div className="text-sm text-gray-700">{formatLastAccess(customer.last_access)}</div>
                     <div className="text-xs text-gray-500 mt-0.5">{customer.days_active_7}/7 dias ativos</div>
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="flex gap-4 text-sm">
+                  <td className="px-6 py-3">
+                    <div className="flex gap-4 text-xs">
                       <div className="flex items-center gap-1.5">
                         <Package className="w-3.5 h-3.5 text-gray-400" />
                         <span className="text-gray-700">{customer.products_count}</span>
@@ -571,8 +605,10 @@ export default function SuperAdminCustomers() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-5 text-center">
-                    <span className="text-2xl">{getHealthIcon(customer.health_score)}</span>
+                  <td className="px-6 py-3">
+                    <div className="flex justify-start">
+                      <span className="text-xs">{getHealthIcon(customer.health_score)}</span>
+                    </div>
                   </td>
                 </tr>
               ))}

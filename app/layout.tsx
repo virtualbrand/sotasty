@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { PostHogProvider } from "@/components/PostHogProvider";
 
 const kumbhSans = localFont({
   src: [
@@ -32,7 +33,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${kumbhSans.variable} font-sans antialiased`}>
-        {children}
+        <PostHogProvider>
+          {children}
+        </PostHogProvider>
       </body>
     </html>
   );

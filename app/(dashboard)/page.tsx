@@ -1,13 +1,42 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { TrendingUp, TrendingDown, DollarSign, Users, Package, ShoppingCart, Target, Percent, Award, Info, ChevronLeft, ChevronRight } from 'lucide-react'
+import { TrendingUp, TrendingDown, DollarSign, Users, Package, ShoppingCart, Target, Percent, Award, Info, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
+import { format, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import SaaSMetricsChart from '@/components/charts/SaaSMetricsChart'
 
 export default function Home() {
   const [userRole, setUserRole] = useState<string>('admin')
   const [loading, setLoading] = useState(true)
-  const [currentDate, setCurrentDate] = useState(new Date())
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [showMonthPicker, setShowMonthPicker] = useState(false)
+  const monthPickerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (monthPickerRef.current && !monthPickerRef.current.contains(event.target as Node)) {
+        setShowMonthPicker(false)
+      }
+    }
+
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showMonthPicker) {
+        setShowMonthPicker(false)
+      }
+    }
+
+    if (showMonthPicker) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleEscKey)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscKey)
+    }
+  }, [showMonthPicker])
 
   useEffect(() => {
     const loadUserRole = async () => {
@@ -31,24 +60,16 @@ export default function Home() {
     loadUserRole()
   }, [])
 
+  const formatMonthYear = (date: Date) => {
+    return format(date, 'MMMM yyyy', { locale: ptBR })
+  }
+
   const handlePreviousMonth = () => {
-    setCurrentDate(prev => {
-      const newDate = new Date(prev)
-      newDate.setMonth(newDate.getMonth() - 1)
-      return newDate
-    })
+    setSelectedDate(subMonths(selectedDate, 1))
   }
 
   const handleNextMonth = () => {
-    setCurrentDate(prev => {
-      const newDate = new Date(prev)
-      newDate.setMonth(newDate.getMonth() + 1)
-      return newDate
-    })
-  }
-
-  const formatMonthYear = (date: Date) => {
-    return date.toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' })
+    setSelectedDate(addMonths(selectedDate, 1))
   }
 
   if (loading) {
@@ -70,95 +91,34 @@ export default function Home() {
             <p className="text-gray-500 mt-1">Métricas de crescimento e performance do CakeCloud</p>
           </div>
           
-          {/* Filtro de Mês/Ano */}
-          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2">
+          {/* Filtro de Mês */}
+          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
             <button
               onClick={handlePreviousMonth}
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              aria-label="Mês anterior"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4 text-gray-600" />
             </button>
-            <span className="text-sm font-medium text-gray-900 min-w-[80px] text-center">
-              {formatMonthYear(currentDate)}
-            </span>
+            <div className="flex items-center gap-2 px-2">
+              <CalendarIcon className="w-4 h-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-900 capitalize min-w-[140px] text-center">
+                {formatMonthYear(selectedDate)}
+              </span>
+            </div>
             <button
               onClick={handleNextMonth}
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              aria-label="Próximo mês"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4 text-gray-600" />
             </button>
           </div>
         </div>
 
-        {/* Métricas de Receita */}
+        {/* Gráfico de Métricas SaaS */}
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Receita e Crescimento</h2>
-            <div className="group relative">
-              <Info className="w-4 h-4 text-gray-400 cursor-help" />
-              <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[400px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200 p-4">
-                <strong>MRR</strong> (Monthly Recurring Revenue): Receita recorrente mensal de todas as assinaturas ativas.<br/><br/>
-                <strong>ARR</strong> (Annual Recurring Revenue): Projeção anual da receita recorrente (MRR × 12).<br/><br/>
-                <strong>Crescimento MoM</strong>: Taxa de crescimento mês sobre mês.<br/><br/>
-                <strong>Crescimento YoY</strong>: Taxa de crescimento ano sobre ano.
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-green-600" />
-                </div>
-                <span className="text-sm text-green-600 font-semibold flex items-center gap-1">
-                  <TrendingUp className="w-4 h-4" />
-                  +15.3%
-                </span>
-              </div>
-              <h3 className="text-gray-600 text-sm mb-1">MRR</h3>
-              <p className="text-3xl font-bold text-gray-900">R$ 45.200</p>
-              <p className="text-xs text-gray-400 mt-2">Receita Recorrente Mensal</p>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-blue-600" />
-                </div>
-                <span className="text-sm text-blue-600 font-semibold flex items-center gap-1">
-                  <TrendingUp className="w-4 h-4" />
-                  +18.5%
-                </span>
-              </div>
-              <h3 className="text-gray-600 text-sm mb-1">ARR</h3>
-              <p className="text-3xl font-bold text-gray-900">R$ 542.4K</p>
-              <p className="text-xs text-gray-400 mt-2">Receita Recorrente Anual</p>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-purple-600" />
-                </div>
-                <span className="text-sm text-purple-600 font-semibold">MoM</span>
-              </div>
-              <h3 className="text-gray-600 text-sm mb-1">Crescimento MoM</h3>
-              <p className="text-3xl font-bold text-gray-900">+12.8%</p>
-              <p className="text-xs text-gray-400 mt-2">Mês sobre mês</p>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-orange-600" />
-                </div>
-                <span className="text-sm text-orange-600 font-semibold">YoY</span>
-              </div>
-              <h3 className="text-gray-600 text-sm mb-1">Crescimento YoY</h3>
-              <p className="text-3xl font-bold text-gray-900">+156%</p>
-              <p className="text-xs text-gray-400 mt-2">Ano sobre ano</p>
-            </div>
-          </div>
+          <SaaSMetricsChart />
         </div>
 
         {/* Métricas de Cliente */}

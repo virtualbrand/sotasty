@@ -19,6 +19,7 @@ import {
   LogOut,
   User,
   ChevronLeft,
+  BarChart3,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -31,6 +32,12 @@ const menuItems = [
   { icon: MessageCircle, label: 'Atendimento', href: '/atendimento' },
   { icon: Calendar, label: 'Agenda', href: '/agenda' },
   { icon: DollarSign, label: 'Financeiro', href: '/financeiro' },
+]
+
+const superAdminMenuItems = [
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
+  { icon: Users, label: 'Clientes', href: '/customers' },
+  { icon: BarChart3, label: 'Analytics', href: '/analytics' },
 ]
 
 const bottomMenuItems = [
@@ -190,7 +197,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
 
   // Filtrar menu items baseado no role do usuário
   const filteredMenuItems = userRole === 'superadmin'
-    ? menuItems.filter(item => item.href === '/' || item.href === '/customers')
+    ? superAdminMenuItems
     : menuItems
 
   // Layout Horizontal (Header/Footer)
