@@ -4,12 +4,20 @@ interface ProductSettings {
   showLossFactorIngredients: boolean
   showLossFactorBases: boolean
   showLossFactorProducts: boolean
+  showProductPhoto: boolean
+  showIngredientPhoto: boolean
+  showBasePhoto: boolean
+  measurementUnit: 'metric-large' | 'metric-small' // kg/L ou g/ml
 }
 
 const defaultSettings: ProductSettings = {
   showLossFactorIngredients: true,
   showLossFactorBases: true,
   showLossFactorProducts: true,
+  showProductPhoto: true,
+  showIngredientPhoto: true,
+  showBasePhoto: true,
+  measurementUnit: 'metric-small', // padrão g/ml
 }
 
 function getInitialSettings(): ProductSettings {

@@ -1,14 +1,21 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import Image from 'next/image'
 import Modal from '@/components/Modal'
 import { Spinner } from '@/components/ui/spinner'
-import { Info, Package, Layers, ShoppingBag, Search, ArrowDownAZ, ArrowDownZA, Filter, Check, Trash2, Plus } from 'lucide-react'
+import { Info, Package, Layers, ShoppingBag, Search, ArrowDownAZ, ArrowDownZA, Filter, Check, Trash2, Plus, Camera, SwitchCamera, CircleX, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useProductSettings } from '@/hooks/useProductSettings'
 import { showToast } from '@/app/(dashboard)/layout'
+import { 
+  convertFromSmallUnit, 
+  convertToSmallUnit, 
+  getUnitOptions, 
+  formatQuantityWithUnit 
+} from '@/lib/unitConversion'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -142,6 +149,7 @@ type FinalProduct = {
   name: string
   category: string
   description?: string
+  image_url?: string
   loss_factor: number
   selling_price?: number
   profit_margin?: number
@@ -157,6 +165,26 @@ export default function ProductsPage() {
   const [typeFilter, setTypeFilter] = useState<string[]>([]) // Filtro de tipo de insumo
   const [showTypeFilter, setShowTypeFilter] = useState(false) // Dropdown do filtro
   const typeFilterRef = useRef<HTMLDivElement>(null) // Ref para o dropdown
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]) // Filtro de categoria de produto
+  const [showCategoryFilter, setShowCategoryFilter] = useState(false) // Dropdown do filtro de categoria
+  const categoryFilterRef = useRef<HTMLDivElement>(null) // Ref para o dropdown de categoria
+  const [categories, setCategories] = useState<string[]>([]) // Lista de categorias disponíveis
+
+  // Carregar categorias
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await fetch('/api/products/categories')
+        if (response.ok) {
+          const data = await response.json()
+          setCategories(data.map((cat: { id: string; name: string }) => cat.name))
+        }
+      } catch (error) {
+        console.error('Erro ao carregar categorias:', error)
+      }
+    }
+    loadCategories()
+  }, [])
 
   // Fechar dropdown ao clicar fora ou pressionar ESC
   useEffect(() => {
@@ -164,15 +192,19 @@ export default function ProductsPage() {
       if (typeFilterRef.current && !typeFilterRef.current.contains(event.target as Node)) {
         setShowTypeFilter(false)
       }
+      if (categoryFilterRef.current && !categoryFilterRef.current.contains(event.target as Node)) {
+        setShowCategoryFilter(false)
+      }
     }
 
     const handleEscKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setShowTypeFilter(false)
+        setShowCategoryFilter(false)
       }
     }
 
-    if (showTypeFilter) {
+    if (showTypeFilter || showCategoryFilter) {
       document.addEventListener('mousedown', handleClickOutside)
       document.addEventListener('keydown', handleEscKey)
     }
@@ -181,7 +213,7 @@ export default function ProductsPage() {
       document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener('keydown', handleEscKey)
     }
-  }, [showTypeFilter])
+  }, [showTypeFilter, showCategoryFilter])
 
   const handleNewButtonClick = () => {
     setOpenModalForTab(activeTab)
@@ -203,6 +235,16 @@ export default function ProductsPage() {
 
   const clearTypeFilter = () => {
     setTypeFilter([])
+  }
+
+  const toggleCategoryFilter = (category: string) => {
+    setCategoryFilter(prev =>
+      prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]
+    )
+  }
+
+  const clearCategoryFilter = () => {
+    setCategoryFilter([])
   }
 
   return (
@@ -306,13 +348,61 @@ export default function ProductsPage() {
           </div>
         )}
 
+        {/* Filtro de Categoria - só aparece na aba de Produtos */}
+        {activeTab === 'products' && (
+          <div className="relative" ref={categoryFilterRef}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="filter-button h-10 cursor-pointer"
+              onClick={() => {
+                setShowCategoryFilter(!showCategoryFilter)
+              }}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Categoria
+              {categoryFilter.length > 0 && (
+                <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                  {categoryFilter.length}
+                </Badge>
+              )}
+            </Button>
+            
+            {showCategoryFilter && (
+              <div className="filter-dropdown absolute top-full mt-2 right-0 bg-[var(--color-bg-modal)] border border-gray-200 rounded-lg shadow-lg p-2 z-10 min-w-[180px] max-h-[300px] overflow-y-auto">
+                {categories.length > 0 ? (
+                  categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => toggleCategoryFilter(category)}
+                      className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left cursor-pointer hover:bg-gray-50 rounded"
+                    >
+                      <span className="text-sm">{category}</span>
+                      {categoryFilter.includes(category) && (
+                        <span className="text-xs text-green-600 font-semibold">✓</span>
+                      )}
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-3 py-2 text-sm text-gray-500">
+                    Nenhuma categoria cadastrada
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Botão Limpar Filtros */}
-        {typeFilter.length > 0 && (
+        {(typeFilter.length > 0 || categoryFilter.length > 0) && (
           <Button
             variant="ghost"
             size="sm"
             className="h-10 cursor-pointer"
-            onClick={clearTypeFilter}
+            onClick={() => {
+              clearTypeFilter()
+              clearCategoryFilter()
+            }}
           >
             Limpar
           </Button>
@@ -320,19 +410,40 @@ export default function ProductsPage() {
       </div>
 
       {/* Filtros Ativos */}
-      {typeFilter.length > 0 && (
+      {(typeFilter.length > 0 || categoryFilter.length > 0) && (
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm text-gray-600">Filtros ativos:</span>
           {typeFilter.map(filter => (
-            <Badge key={filter} variant="secondary" className="gap-1.5">
-              {filter === 'ingredientes' ? 'Ingredientes' : 'Materiais'}
+            <div
+              key={filter}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border bg-[var(--color-lavender-blush)] text-[var(--color-old-rose)] border-[var(--color-old-rose)]"
+            >
+              <span className="text-xs font-medium">
+                {filter === 'ingredientes' ? 'Ingredientes' : 'Materiais'}
+              </span>
               <button
                 onClick={() => toggleTypeFilter(filter)}
-                className="ml-1 hover:text-red-600"
+                className="hover:opacity-70"
+                title="Remover filtro"
               >
-                ×
+                <X className="w-3 h-3" />
               </button>
-            </Badge>
+            </div>
+          ))}
+          {categoryFilter.map(filter => (
+            <div
+              key={filter}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border bg-[var(--color-lavender-blush)] text-[var(--color-old-rose)] border-[var(--color-old-rose)]"
+            >
+              <span className="text-xs font-medium">{filter}</span>
+              <button
+                onClick={() => toggleCategoryFilter(filter)}
+                className="hover:opacity-70"
+                title="Remover categoria"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
           ))}
         </div>
       )}
@@ -379,7 +490,7 @@ export default function ProductsPage() {
         <div>
           {activeTab === 'ingredients' && <IngredientsTab shouldOpenModal={openModalForTab === 'ingredients'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} typeFilter={typeFilter} />}
           {activeTab === 'bases' && <BasesTab shouldOpenModal={openModalForTab === 'bases'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} />}
-          {activeTab === 'products' && <ProductsTab shouldOpenModal={openModalForTab === 'products'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} />}
+          {activeTab === 'products' && <ProductsTab shouldOpenModal={openModalForTab === 'products'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} categoryFilter={categoryFilter} />}
         </div>
       </div>
     </div>
@@ -393,27 +504,69 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [ingredientUsage, setIngredientUsage] = useState<Record<string, string[]>>({})
+  const [bases, setBases] = useState<BaseRecipe[]>([])
+  
+  // Função auxiliar para obter unidade padrão baseada nas configurações
+  const getDefaultUnit = useCallback(() => {
+    return settings.measurementUnit === 'metric-large' ? 'kg' : 'gramas'
+  }, [settings.measurementUnit])
+  
   const [formData, setFormData] = useState({
     type: 'ingredientes', // 'ingredientes' ou 'materiais'
     name: '',
     volume: '',
-    unit: 'gramas',
+    unit: getDefaultUnit(),
     average_cost: '',
-    loss_factor: '2'
+    loss_factor: '2',
+    image_url: ''
   })
 
   useEffect(() => {
     fetchIngredients()
+    fetchBases()
   }, [])
+
+  const fetchBases = async () => {
+    try {
+      const response = await fetch('/api/products/bases')
+      if (response.ok) {
+        const data = await response.json()
+        setBases(data)
+        
+        // Mapear quais ingredientes estão sendo usados em quais bases
+        const usage: Record<string, string[]> = {}
+        data.forEach((base: any) => {
+          if (base.base_recipe_items) {
+            base.base_recipe_items.forEach((item: any) => {
+              const ingredientId = item.ingredient_id || item.ingredients?.id
+              if (ingredientId) {
+                if (!usage[ingredientId]) {
+                  usage[ingredientId] = []
+                }
+                usage[ingredientId].push(base.name)
+              }
+            })
+          }
+        })
+        setIngredientUsage(usage)
+      }
+    } catch (error) {
+      console.error('Erro ao buscar bases:', error)
+    }
+  }
 
   useEffect(() => {
     if (shouldOpenModal) {
       setEditingId(null)
-      setFormData({ type: 'ingredientes', name: '', volume: '', unit: 'gramas', average_cost: '', loss_factor: '2' })
+      setImagePreview(null)
+      setFormData({ type: 'ingredientes', name: '', volume: '', unit: getDefaultUnit(), average_cost: '', loss_factor: '2', image_url: '' })
       setIsModalOpen(true)
       onModalClose()
     }
-  }, [shouldOpenModal, onModalClose])
+  }, [shouldOpenModal, onModalClose, getDefaultUnit])
 
   const fetchIngredients = async () => {
     try {
@@ -479,6 +632,23 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
     e.preventDefault()
     
     try {
+      // Preparar dados: converter unidades para o padrão do banco (g/ml)
+      const volumeValue = parseFloat(formData.volume)
+      const convertedVolume = convertToSmallUnit(volumeValue, formData.unit, settings.measurementUnit)
+      
+      // Mapear unidade para o padrão do banco
+      let dbUnit = formData.unit
+      if (settings.measurementUnit === 'metric-large') {
+        if (formData.unit === 'kg') dbUnit = 'gramas'
+        if (formData.unit === 'L') dbUnit = 'ml'
+      }
+      
+      const dataToSend = {
+        ...formData,
+        volume: convertedVolume.toString(),
+        unit: dbUnit
+      }
+      
       const url = editingId 
         ? `/api/products/ingredients?id=${editingId}`
         : '/api/products/ingredients'
@@ -486,7 +656,7 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
       const response = await fetch(url, {
         method: editingId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(dataToSend)
       })
 
       if (response.ok) {
@@ -514,13 +684,15 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
         
         setIsModalOpen(false)
         setEditingId(null)
+        setImagePreview(null)
         setFormData({
           type: 'ingredientes',
           name: '',
           volume: '',
           unit: 'gramas',
           average_cost: '',
-          loss_factor: '2'
+          loss_factor: '2',
+          image_url: ''
         })
       } else {
         const error = await response.json()
@@ -545,34 +717,133 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
   const handleCloseModal = () => {
     setIsModalOpen(false)
     setEditingId(null)
+    setImagePreview(null)
     setFormData({
       type: 'ingredientes',
       name: '',
       volume: '',
       unit: 'gramas',
       average_cost: '',
-      loss_factor: '2'
+      loss_factor: '2',
+      image_url: ''
     })
   }
 
   const handleEdit = (ingredient: Ingredient) => {
     setEditingId(ingredient.id)
+    
+    // Converter valores do banco (g/ml) para a unidade de exibição
+    const volumeValue = ingredient.volume || 0
+    const baseUnit = ingredient.unit || 'gramas'
+    const convertedVolume = convertFromSmallUnit(volumeValue, baseUnit, settings.measurementUnit)
+    
+    // Mapear unidade para exibição
+    let displayUnit = baseUnit
+    if (settings.measurementUnit === 'metric-large') {
+      if (baseUnit === 'gramas') displayUnit = 'kg'
+      if (baseUnit === 'ml') displayUnit = 'L'
+    }
+    
+    // Definir preview da imagem se houver
+    if ((ingredient as any).image_url) {
+      setImagePreview((ingredient as any).image_url)
+    }
+    
     setFormData({
       type: ingredient.type || 'ingredientes',
       name: ingredient.name || '',
-      volume: ingredient.volume?.toString() || '',
-      unit: ingredient.unit || 'gramas',
+      volume: convertedVolume.toString(),
+      unit: displayUnit,
       average_cost: ingredient.average_cost?.toString() || '',
-      loss_factor: ingredient.loss_factor?.toString() || '2'
+      loss_factor: ingredient.loss_factor?.toString() || '2',
+      image_url: (ingredient as any).image_url || ''
     })
     setIsModalOpen(true)
+  }
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const base64String = reader.result as string
+        setImagePreview(base64String)
+        setFormData(prev => ({ ...prev, image_url: base64String }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const removeAvatar = () => {
+    setImagePreview(null)
+    setFormData(prev => ({ ...prev, image_url: '' }))
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   return (
     <div>
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Insumo" : "Novo Insumo"}>
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
+          <div className="space-y-4">{settings.showIngredientPhoto && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Foto do Insumo</label>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <label className="cursor-pointer group">
+                      <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative">
+                        {imagePreview ? (
+                          <>
+                            <Image
+                              src={imagePreview}
+                              alt="Preview"
+                              fill
+                              className="object-cover"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <div className="bg-white bg-opacity-90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                                <SwitchCamera className="w-5 h-5 text-gray-700" />
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Package className="w-12 h-12 text-gray-400 group-hover:text-gray-500 transition-colors" />
+                            <div className="absolute inset-0 bg-gray-100 group-hover:bg-gray-200 transition-colors flex items-center justify-center">
+                              <div className="flex flex-col items-center">
+                                <Camera className="w-6 h-6 text-gray-400" />
+                                <span className="text-xs text-gray-500 mt-1">Adicionar</span>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                    </label>
+                    {imagePreview && (
+                      <button
+                        type="button"
+                        onClick={removeAvatar}
+                        className="absolute -top-1 -right-1 hover:scale-110 transition-transform"
+                      >
+                        <CircleX className="w-5 h-5 text-[#D67973] hover:text-[#C86561] transition-colors" />
+                      </button>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
+                    <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
+                  </div>
+                </div>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Insumo *</label>
               <select 
@@ -587,8 +858,8 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
                 }}
                 className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 bg-white"
               >
-                <option value="ingredientes">Ingredientes</option>
-                <option value="materiais">Materiais</option>
+                <option value="ingredientes">Ingrediente</option>
+                <option value="materiais">Material</option>
               </select>
             </div>
             <div>
@@ -611,11 +882,9 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
                 onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                 className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-500 bg-white"
               >
-                <option value="gramas">Gramas (g)</option>
-                <option value="kg">Quilogramas (kg)</option>
-                <option value="ml">Mililitros (ml)</option>
-                <option value="litros">Litros (L)</option>
-                <option value="unidades">Unidades</option>
+                {getUnitOptions(settings.measurementUnit).map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -671,14 +940,30 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
           </div>
           <div className="flex gap-2 mt-6 justify-end">
             {editingId && (
-              <button
-                type="button"
-                onClick={() => setDeleteDialogOpen(true)}
-                className="btn-outline-danger"
-              >
-                <Trash2 className="w-4 h-4" />
-                Excluir Insumo
-              </button>
+              <div className="relative group">
+                <button
+                  type="button"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  disabled={!!(editingId && ingredientUsage[editingId]?.length > 0)}
+                  className="btn-outline-danger disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Excluir Insumo
+                </button>
+                {editingId && ingredientUsage[editingId]?.length > 0 && (
+                  <div className="invisible group-hover:visible absolute bottom-full mb-2 left-0 w-[280px] bg-white text-[var(--color-licorice)] text-xs rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '15px' }}>
+                    <p className="font-medium mb-2">Não pode ser excluído. Usado em:</p>
+                    <ul className="list-none space-y-1">
+                      {ingredientUsage[editingId].map((baseName, idx) => (
+                        <li key={idx} className="flex items-start">
+                          <span className="mr-2">•</span>
+                          <span>{baseName}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             )}
             <button 
               type="submit"
@@ -757,6 +1042,7 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
+                {settings.showIngredientPhoto && <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm w-20"></th>}
                 <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Insumo</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Quantidade</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Custo Médio</th>
@@ -765,21 +1051,49 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
               </tr>
             </thead>
             <tbody>
-              {filteredIngredients.map((ingredient) => (
-                <tr 
-                  key={ingredient.id} 
-                  className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => handleEdit(ingredient)}
-                >
-                  <td className="py-3 px-4 text-sm text-gray-900">{ingredient.name}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">
-                    {formatSmartNumber(ingredient.volume)} {getUnitAbbreviation(ingredient.unit)}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-600">R$ {formatSmartNumber(ingredient.average_cost, 2, true)}</td>
-                  <td className="py-3 px-4 text-sm text-gray-900 font-medium">R$ {formatSmartNumber(ingredient.unit_cost, 5, true)}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{formatSmartNumber(ingredient.loss_factor, 2, true)}%</td>
-                </tr>
-              ))}
+              {filteredIngredients.map((ingredient) => {
+                // Converter volume do banco (g/ml) para unidade de exibição
+                const displayVolume = convertFromSmallUnit(ingredient.volume, ingredient.unit, settings.measurementUnit)
+                const displayUnit = ingredient.unit === 'gramas' && settings.measurementUnit === 'metric-large' 
+                  ? 'kg' 
+                  : ingredient.unit === 'ml' && settings.measurementUnit === 'metric-large'
+                  ? 'L'
+                  : ingredient.unit
+                
+                return (
+                  <tr 
+                    key={ingredient.id} 
+                    className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={() => handleEdit(ingredient)}
+                  >
+                    {settings.showIngredientPhoto && (
+                      <td className="py-3 px-4">
+                        {(ingredient as any).image_url ? (
+                          <div className="relative w-12 h-12 rounded-full overflow-hidden border border-gray-200">
+                            <Image
+                              src={(ingredient as any).image_url}
+                              alt={ingredient.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center">
+                            <Package className="w-5 h-5 text-gray-400" />
+                          </div>
+                        )}
+                      </td>
+                    )}
+                    <td className="py-3 px-4 text-sm text-gray-900">{ingredient.name}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">
+                      {formatSmartNumber(displayVolume)} {getUnitAbbreviation(displayUnit)}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-600">R$ {formatSmartNumber(ingredient.average_cost, 2, true)}</td>
+                    <td className="py-3 px-4 text-sm text-gray-900 font-medium">R$ {formatSmartNumber(ingredient.unit_cost, 5, true)}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{formatSmartNumber(ingredient.loss_factor, 2, true)}%</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}
@@ -796,30 +1110,74 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [baseUsage, setBaseUsage] = useState<Record<string, string[]>>({})
+  const [products, setProducts] = useState<FinalProduct[]>([])
+  
+  // Função auxiliar para obter unidade padrão baseada nas configurações
+  const getDefaultUnit = useCallback(() => {
+    return settings.measurementUnit === 'metric-large' ? 'kg' : 'gramas'
+  }, [settings.measurementUnit])
+  
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     loss_factor: '2',
-    unit: 'gramas',
+    unit: getDefaultUnit(),
     yield: '',
-    items: [] as { ingredient_id: string; quantity: string }[]
+    items: [] as { ingredient_id: string; quantity: string }[],
+    image_url: ''
   })
   const [newItem, setNewItem] = useState({ ingredient_id: '', quantity: '' })
 
   useEffect(() => {
     fetchBases()
     fetchIngredients()
+    fetchProducts()
   }, [])
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('/api/products/pricing')
+      if (response.ok) {
+        const data = await response.json()
+        setProducts(data)
+        
+        // Mapear quais bases estão sendo usadas em quais produtos
+        const usage: Record<string, string[]> = {}
+        data.forEach((product: any) => {
+          if (product.final_product_items) {
+            product.final_product_items.forEach((item: any) => {
+              if (item.item_type === 'base_recipe') {
+                const baseId = item.base_recipe_id || item.base_recipes?.id
+                if (baseId) {
+                  if (!usage[baseId]) {
+                    usage[baseId] = []
+                  }
+                  usage[baseId].push(product.name)
+                }
+              }
+            })
+          }
+        })
+        setBaseUsage(usage)
+      }
+    } catch (error) {
+      console.error('Erro ao buscar produtos:', error)
+    }
+  }
 
   useEffect(() => {
     if (shouldOpenModal) {
       setEditingId(null)
-      setFormData({ name: '', description: '', loss_factor: '2', unit: 'gramas', yield: '', items: [] })
+      setImagePreview(null)
+      setFormData({ name: '', description: '', loss_factor: '2', unit: getDefaultUnit(), yield: '', items: [], image_url: '' })
       setNewItem({ ingredient_id: '', quantity: '' })
       setIsModalOpen(true)
       onModalClose()
     }
-  }, [shouldOpenModal, onModalClose])
+  }, [shouldOpenModal, onModalClose, getDefaultUnit])
 
   const fetchBases = async () => {
     try {
@@ -881,6 +1239,23 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
     e.preventDefault()
     
     try {
+      // Converter valores para o padrão do banco (g/ml)
+      const yieldValue = parseFloat(formData.yield)
+      const convertedYield = convertToSmallUnit(yieldValue, formData.unit, settings.measurementUnit)
+      
+      // Mapear unidade para o padrão do banco
+      let dbUnit = formData.unit
+      if (settings.measurementUnit === 'metric-large') {
+        if (formData.unit === 'kg') dbUnit = 'gramas'
+        if (formData.unit === 'L') dbUnit = 'ml'
+      }
+      
+      const dataToSend = {
+        ...formData,
+        yield: convertedYield.toString(),
+        unit: dbUnit
+      }
+      
       const url = editingId 
         ? `/api/products/bases?id=${editingId}`
         : '/api/products/bases'
@@ -888,7 +1263,7 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
       const response = await fetch(url, {
         method: editingId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(dataToSend)
       })
 
       if (response.ok) {
@@ -916,13 +1291,15 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
         
         setIsModalOpen(false)
         setEditingId(null)
+        setImagePreview(null)
         setFormData({
           name: '',
           description: '',
           loss_factor: '2',
           unit: 'gramas',
           yield: '',
-          items: []
+          items: [],
+          image_url: ''
         })
       } else {
         const error = await response.json()
@@ -946,16 +1323,35 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
 
   const handleEdit = (base: BaseRecipe) => {
     setEditingId(base.id)
+    
+    // Converter valores do banco (g/ml) para a unidade de exibição
+    const baseUnit = (base as any).unit || 'gramas'
+    const yieldValue = parseFloat((base as any).yield || '0')
+    const convertedYield = convertFromSmallUnit(yieldValue, baseUnit, settings.measurementUnit)
+    
+    // Mapear unidade para exibição
+    let displayUnit = baseUnit
+    if (settings.measurementUnit === 'metric-large') {
+      if (baseUnit === 'gramas') displayUnit = 'kg'
+      if (baseUnit === 'ml') displayUnit = 'L'
+    }
+    
+    // Definir preview da imagem se houver
+    if ((base as any).image_url) {
+      setImagePreview((base as any).image_url)
+    }
+    
     setFormData({
       name: base.name,
       description: base.description || '',
       loss_factor: base.loss_factor.toString(),
-      unit: (base as any).unit || 'gramas',
-      yield: (base as any).yield?.toString() || '',
+      unit: displayUnit,
+      yield: convertedYield.toString(),
       items: (base.base_recipe_items || []).map(item => ({
         ingredient_id: item.ingredients?.id || item.ingredient_id,
         quantity: item.quantity.toString()
-      }))
+      })),
+      image_url: (base as any).image_url || ''
     })
     setIsModalOpen(true)
   }
@@ -963,14 +1359,37 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
   const handleCloseModal = () => {
     setIsModalOpen(false)
     setEditingId(null)
+    setImagePreview(null)
     setFormData({
       name: '',
       description: '',
       loss_factor: '2',
       unit: 'gramas',
       yield: '',
-      items: []
+      items: [],
+      image_url: ''
     })
+  }
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const base64String = reader.result as string
+        setImagePreview(base64String)
+        setFormData(prev => ({ ...prev, image_url: base64String }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const removeAvatar = () => {
+    setImagePreview(null)
+    setFormData(prev => ({ ...prev, image_url: '' }))
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   return (
@@ -978,6 +1397,64 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Base de Preparo" : "Nova Base de Preparo"}>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 mb-4">
+            {settings.showBasePhoto && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Foto da Base</label>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <label className="cursor-pointer group">
+                      <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative">
+                        {imagePreview ? (
+                          <>
+                            <Image
+                              src={imagePreview}
+                              alt="Preview"
+                              fill
+                              className="object-cover"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <div className="bg-white bg-opacity-90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                                <SwitchCamera className="w-5 h-5 text-gray-700" />
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Layers className="w-12 h-12 text-gray-400 group-hover:text-gray-500 transition-colors" />
+                            <div className="absolute inset-0 bg-gray-100 group-hover:bg-gray-200 transition-colors flex items-center justify-center">
+                              <div className="flex flex-col items-center">
+                                <Camera className="w-6 h-6 text-gray-400" />
+                                <span className="text-xs text-gray-500 mt-1">Adicionar</span>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                    </label>
+                    {imagePreview && (
+                      <button
+                        type="button"
+                        onClick={removeAvatar}
+                        className="absolute -top-1 -right-1 hover:scale-110 transition-transform"
+                      >
+                        <CircleX className="w-5 h-5 text-[#D67973] hover:text-[#C86561] transition-colors" />
+                      </button>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
+                    <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
+                  </div>
+                </div>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Base *</label>
               <input
@@ -1010,11 +1487,9 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
                 onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                 className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-500 bg-white"
               >
-                <option value="gramas">Gramas (g)</option>
-                <option value="kg">Quilogramas (kg)</option>
-                <option value="ml">Mililitros (ml)</option>
-                <option value="litros">Litros (L)</option>
-                <option value="unidades">Unidades</option>
+                {getUnitOptions(settings.measurementUnit).map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -1075,8 +1550,8 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
                   onChange={(e) => setNewItem({ ...newItem, ingredient_id: e.target.value })}
                   className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-500 bg-white"
                 >
-                  <option value="">Selecione um insumo</option>
-                  {ingredients.map((ing) => (
+                  <option value="">Selecione um ingrediente</option>
+                  {ingredients.filter(ing => ing.type === 'ingredientes' || !ing.type).map((ing) => (
                     <option key={ing.id} value={ing.id}>{ing.name}</option>
                   ))}
                 </select>
@@ -1105,14 +1580,30 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
 
           <div className="flex gap-2 mt-6 justify-end">
             {editingId && (
-              <button
-                type="button"
-                onClick={() => setDeleteDialogOpen(true)}
-                className="btn-outline-danger"
-              >
-                <Trash2 className="w-4 h-4" />
-                Excluir Base
-              </button>
+              <div className="relative group">
+                <button
+                  type="button"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  disabled={!!(editingId && baseUsage[editingId]?.length > 0)}
+                  className="btn-outline-danger disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Excluir Base
+                </button>
+                {editingId && baseUsage[editingId]?.length > 0 && (
+                  <div className="invisible group-hover:visible absolute bottom-full mb-2 left-0 w-[280px] bg-white text-[var(--color-licorice)] text-xs rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '15px' }}>
+                    <p className="font-medium mb-2">Não pode ser excluída. Usada em:</p>
+                    <ul className="list-none space-y-1">
+                      {baseUsage[editingId].map((productName, idx) => (
+                        <li key={idx} className="flex items-start">
+                          <span className="mr-2">•</span>
+                          <span>{productName}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             )}
             <button 
               type="submit"
@@ -1131,48 +1622,63 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Base</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir esta base? Esta ação não pode ser desfeita.
+              {editingId && baseUsage[editingId]?.length > 0 ? (
+                <>
+                  Não é possível excluir esta base pois ela está sendo usada nos seguintes produtos:
+                  <ul className="mt-2 ml-4 list-disc text-gray-700">
+                    {baseUsage[editingId].map((productName, idx) => (
+                      <li key={idx}>
+                        <span>{productName}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                'Tem certeza que deseja excluir esta base? Esta ação não pode ser desfeita.'
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="btn-outline-grey">
-              Cancelar
+              {editingId && baseUsage[editingId]?.length > 0 ? 'Fechar' : 'Cancelar'}
             </AlertDialogCancel>
-            <AlertDialogAction
-              className="btn-danger"
-              onClick={async () => {
-                if (editingId) {
-                  try {
-                    const response = await fetch(`/api/products/bases/${editingId}`, {
-                      method: 'DELETE',
-                    })
-                    if (response.ok) {
+            {(!editingId || !baseUsage[editingId] || baseUsage[editingId].length === 0) && (
+              <AlertDialogAction
+                className="btn-danger"
+                onClick={async () => {
+                  if (editingId) {
+                    try {
+                      const response = await fetch(`/api/products/bases/${editingId}`, {
+                        method: 'DELETE',
+                      })
+                      if (response.ok) {
+                        showToast({
+                          title: 'Base excluída!',
+                          message: 'A base foi removida com sucesso.',
+                          variant: 'success',
+                          duration: 3000,
+                        })
+                        setIsModalOpen(false)
+                        setDeleteDialogOpen(false)
+                        fetchBases()
+                      } else {
+                        throw new Error('Erro ao excluir base')
+                      }
+                    } catch (error) {
+                      console.error('Erro ao excluir:', error)
                       showToast({
-                        title: 'Base excluída!',
-                        message: 'A base foi removida com sucesso.',
-                        variant: 'success',
+                        title: 'Erro',
+                        message: 'Não foi possível excluir a base.',
+                        variant: 'error',
                         duration: 3000,
                       })
-                      setIsModalOpen(false)
-                      setDeleteDialogOpen(false)
-                      fetchBases()
-                    } else {
-                      throw new Error('Erro ao excluir base')
                     }
-                  } catch (error) {
-                    console.error('Erro ao excluir:', error)
-                    showToast({
-                      title: 'Erro',
-                      message: 'Não foi possível excluir a base.',
-                      variant: 'error',
-                      duration: 3000,
-                    })
                   }
-                }
-              }}
-            >
-              Excluir
-            </AlertDialogAction>
+                }}
+              >
+                Excluir
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -1188,28 +1694,51 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
             {searchQuery ? 'Nenhuma base encontrada' : 'Nenhuma base cadastrada. Clique em "+ Nova Base" para começar.'}
           </div>
         ) : (
-          filteredBases.map((base) => (
-            <div 
-              key={base.id} 
-              className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200"
-              onClick={() => handleEdit(base)}
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h3 className="font-semibold text-gray-900">{base.name}</h3>
-                  <p className="text-sm text-gray-500">Fator de Perda: {formatSmartNumber(base.loss_factor, 2, true)}%</p>
-                  {(base as any).yield && (base as any).unit && (
-                    <p className="text-sm text-gray-500">
-                      Rendimento: {formatInteger(parseFloat((base as any).yield))} {getUnitAbbreviation((base as any).unit)}
-                    </p>
-                  )}
-                  {base.description && <p className="text-sm text-gray-600 mt-1">{base.description}</p>}
+          filteredBases.map((base) => {
+            // Converter yield do banco (g/ml) para unidade de exibição
+            const baseUnit = (base as any).unit || 'gramas'
+            const yieldValue = parseFloat((base as any).yield || '0')
+            const displayYield = convertFromSmallUnit(yieldValue, baseUnit, settings.measurementUnit)
+            const displayUnit = baseUnit === 'gramas' && settings.measurementUnit === 'metric-large' 
+              ? 'kg' 
+              : baseUnit === 'ml' && settings.measurementUnit === 'metric-large'
+              ? 'L'
+              : baseUnit
+            
+            return (
+              <div 
+                key={base.id} 
+                className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200"
+                onClick={() => handleEdit(base)}
+              >
+                {settings.showBasePhoto && (base as any).image_url && (
+                  <div className="mb-3">
+                    <div className="relative w-full h-40 rounded-lg overflow-hidden border border-gray-200">
+                      <Image
+                        src={(base as any).image_url}
+                        alt={base.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{base.name}</h3>
+                    <p className="text-sm text-gray-500">Fator de Perda: {formatSmartNumber(base.loss_factor, 2, true)}%</p>
+                    {yieldValue > 0 && displayUnit && (
+                      <p className="text-sm text-gray-500">
+                        Rendimento: {formatSmartNumber(displayYield)} {getUnitAbbreviation(displayUnit)}
+                      </p>
+                    )}
+                    {base.description && <p className="text-sm text-gray-600 mt-1">{base.description}</p>}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-gray-900">R$ {formatBRL(base.total_cost || 0, 2)}</p>
+                    <p className="text-xs text-gray-500">Custo Total</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-gray-900">R$ {formatBRL(base.total_cost || 0, 2)}</p>
-                  <p className="text-xs text-gray-500">Custo Total</p>
-                </div>
-              </div>
               {base.base_recipe_items && base.base_recipe_items.length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -1224,11 +1753,20 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
                     <tbody>
                       {base.base_recipe_items.map((item: any) => {
                         const subtotal = item.quantity * (item.ingredients?.unit_cost || 0)
+                        // Converter quantidade do ingrediente
+                        const ingUnit = item.ingredients?.unit || 'gramas'
+                        const displayQuantity = convertFromSmallUnit(item.quantity, ingUnit, settings.measurementUnit)
+                        const displayIngUnit = ingUnit === 'gramas' && settings.measurementUnit === 'metric-large' 
+                          ? 'kg' 
+                          : ingUnit === 'ml' && settings.measurementUnit === 'metric-large'
+                          ? 'L'
+                          : ingUnit
+                        
                         return (
                           <tr key={item.id} className="border-b border-gray-100">
                             <td className="py-2 px-2 text-gray-900">{item.ingredients?.name}</td>
                             <td className="py-2 px-2 text-gray-600">
-                              {formatSmartNumber(item.quantity, 2)} {getUnitAbbreviation(item.ingredients?.unit || '')}
+                              {formatSmartNumber(displayQuantity, 2)} {getUnitAbbreviation(displayIngUnit)}
                             </td>
                             <td className="py-2 px-2 text-gray-600">R$ {formatSmartNumber(item.ingredients?.unit_cost || 0, 5, true)}</td>
                             <td className="py-2 px-2 text-gray-900 font-medium">R$ {formatSmartNumber(subtotal, 4, true)}</td>
@@ -1267,14 +1805,15 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
                 </div>
               )}
             </div>
-          ))
+            )
+          })
         )}
       </div>
     </div>
   )
 }
 
-function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { shouldOpenModal: boolean; onModalClose: () => void; searchQuery: string; sortOrder: 'asc' | 'desc' | null }) {
+function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, categoryFilter }: { shouldOpenModal: boolean; onModalClose: () => void; searchQuery: string; sortOrder: 'asc' | 'desc' | null; categoryFilter: string[] }) {
   const settings = useProductSettings()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -1282,8 +1821,11 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [bases, setBases] = useState<BaseRecipe[]>([])
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [categories, setCategories] = useState<string[]>([])
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -1291,9 +1833,10 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
     loss_factor: '2',
     selling_price: '',
     profit_margin: '',
+    image: null as File | null,
     items: [] as { item_type: string; item_id: string; quantity: string }[]
   })
-  const [newItem, setNewItem] = useState({ item_type: 'ingredient', item_id: '', quantity: '' })
+  const [newItem, setNewItem] = useState({ item_type: 'base_recipe', item_id: '', quantity: '' })
 
   useEffect(() => {
     fetchProducts()
@@ -1338,9 +1881,11 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
         loss_factor: '2',
         selling_price: '',
         profit_margin: '',
+        image: null,
         items: []
       })
-      setNewItem({ item_type: 'ingredient', item_id: '', quantity: '' })
+      setImagePreview(null)
+      setNewItem({ item_type: 'base_recipe', item_id: '', quantity: '' })
       setIsModalOpen(true)
       onModalClose()
     }
@@ -1365,6 +1910,13 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
     product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.category.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  // Aplica filtro de categoria
+  if (categoryFilter.length > 0) {
+    filteredProducts = filteredProducts.filter(product =>
+      categoryFilter.includes(product.category)
+    )
+  }
 
   // Ordena somente se sortOrder foi definido
   if (sortOrder !== null) {
@@ -1418,15 +1970,28 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    setSaving(true)
+    
     try {
       const url = editingId 
         ? `/api/products/pricing?id=${editingId}`
         : '/api/products/pricing'
       
+      const dataToSend = {
+        name: formData.name,
+        category: formData.category,
+        description: formData.description,
+        loss_factor: formData.loss_factor,
+        selling_price: formData.selling_price,
+        profit_margin: formData.profit_margin,
+        image_url: imagePreview,
+        items: formData.items
+      }
+      
       const response = await fetch(url, {
         method: editingId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(dataToSend)
       })
 
       if (response.ok) {
@@ -1461,8 +2026,10 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
           loss_factor: '2',
           selling_price: '',
           profit_margin: '',
+          image: null,
           items: []
         })
+        setImagePreview(null)
       } else {
         const error = await response.json()
         showToast({
@@ -1480,6 +2047,8 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
         variant: 'error',
         duration: 4000,
       })
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -1493,12 +2062,14 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
       loss_factor: '2',
       selling_price: '',
       profit_margin: '',
+      image: null,
       items: []
     })
+    setImagePreview(null)
   }
 
   const getItemName = (item: any) => {
-    if (item.item_type === 'ingredient') {
+    if (item.item_type === 'material') {
       const ing = ingredients.find(i => i.id === item.item_id)
       return ing?.name || 'Item não encontrado'
     } else {
@@ -1516,12 +2087,16 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
       loss_factor: product.loss_factor.toString(),
       selling_price: product.selling_price?.toString() || '',
       profit_margin: product.profit_margin?.toString() || '',
+      image: null,
       items: (product.final_product_items || []).map(item => ({
         item_type: item.item_type,
-        item_id: item.item_type === 'ingredient' ? item.ingredients?.id || item.ingredient_id : item.base_recipes?.id || item.base_recipe_id,
+        item_id: item.item_type === 'material' ? item.ingredients?.id || item.ingredient_id : item.base_recipes?.id || item.base_recipe_id,
         quantity: item.quantity.toString()
       }))
     })
+    if (product.image_url) {
+      setImagePreview(product.image_url)
+    }
     setIsModalOpen(true)
   }
 
@@ -1530,6 +2105,78 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Produto Final" : "Novo Produto Final"} maxWidth="750px">
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 mb-4">
+            {/* Foto do Produto */}
+            {settings.showProductPhoto && (
+              <div className="mb-6 pb-6 border-b border-gray-200">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <label className="cursor-pointer group">
+                      <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative">
+                      {imagePreview ? (
+                        <>
+                          <Image 
+                            src={imagePreview} 
+                            alt="Preview" 
+                            fill
+                            className="object-cover" 
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="bg-white bg-opacity-90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                              <SwitchCamera className="w-5 h-5 text-gray-700" />
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingBag className="w-12 h-12 text-gray-400 group-hover:text-gray-500 transition-colors" />
+                          <div className="absolute inset-0 bg-gray-100 group-hover:bg-gray-200 transition-colors flex items-center justify-center">
+                            <div className="flex flex-col items-center">
+                              <Camera className="w-6 h-6 text-gray-400" />
+                              <span className="text-xs text-gray-500 mt-1">Adicionar</span>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          setFormData(prev => ({ ...prev, image: file }))
+                          const reader = new FileReader()
+                          reader.onloadend = () => {
+                            setImagePreview(reader.result as string)
+                          }
+                          reader.readAsDataURL(file)
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                  {imagePreview && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagePreview(null)
+                        setFormData(prev => ({ ...prev, image: null }))
+                      }}
+                      className="absolute -top-1 -right-1 hover:scale-110 transition-transform"
+                    >
+                      <CircleX className="w-5 h-5 text-[#D67973] hover:text-[#C86561] transition-colors" />
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
+                  <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
+                </div>
+              </div>
+            </div>
+            )}
+
             {/* 1. Nome */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Produto *</label>
@@ -1572,7 +2219,7 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
                 {formData.items.map((item, index) => (
                   <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                     <span className="text-sm text-gray-900">
-                      {item.item_type === 'ingredient' ? '📦 Ingrediente' : '🥄 Material'}: {getItemName(item)} - {item.quantity}
+                      {item.item_type === 'base_recipe' ? '🥄 Base' : '📦 Material'}: {getItemName(item)} - {item.quantity}
                     </span>
                     <button
                       type="button"
@@ -1593,8 +2240,8 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
                   onChange={(e) => setNewItem({ ...newItem, item_type: e.target.value, item_id: '' })}
                   className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-500 bg-white"
                 >
-                  <option value="ingredient">Ingrediente</option>
-                  <option value="base_recipe">Material</option>
+                  <option value="base_recipe">Base</option>
+                  <option value="material">Material</option>
                 </select>
               </div>
               <div className="md:col-span-2">
@@ -1604,8 +2251,8 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
                   className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-500 bg-white"
                 >
                   <option value="">Selecione</option>
-                  {newItem.item_type === 'ingredient' 
-                    ? ingredients.map((ing) => (
+                  {newItem.item_type === 'material' 
+                    ? ingredients.filter(ing => ing.type === 'materiais').map((ing) => (
                         <option key={ing.id} value={ing.id}>{ing.name}</option>
                       ))
                     : bases.map((base) => (
@@ -1697,10 +2344,20 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
             )}
             <button 
               type="submit"
-              className="btn-success"
+              disabled={saving}
+              className="btn-success disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Check className="w-4 h-4" />
-              {editingId ? 'Atualizar Produto' : 'Salvar Produto'}
+              {saving ? (
+                <>
+                  <Spinner size="small" className="text-white" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  {editingId ? 'Atualizar Produto' : 'Salvar Produto'}
+                </>
+              )}
             </button>
           </div>
         </form>
@@ -1724,7 +2381,7 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
               onClick={async () => {
                 if (editingId) {
                   try {
-                    const response = await fetch(`/api/products/${editingId}`, {
+                    const response = await fetch(`/api/products/pricing?id=${editingId}`, {
                       method: 'DELETE',
                     })
                     if (response.ok) {
@@ -1784,32 +2441,45 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
                 onClick={() => handleEdit(product)}
               >
                 <div className="flex justify-between items-start gap-6">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 text-lg mb-1">{product.name}</h3>
-                    <p className="text-sm text-gray-500">
-                      Categoria: {product.category} | Perda: {formatSmartNumber(product.loss_factor, 2, true)}%
-                    </p>
-                    {product.description && <p className="text-sm text-gray-600 mt-1">{product.description}</p>}
+                  <div className="flex items-start gap-4 flex-1">
+                    {/* Foto do Produto */}
+                    {settings.showProductPhoto && product.image_url && (
+                      <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 relative">
+                        <Image
+                          src={product.image_url}
+                          alt={product.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
                     
-                    {/* Tabela de itens integrada */}
-                    {product.final_product_items && product.final_product_items.length > 0 && (
-                      <div className="mt-4">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-gray-200">
-                              <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Tipo</th>
-                              <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Item</th>
-                              <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Qtde</th>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 text-lg mb-1">{product.name}</h3>
+                      <p className="text-sm text-gray-500">
+                        Categoria: {product.category} | Perda: {formatSmartNumber(product.loss_factor, 2, true)}%
+                      </p>
+                      {product.description && <p className="text-sm text-gray-600 mt-1">{product.description}</p>}
+                      
+                      {/* Tabela de itens integrada */}
+                      {product.final_product_items && product.final_product_items.length > 0 && (
+                        <div className="mt-4">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b border-gray-200">
+                                <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Tipo</th>
+                                <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Item</th>
+                                <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Qtde</th>
                             </tr>
                           </thead>
                           <tbody>
                             {product.final_product_items.map((item: any) => (
                               <tr key={item.id} className="border-b border-gray-100">
                                 <td className="py-2 px-2 text-gray-600">
-                                  {item.item_type === 'ingredient' ? 'Ingrediente' : 'Material'}
+                                  {item.item_type === 'base_recipe' ? 'Base' : 'Material'}
                                 </td>
                                 <td className="py-2 px-2 text-gray-900">
-                                  {item.item_type === 'ingredient' 
+                                  {item.item_type === 'material' 
                                     ? item.ingredients?.name 
                                     : item.base_recipes?.name}
                                 </td>
@@ -1820,6 +2490,7 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: 
                         </table>
                       </div>
                     )}
+                    </div>
                   </div>
                   
                   {/* Coluna consolidada de valores */}

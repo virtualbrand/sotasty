@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, volume, unit, average_cost, loss_factor, type } = body
+    const { name, volume, unit, average_cost, loss_factor, type, image_url } = body
 
     if (!name || !volume || !unit || average_cost === undefined || loss_factor === undefined) {
       return NextResponse.json({ error: 'Dados incompletos' }, { status: 400 })
@@ -54,7 +54,8 @@ export async function POST(request: NextRequest) {
           unit,
           average_cost: parseFloat(average_cost),
           loss_factor: parseFloat(loss_factor),
-          type: type || 'ingredientes'
+          type: type || 'ingredientes',
+          image_url: image_url || null
         }
       ])
       .select()
@@ -83,7 +84,7 @@ export async function PATCH(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     const body = await request.json()
-    const { name, volume, unit, average_cost, loss_factor, type } = body
+    const { name, volume, unit, average_cost, loss_factor, type, image_url } = body
 
     if (!id) {
       return NextResponse.json({ error: 'ID não fornecido' }, { status: 400 })
@@ -97,7 +98,8 @@ export async function PATCH(request: NextRequest) {
         unit,
         average_cost: parseFloat(average_cost),
         loss_factor: parseFloat(loss_factor),
-        type: type || 'ingredientes'
+        type: type || 'ingredientes',
+        image_url: image_url || null
       })
       .eq('id', id)
       .eq('user_id', user.id)
