@@ -1,25 +1,25 @@
-# Sistema de Gerenciamento de Usuários - CakeCloud
+# Sistema de Gerenciamento de Usuários - SoTasty
 
 ## Visão Geral
 
-O CakeCloud implementa um sistema de gerenciamento de usuários com três níveis de permissão e funcionalidade de convites por e-mail.
+O SoTasty implementa um sistema de gerenciamento de usuários com três níveis de permissão e funcionalidade de convites por e-mail.
 
 ## Tipos de Usuário
 
 ### 1. Superadmin
-- **Descrição**: Dono do software CakeCloud
+- **Descrição**: Dono do software SoTasty
 - **Acesso**: View diferenciada com dashboards e relatórios do SaaS
 - **Permissões**: Controle total sobre todas as contas e configurações do sistema
 
 ### 2. Admin (Administrador)
-- **Descrição**: Dono da confeitaria/doceria
+- **Descrição**: Dono do negócio gastronômico
 - **Acesso**: Controle total sobre sua própria conta
 - **Permissões**:
   - Gerenciar todos os aspectos do negócio
   - Convidar novos usuários para o workspace
   - Configurar permissões granulares para membros
   - Remover membros do workspace
-- **Criação**: Automaticamente atribuído quando um usuário cria conta na CakeCloud
+- **Criação**: Automaticamente atribuído quando um usuário cria conta na SoTasty
 
 ### 3. Member (Membro)
 - **Descrição**: Usuário convidado por um Admin

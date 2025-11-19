@@ -17,7 +17,7 @@ export default function AtendimentoPage() {
     {
       id: '1',
       role: 'assistant',
-      content: 'Olá! Sou o assistente virtual da CakeCloud. Como posso ajudá-lo hoje?',
+      content: 'Olá! Sou o assistente virtual da SoTasty. Como posso ajudá-lo hoje?',
       timestamp: new Date()
     }
   ])
@@ -114,7 +114,7 @@ export default function AtendimentoPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-900">Atendimento Virtual</h1>
-            <p className="text-sm text-gray-500">Assistente CakeCloud</p>
+            <p className="text-sm text-gray-500">Assistente SoTasty</p>
           </div>
         </div>
       </div>

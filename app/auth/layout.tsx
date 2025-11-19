@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "CakeCloud - Login",
-  description: "Acesse sua conta CakeCloud",
+  title: "SoTasty - Login",
+  description: "Acesse sua conta SoTasty",
 };
 
 export default function AuthLayout({

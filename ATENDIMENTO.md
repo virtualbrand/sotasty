@@ -4,7 +4,7 @@ Este documento explica como funciona o módulo de Atendimento integrado com o Op
 
 ## 🤖 Sobre o Assistente
 
-O módulo de Atendimento utiliza o OpenAI Assistant API para fornecer suporte automatizado aos usuários da plataforma CakeCloud. O assistente está configurado para:
+O módulo de Atendimento utiliza o OpenAI Assistant API para fornecer suporte automatizado aos usuários da plataforma SoTasty. O assistente está configurado para:
 
 - Responder perguntas sobre funcionalidades da plataforma
 - Ajudar na gestão de produtos, pedidos e clientes
@@ -73,7 +73,7 @@ OPENAI_API_KEY=sua-chave-aqui
 
 ## 🎨 Design
 
-O design segue o padrão da CakeCloud com:
+O design segue o padrão da SoTasty com:
 - Cores gradiente (Old Rose → Melon)
 - Bordas arredondadas (rounded-2xl)
 - Sombras suaves

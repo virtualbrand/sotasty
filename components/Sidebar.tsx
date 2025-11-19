@@ -208,7 +208,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
       <nav className="w-full bg-[var(--color-snow)] shadow-lg flex items-center justify-between px-6 py-3">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3">
-          <img src="/logo.svg" alt="CakeCloud" className="w-10 h-10" />
+          <img src="/logo.svg" alt="SoTasty" className="w-10 h-10" />
         </Link>
 
         {/* Main Menu - Horizontal */}
@@ -348,11 +348,11 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
         <div className="p-6 flex items-center justify-between">
           {!isCollapsed && (
             <Link href="/" className="flex items-center gap-3">
-              <img src="/logo.svg" alt="CakeCloud" className="w-25 h-25" />
+              <img src="/logo.svg" alt="SoTasty" className="w-25 h-25" />
             </Link>
           )}
           {isCollapsed && (
-            <img src="/logo.svg" alt="CakeCloud" className="w-10 h-10 mx-auto" />
+            <img src="/logo.svg" alt="SoTasty" className="w-10 h-10 mx-auto" />
           )}
         </div>
 

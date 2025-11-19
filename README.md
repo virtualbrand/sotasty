@@ -1,6 +1,6 @@
-# CakeCloud 🍰
+# SoTasty 🍽️
 
-Sistema completo de gestão para confeitarias desenvolvido com Next.js, React, Supabase e Tailwind CSS.
+Sistema completo de gestão para negócios gastronômicos desenvolvido com Next.js, React, Supabase e Tailwind CSS.
 
 ## 🚀 Tecnologias
 
@@ -22,8 +22,8 @@ Sistema completo de gestão para confeitarias desenvolvido com Next.js, React, S
 
 1. Clone o repositório:
 ```bash
-git clone git@github.com:virtualbrand/cakecloud.git
-cd cakecloud
+git clone git@github.com:virtualbrand/sotasty.git
+cd sotasty
 ```
 
 2. Instale as dependências:
@@ -48,7 +48,7 @@ Acesse [http://localhost:3000](http://localhost:3000) no seu navegador.
 ## 📦 Estrutura do Projeto
 
 ```
-cakecloud/
+sotasty/
 ├── app/                    # Páginas do Next.js (App Router)
 │   ├── products/          # Gestão de produtos
 │   ├── orders/            # Controle de pedidos
@@ -70,7 +70,7 @@ O projeto utiliza Supabase para gerenciar:
 - Storage para imagens
 
 ### Tabelas principais:
-- `products` - Produtos da confeitaria
+- `products` - Produtos gastronômicos
 - `orders` - Pedidos dos clientes
 - `order_items` - Itens de cada pedido
 - `customers` - Cadastro de clientes
@@ -107,4 +107,4 @@ Este projeto é open source e está disponível sob a licença MIT.
 
 ---
 
-Desenvolvido com ❤️ para confeitarias
+Desenvolvido com ❤️ para negócios gastronômicos

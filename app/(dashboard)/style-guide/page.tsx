@@ -14,7 +14,7 @@ export default function StyleGuidePage() {
   return (
     <div className="p-8 space-y-12 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Guia de Estilos CakeCloud</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">Guia de Estilos SoTasty</h1>
         <p className="text-gray-600 text-lg">Sistema de design completo</p>
       </div>
 
@@ -69,7 +69,7 @@ export default function StyleGuidePage() {
       </section>
 
       <div className="pt-8 border-t border-gray-200">
-        <p className="text-center text-sm text-gray-500">© 2025 CakeCloud v1.0</p>
+        <p className="text-center text-sm text-gray-500">© 2025 SoTasty v1.0</p>
       </div>
     </div>
   )

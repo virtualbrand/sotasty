@@ -98,7 +98,7 @@ Upload: `como_fazer_pedido.pdf`
 
 ## 🎨 Design
 
-A interface segue o padrão CakeCloud:
+A interface segue o padrão SoTasty:
 - Gradientes Old Rose → Melon
 - Cards com bordas arredondadas
 - Ícones intuitivos (FileText, Upload, Trash2)

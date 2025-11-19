@@ -330,7 +330,7 @@ export default function SuperAdminCustomers() {
           <div className="group relative">
             <Info className="w-4 h-4 text-gray-400 cursor-help" />
             <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[400px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200 p-4">
-              Visão completa de todos os clientes do CakeCloud. Monitore status de trial, conversões, engajamento e identifique clientes em risco de churn.
+              Visão completa de todos os clientes do SoTasty. Monitore status de trial, conversões, engajamento e identifique clientes em risco de churn.
             </div>
           </div>
         </div>

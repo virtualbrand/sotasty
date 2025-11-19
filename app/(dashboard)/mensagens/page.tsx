@@ -38,7 +38,7 @@ export default function MensagensPage() {
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [connected, setConnected] = useState(false)
-  const [instanceName] = useState('cakecloud-whatsapp') // Nome padrão da instância
+  const [instanceName] = useState('sotasty-whatsapp') // Nome padrão da instância
   const imageCacheRef = useRef<Record<string, string>>({})
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
@@ -252,7 +252,7 @@ export default function MensagensPage() {
 
     try {
       const response = await fetch(
-        `/api/whatsapp/media?messageId=${messageId}&instance=cakecloud-whatsapp`
+        `/api/whatsapp/media?messageId=${messageId}&instance=sotasty-whatsapp`
       )
       
       if (response.ok) {

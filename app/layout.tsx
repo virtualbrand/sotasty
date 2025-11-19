@@ -21,8 +21,8 @@ const kumbhSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "CakeCloud - Sistema de Gestão para Confeitaria",
-  description: "Sistema completo para gerenciar sua confeitaria",
+  title: "SoTasty - Sistema de Gestão para Gastronomia",
+  description: "Sistema completo para gerenciar seu negócio gastronômico",
 };
 
 export default function RootLayout({

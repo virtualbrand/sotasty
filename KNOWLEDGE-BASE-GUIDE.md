@@ -13,7 +13,7 @@ A Base de Conhecimento permite que o assistente de atendimento responda pergunta
 
 ## 🔧 Como Configurar
 
-### Opção 1: Via CakeCloud (Interface Web)
+### Opção 1: Via SoTasty (Interface Web)
 
 1. Acesse **Configurações > Atendimento**
 2. Clique em "Clique para selecionar arquivos" ou arraste os arquivos

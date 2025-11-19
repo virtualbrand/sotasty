@@ -5,7 +5,7 @@ import { QrCode, Smartphone, CheckCircle2, XCircle, RefreshCw, LogOut, X } from 
 import { showToast } from '@/app/(dashboard)/layout';
 
 export default function WhatsAppSettings() {
-  const [instanceName, setInstanceName] = useState('cakecloud-whatsapp');
+  const [instanceName, setInstanceName] = useState('sotasty-whatsapp');
   const [qrCode, setQrCode] = useState('');
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [loading, setLoading] = useState(false);
@@ -367,7 +367,7 @@ export default function WhatsAppSettings() {
                 value={instanceName}
                 onChange={(e) => setInstanceName(e.target.value)}
                 className="w-full px-4 py-2 border border-[var(--lavender-blush)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--old-rose)]"
-                placeholder="Ex: cakecloud-whatsapp"
+                placeholder="Ex: sotasty-whatsapp"
                 disabled={loading}
                 autoComplete="off"
               />

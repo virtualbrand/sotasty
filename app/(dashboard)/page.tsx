@@ -88,8 +88,8 @@ export default function Home() {
         {/* Page Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard SaaS</h1>
-            <p className="text-gray-500 mt-1">Métricas de crescimento e performance do CakeCloud</p>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-500 mt-1">Métricas de crescimento e performance do SoTasty</p>
           </div>
           
           {/* Filtro de Mês */}
@@ -260,7 +260,7 @@ export default function Home() {
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500 mt-1">Bem-vindo ao CakeCloud - Sistema de Gestão para Confeitaria</p>
+        <p className="text-gray-500 mt-1">Bem-vindo ao SoTasty - Sistema de Gestão para Gastronomia</p>
       </div>
 
       {/* Stats Cards */}

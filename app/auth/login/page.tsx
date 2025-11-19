@@ -42,15 +42,15 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FFFBFB] to-[#EBC7C1] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Logo */}
-        <div className="text-center">
+        <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <img src="/logo.svg" alt="CakeCloud" className="w-16 h-16" />
+            <img src="/logo.svg" alt="SoTasty" className="w-16 h-16" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900">
-            CakeCloud
-          </h2>
+          <h1 className="text-3xl font-bold text-gray-900">
+            SoTasty
+          </h1>
           <p className="mt-2 text-sm text-gray-600">
-            Sistema de Gestão para Confeitaria
+            Sistema de Gestão para Gastronomia
           </p>
         </div>
 
@@ -164,7 +164,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-500">
-          © 2025 CakeCloud. Todos os direitos reservados.
+          © 2025 SoTasty. Todos os direitos reservados.
         </p>
       </div>
     </div>

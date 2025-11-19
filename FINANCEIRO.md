@@ -1,8 +1,8 @@
-# Módulo Financeiro - CakeCloud
+# Módulo Financeiro - SoTasty
 
 ## Visão Geral
 
-O módulo financeiro do CakeCloud é inspirado no Organizze e oferece controle completo sobre receitas e despesas do negócio.
+O módulo financeiro do SoTasty é inspirado no Organizze e oferece controle completo sobre receitas e despesas do negócio.
 
 ## Funcionalidades Implementadas
 

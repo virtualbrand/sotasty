@@ -2,7 +2,7 @@
 
 ## 📖 Visão Geral
 
-A feature **Mensagens** integra o CakeCloud com WhatsApp através da **Evolution API**, permitindo:
+A feature **Mensagens** integra o SoTasty com WhatsApp através da **Evolution API**, permitindo:
 - ✅ Enviar e receber mensagens
 - ✅ Visualizar conversas em tempo real
 - ✅ Gerenciar contatos
@@ -19,7 +19,7 @@ As variáveis já foram adicionadas no arquivo `.env.local`:
 # Evolution API Configuration
 EVOLUTION_API_URL=https://evolution-api-production-be53.up.railway.app
 EVOLUTION_API_KEY=q4azKeOl2MR7VzDOsxInZrZdu49zZzIcKVBwStnHyWg=
-EVOLUTION_INSTANCE=cakecloud-whatsapp
+EVOLUTION_INSTANCE=sotasty-whatsapp
 ```
 
 ### 2. Conectar WhatsApp
@@ -140,7 +140,7 @@ Envia mensagem para um contato
 ## 🎨 Design
 
 ### Cores e Tema
-- Usa o tema padrão CakeCloud (Old Rose, Melon, Lavender Blush)
+- Usa o tema padrão SoTasty (Old Rose, Melon, Lavender Blush)
 - Interface responsiva
 - Ícones Lucide React
 - Tailwind CSS
@@ -223,5 +223,5 @@ Para mais informações sobre a Evolution API:
 
 ---
 
-**Desenvolvido para CakeCloud** 🍰
+**Desenvolvido para SoTasty** 🍽️
 Integração WhatsApp através de Evolution API

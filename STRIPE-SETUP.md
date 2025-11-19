@@ -16,19 +16,19 @@
 2. Crie 3 produtos:
 
 ### Start - R$ 97/mês
-- Nome: "CakeCloud Start"
+- Nome: "SoTasty Start"
 - Preço: R$ 97,00
 - Recorrência: Mensal
 - Copie o **Price ID** → `STRIPE_PRICE_START`
 
 ### Grow - R$ 197/mês
-- Nome: "CakeCloud Grow"
+- Nome: "SoTasty Grow"
 - Preço: R$ 197,00
 - Recorrência: Mensal
 - Copie o **Price ID** → `STRIPE_PRICE_GROW`
 
 ### Scale - R$ 397/mês
-- Nome: "CakeCloud Scale"
+- Nome: "SoTasty Scale"
 - Preço: R$ 397,00
 - Recorrência: Mensal
 - Copie o **Price ID** → `STRIPE_PRICE_SCALE`
