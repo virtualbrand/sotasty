@@ -1,15 +1,28 @@
 'use client'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { initPostHog, trackPageView } from '@/lib/analytics/posthog'
 import { createClient } from '@/lib/supabase/client'
 import { identifyUser } from '@/lib/analytics/posthog'
 
-export function PostHogProvider({ children }: { children: React.ReactNode }) {
+function PostHogPageView() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
+  useEffect(() => {
+    // Track page views
+    if (pathname) {
+      trackPageView(pathname, {
+        url: `${pathname}${searchParams?.toString() ? `?${searchParams.toString()}` : ''}`,
+      })
+    }
+  }, [pathname, searchParams])
+
+  return null
+}
+
+export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Inicializar PostHog
     initPostHog()
@@ -38,14 +51,12 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     identifyCurrentUser()
   }, [])
 
-  useEffect(() => {
-    // Track page views
-    if (pathname) {
-      trackPageView(pathname, {
-        url: `${pathname}${searchParams?.toString() ? `?${searchParams.toString()}` : ''}`,
-      })
-    }
-  }, [pathname, searchParams])
-
-  return <>{children}</>
+  return (
+    <>
+      <Suspense fallback={null}>
+        <PostHogPageView />
+      </Suspense>
+      {children}
+    </>
+  )
 }
