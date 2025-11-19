@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { MessageCircle, Send, Phone, Search, Info, AlertCircle, Settings, Mic } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { Spinner } from '@/components/ui/spinner'
 import PageLoading from '@/components/PageLoading'
 import Link from 'next/link'
 
