@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Plus, Info, GripVertical, Lightbulb, Cloud, ClipboardList, Shirt, Settings, Plane, Briefcase, 
   Music, Trophy, Newspaper, Sandwich, ChefHat, MessageCircle, Dices, MapPin, 
@@ -35,8 +35,20 @@ interface Category {
   sort_order?: number
 }
 
-export default function FinanceiroSettingsPage() {
+function TabInitializer({ onTabChange }: { onTabChange: (tab: 'despesas' | 'receitas' | 'contas') => void }) {
   const searchParams = useSearchParams()
+  
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab === 'receitas' || tab === 'despesas' || tab === 'contas') {
+      onTabChange(tab)
+    }
+  }, [searchParams, onTabChange])
+  
+  return null
+}
+
+function FinanceiroSettingsContent() {
   const [categories, setCategories] = useState<Category[]>([])
   const [loadingCategories, setLoadingCategories] = useState(true)
   const [activeTab, setActiveTab] = useState<'despesas' | 'receitas' | 'contas'>('despesas')
@@ -46,14 +58,6 @@ export default function FinanceiroSettingsPage() {
   const [dropPosition, setDropPosition] = useState<'before' | 'after' | 'inside' | null>(null)
   const [dragOverSubcategory, setDragOverSubcategory] = useState<string | null>(null)
   const [dropPositionSub, setDropPositionSub] = useState<'before' | 'after' | null>(null)
-
-  // Read tab from URL on mount
-  useEffect(() => {
-    const tab = searchParams.get('tab')
-    if (tab === 'receitas' || tab === 'despesas' || tab === 'contas') {
-      setActiveTab(tab)
-    }
-  }, [searchParams])
 
   useEffect(() => {
     fetchCategories()
@@ -437,6 +441,10 @@ export default function FinanceiroSettingsPage() {
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <Suspense fallback={null}>
+        <TabInitializer onTabChange={setActiveTab} />
+      </Suspense>
+      
       <div className="flex items-center gap-2 mb-6">
         <h2 className="text-lg font-semibold text-gray-900">Financeiro</h2>
         <div className="group relative">
@@ -721,5 +729,13 @@ export default function FinanceiroSettingsPage() {
         />
       )}
     </div>
+  )
+}
+
+export default function FinanceiroSettingsPage() {
+  return (
+    <Suspense fallback={<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">Carregando...</div>}>
+      <FinanceiroSettingsContent />
+    </Suspense>
   )
 }
