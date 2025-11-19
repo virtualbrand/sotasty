@@ -102,7 +102,7 @@ interface ChartTooltipContentProps {
   label?: string;
   labelFormatter?: (value: any, payload: any[]) => string;
   labelClassName?: string;
-  formatter?: (value: any, name: string, item: any, index: number) => React.ReactNode;
+  formatter?: (value: any, name: string, item: any, index: number, payload: any) => React.ReactNode;
   color?: string;
   nameKey?: string;
   labelKey?: string;
