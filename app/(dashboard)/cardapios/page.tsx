@@ -408,7 +408,7 @@ export default function CardapiosPage() {
                         onClick={() => {
                           const url = customUrlSlug 
                             ? `https://sotasty.com.br/${customUrlSlug}/${menu.url_slug}`
-                            : menu.url_slug
+                            : `https://sotasty.com.br/[sua-url]/${menu.url_slug}`
                           navigator.clipboard.writeText(url)
                           showToast({
                             title: 'URL copiada!',
