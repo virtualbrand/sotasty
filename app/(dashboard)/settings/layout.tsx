@@ -27,12 +27,6 @@ const settingsNavigation = [
     description: 'Gerencie suas informações pessoais'
   },
   { 
-    name: 'Preferências', 
-    href: '/settings/preferences', 
-    icon: SettingsIcon,
-    description: 'Configure suas preferências do sistema'
-  },
-  { 
     name: 'Notificações', 
     href: '/settings/notifications', 
     icon: Bell,

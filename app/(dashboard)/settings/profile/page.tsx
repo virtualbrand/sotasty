@@ -5,9 +5,19 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
-import { User, Mail, Phone, MapPin, Camera, Check, SwitchCamera, CircleX, CreditCard, Building2, Clock, Plus, X } from 'lucide-react'
+import { User, Mail, Phone, MapPin, Camera, Check, SwitchCamera, CircleX, CreditCard, Building2, Clock, Plus, X, Settings, Layout, BrushCleaning, Trash2, Link2, ExternalLink, Globe, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { showToast } from '@/app/(dashboard)/layout'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 type BusinessHourInterval = {
   open: string
@@ -36,7 +46,7 @@ type ProfileData = {
   }
 }
 
-type TabType = 'personal' | 'establishment' | 'hours'
+type TabType = 'personal' | 'establishment' | 'hours' | 'preferences'
 
 const formatPhone = (value: string): string => {
   // Remove tudo que não é número
@@ -181,6 +191,25 @@ export default function ProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  
+  // Estados de Preferências
+  const [menuPosition, setMenuPosition] = useState<'sidebar' | 'header' | 'footer' | 'right'>('sidebar')
+  const [savedMenuPosition, setSavedMenuPosition] = useState<'sidebar' | 'header' | 'footer' | 'right'>('sidebar')
+  const [showDailyBalance, setShowDailyBalance] = useState(false)
+  const [savedShowDailyBalance, setSavedShowDailyBalance] = useState(false)
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
+  const [resetConfirmText, setResetConfirmText] = useState('')
+  const [customUrlSlug, setCustomUrlSlug] = useState('')
+  const [savedCustomUrlSlug, setSavedCustomUrlSlug] = useState('')
+  const [urlError, setUrlError] = useState('')
+  
+  // Estados de Domínio Personalizado
+  const [customDomain, setCustomDomain] = useState('')
+  const [savedCustomDomain, setSavedCustomDomain] = useState('')
+  const [domainError, setDomainError] = useState('')
+  const [isDomainVerified, setIsDomainVerified] = useState(false)
+  const [isVerifyingDomain, setIsVerifyingDomain] = useState(false)
+  
   const [hasChanges, setHasChanges] = useState(false)
 
   useEffect(() => {
@@ -193,8 +222,32 @@ export default function ProfilePage() {
     const dataChanged = JSON.stringify(profileData) !== JSON.stringify(originalProfileData)
     const avatarChanged = avatarFile !== null
     const logoChanged = logoFile !== null
-    setHasChanges(dataChanged || avatarChanged || logoChanged)
-  }, [profileData, originalProfileData, avatarFile, logoFile])
+    const preferencesChanged = 
+      menuPosition !== savedMenuPosition ||
+      showDailyBalance !== savedShowDailyBalance ||
+      customUrlSlug !== savedCustomUrlSlug ||
+      customDomain !== savedCustomDomain
+    setHasChanges(dataChanged || avatarChanged || logoChanged || preferencesChanged)
+  }, [profileData, originalProfileData, avatarFile, logoFile, menuPosition, savedMenuPosition, showDailyBalance, savedShowDailyBalance, customUrlSlug, savedCustomUrlSlug, customDomain, savedCustomDomain])
+
+  // Carregar preferências do localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedPosition = localStorage.getItem('menuPosition') as 'sidebar' | 'header' | 'footer' | 'right' | null
+      const savedBalance = localStorage.getItem('showDailyBalance')
+      
+      if (savedPosition) {
+        setMenuPosition(savedPosition)
+        setSavedMenuPosition(savedPosition)
+      }
+      
+      if (savedBalance) {
+        const balance = savedBalance === 'true'
+        setShowDailyBalance(balance)
+        setSavedShowDailyBalance(balance)
+      }
+    }
+  }, [])
 
   const loadProfile = async () => {
     try {
@@ -278,6 +331,21 @@ export default function ProfilePage() {
         console.log('Full name from data:', data.full_name)
         setProfileData(loadedData)
         setOriginalProfileData(loadedData)
+        
+        // Load custom URL slug from profile_settings
+        try {
+          const settingsResponse = await fetch('/api/profile-settings')
+          if (settingsResponse.ok) {
+            const settingsData = await settingsResponse.json()
+            setCustomUrlSlug(settingsData.custom_url_slug || '')
+            setSavedCustomUrlSlug(settingsData.custom_url_slug || '')
+            setCustomDomain(settingsData.custom_domain || '')
+            setSavedCustomDomain(settingsData.custom_domain || '')
+            setIsDomainVerified(settingsData.custom_domain_verified || false)
+          }
+        } catch (error) {
+          console.error('Erro ao carregar configurações:', error)
+        }
         
         if (data.avatar_url) {
           const { data: { publicUrl } } = supabase.storage
@@ -438,6 +506,66 @@ export default function ProfilePage() {
     setProfileData(prev => ({ ...prev, logo_url: null }))
   }
 
+  const handleVerifyDomain = async () => {
+    if (!customDomain) {
+      setDomainError('Digite um domínio para verificar')
+      return
+    }
+
+    // Validar formato do domínio
+    const domainRegex = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/
+    if (!domainRegex.test(customDomain)) {
+      setDomainError('Formato de domínio inválido. Ex: cardapios.minhaconfeitaria.com.br')
+      return
+    }
+
+    setIsVerifyingDomain(true)
+    setDomainError('')
+
+    try {
+      const response = await fetch('/api/profile-settings/verify-domain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain: customDomain })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setDomainError(data.error || 'Erro ao verificar domínio')
+        setIsDomainVerified(false)
+        showToast({
+          title: 'Falha na verificação',
+          message: data.details || data.error || 'Não foi possível verificar o domínio',
+          variant: 'error',
+          duration: 5000,
+        })
+        return
+      }
+
+      setIsDomainVerified(true)
+      setSavedCustomDomain(customDomain)
+      showToast({
+        title: 'Domínio verificado!',
+        message: `Seu domínio ${customDomain} está configurado corretamente`,
+        variant: 'success',
+        duration: 4000,
+      })
+    } catch (error) {
+      console.error('Erro ao verificar domínio:', error)
+      setDomainError('Erro ao verificar domínio. Tente novamente.')
+      setIsDomainVerified(false)
+      showToast({
+        title: 'Erro',
+        message: 'Erro ao verificar domínio. Tente novamente.',
+        variant: 'error',
+        duration: 4000,
+      })
+    } finally {
+      setIsVerifyingDomain(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -580,6 +708,68 @@ export default function ProfilePage() {
         })
         setSaving(false)
         return
+      }
+
+      // Salvar preferências no localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('menuPosition', menuPosition)
+        localStorage.setItem('showDailyBalance', showDailyBalance.toString())
+        
+        // Atualizar estados salvos
+        setSavedMenuPosition(menuPosition)
+        setSavedShowDailyBalance(showDailyBalance)
+        
+        // Disparar evento de mudança de posição do menu
+        window.dispatchEvent(new CustomEvent('menu-position-changed', {
+          detail: { position: menuPosition }
+        }))
+      }
+
+      // Salvar URL personalizada via API se mudou
+      if (customUrlSlug !== savedCustomUrlSlug) {
+        // Validar URL antes de salvar
+        if (customUrlSlug) {
+          const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+          if (!slugRegex.test(customUrlSlug) || customUrlSlug.length < 3 || customUrlSlug.length > 50) {
+            showToast({
+              title: 'Erro',
+              message: 'URL inválida. Use apenas letras minúsculas, números e hífens (3-50 caracteres)',
+              variant: 'error',
+              duration: 4000,
+            })
+            setSaving(false)
+            return
+          }
+        }
+
+        try {
+          const urlResponse = await fetch('/api/profile-settings', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              custom_url_slug: customUrlSlug || null,
+              custom_domain: customDomain || null
+            })
+          })
+
+          if (!urlResponse.ok) {
+            const errorData = await urlResponse.json().catch(() => ({ error: 'Erro desconhecido' }))
+            throw new Error(errorData.error || 'Erro ao salvar configurações')
+          }
+
+          setSavedCustomUrlSlug(customUrlSlug)
+          setSavedCustomDomain(customDomain)
+        } catch (error) {
+          console.error('Erro ao salvar configurações:', error)
+          showToast({
+            title: 'Erro',
+            message: error instanceof Error ? error.message : 'Erro ao salvar configurações',
+            variant: 'error',
+            duration: 4000,
+          })
+          setSaving(false)
+          return
+        }
       }
 
       showToast({
@@ -750,6 +940,18 @@ export default function ProfilePage() {
             >
               <Clock className="w-4 h-4 inline-block mr-2" />
               Horários de Funcionamento
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('preferences')}
+              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:outline-none cursor-pointer ${
+                activeTab === 'preferences'
+                  ? 'border-[var(--color-old-rose)] text-[var(--color-old-rose)]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Settings className="w-4 h-4 inline-block mr-2" />
+              Preferências
             </button>
           </div>
         </div>
@@ -1117,6 +1319,261 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {activeTab === 'preferences' && (
+          <div className="space-y-6">
+            {/* URL Personalizada */}
+            <div className="pb-6 border-b border-gray-200">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Link2 className="w-5 h-5 text-gray-700" />
+                    <h3 className="text-base font-semibold text-gray-900">Link Personalizado dos Cardápios</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Configure o Link base para seus cardápios públicos.
+                  </p>
+                  
+                  <div className="max-w-md space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">sotasty.com.br/</span>
+                      <input
+                        type="text"
+                        value={customUrlSlug}
+                        onChange={(e) => {
+                          const value = e.target.value.toLowerCase().trim()
+                          setCustomUrlSlug(value)
+                          if (!value) {
+                            setUrlError('')
+                          } else {
+                            const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+                            if (!slugRegex.test(value)) {
+                              setUrlError('Use apenas letras minúsculas, números e hífens')
+                            } else if (value.length < 3) {
+                              setUrlError('Mínimo de 3 caracteres')
+                            } else if (value.length > 50) {
+                              setUrlError('Máximo de 50 caracteres')
+                            } else {
+                              setUrlError('')
+                            }
+                          }
+                        }}
+                        placeholder="sua-confeitaria"
+                        className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent ${urlError ? 'border-red-500' : 'border-gray-300'}`}
+                      />
+                    </div>
+                    
+                    {urlError && (
+                      <p className="text-sm text-red-600">{urlError}</p>
+                    )}
+                    
+                    {customUrlSlug && !urlError && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                        <span>Exemplo: sotasty.com.br/<strong>{customUrlSlug}</strong>/cardapio-principal</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Domínio Personalizado */}
+            <div className="pb-6 border-b border-gray-200">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Globe className="w-5 h-5 text-gray-700" />
+                    <h3 className="text-base font-semibold text-gray-900">Domínio Personalizado</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Use seu próprio domínio para seus cardápios públicos. 
+                    Ex: <strong>cardapios.minhaconfeitaria.com.br</strong>
+                  </p>
+                  
+                  <div className="max-w-2xl space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <input
+                          type="text"
+                          value={customDomain}
+                          onChange={(e) => {
+                            const value = e.target.value.toLowerCase().trim()
+                            setCustomDomain(value)
+                            setDomainError('')
+                            if (value !== savedCustomDomain) {
+                              setIsDomainVerified(false)
+                            }
+                          }}
+                          placeholder="cardapios.minhaconfeitaria.com.br"
+                          className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent ${domainError ? 'border-red-500' : isDomainVerified ? 'border-green-500' : 'border-gray-300'}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleVerifyDomain}
+                          disabled={isVerifyingDomain || !customDomain || isDomainVerified}
+                          className="btn-primary whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isVerifyingDomain ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Verificando...
+                            </>
+                          ) : isDomainVerified ? (
+                            <>
+                              <CheckCircle2 className="w-4 h-4" />
+                              Verificado
+                            </>
+                          ) : (
+                            'Verificar DNS'
+                          )}
+                        </button>
+                      </div>
+                      
+                      {domainError && (
+                        <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 p-3 rounded">
+                          <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                          <span>{domainError}</span>
+                        </div>
+                      )}
+                      
+                      {isDomainVerified && !domainError && (
+                        <div className="flex items-start gap-2 text-sm text-green-600 bg-green-50 p-3 rounded">
+                          <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                          <span>Domínio verificado e configurado com sucesso!</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+                      <h4 className="text-sm font-semibold text-blue-900">Como configurar seu domínio:</h4>
+                      <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                        <li>Acesse o painel de controle do seu provedor de domínio</li>
+                        <li>Crie um registro <strong>CNAME</strong> com estas configurações:
+                          <div className="ml-6 mt-1 space-y-0.5">
+                            <div>• <strong>Tipo:</strong> CNAME</div>
+                            <div>• <strong>Nome/Host:</strong> cardapios (ou subdomínio desejado)</div>
+                            <div>• <strong>Aponta para:</strong> <code className="bg-blue-100 px-1 py-0.5 rounded">cname.sotasty.com.br</code></div>
+                            <div>• <strong>TTL:</strong> 3600 (ou automático)</div>
+                          </div>
+                        </li>
+                        <li>Aguarde de 5 minutos a 48h para propagação do DNS</li>
+                        <li>Clique em &quot;Verificar DNS&quot; para confirmar a configuração</li>
+                      </ol>
+                      <p className="text-xs text-blue-700 mt-2">
+                        💡 <strong>Dica:</strong> A maioria dos provedores propaga em menos de 1 hora
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Posição do Menu */}
+            <div className="pb-6 border-b border-gray-200">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Layout className="w-5 h-5 text-gray-700" />
+                    <h3 className="text-base font-semibold text-gray-900">Posição do Menu</h3>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Escolha onde deseja visualizar o menu de navegação principal
+                  </p>
+                </div>
+                <div className="ml-6 flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="menuPosition"
+                      value="sidebar"
+                      checked={menuPosition === 'sidebar'}
+                      onChange={(e) => setMenuPosition(e.target.value as any)}
+                      className="w-4 h-4 text-[#BE9089] focus:ring-[#BE9089]"
+                    />
+                    <span className="text-sm text-gray-700">Esquerda</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="menuPosition"
+                      value="right"
+                      checked={menuPosition === 'right'}
+                      onChange={(e) => setMenuPosition(e.target.value as any)}
+                      className="w-4 h-4 text-[#BE9089] focus:ring-[#BE9089]"
+                    />
+                    <span className="text-sm text-gray-700">Direita</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="menuPosition"
+                      value="header"
+                      checked={menuPosition === 'header'}
+                      onChange={(e) => setMenuPosition(e.target.value as any)}
+                      className="w-4 h-4 text-[#BE9089] focus:ring-[#BE9089]"
+                    />
+                    <span className="text-sm text-gray-700">Cabeçalho</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="menuPosition"
+                      value="footer"
+                      checked={menuPosition === 'footer'}
+                      onChange={(e) => setMenuPosition(e.target.value as any)}
+                      className="w-4 h-4 text-[#BE9089] focus:ring-[#BE9089]"
+                    />
+                    <span className="text-sm text-gray-700">Rodapé</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Começar do Zero */}
+            <div className="pb-6 border-b border-gray-200">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold text-gray-900">Começar do zero</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Aqui você pode zerar sua conta, deletando toda sua movimentação financeira. 
+                    Suas contas, clientes e produtos cadastrados permanecerão intactos.
+                  </p>
+                </div>
+                <div className="ml-6">
+                  <button
+                    type="button"
+                    onClick={() => setIsResetDialogOpen(true)}
+                    className="btn-ghost-danger"
+                  >
+                    <BrushCleaning className="w-4 h-4" />
+                    Excluir minhas transações
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Excluir Conta */}
+            <div className="pb-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold text-gray-900">Excluir conta</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Hora de dizer tchau? Aqui você pode excluir sua conta definitivamente
+                  </p>
+                </div>
+                <div className="ml-6">
+                  <button
+                    type="button"
+                    className="btn-ghost-danger"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Excluir conta por completo
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
           {hasChanges && (
@@ -1149,6 +1606,80 @@ export default function ProfilePage() {
           </button>
         </div>
       </form>
+
+      {/* Reset Account Dialog */}
+      <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão de Transações</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá deletar TODAS as suas transações financeiras de forma permanente.
+              Suas contas, clientes e produtos cadastrados permanecerão intactos.
+              
+              <div className="mt-4 space-y-2">
+                <p className="font-semibold text-gray-900">Para confirmar, digite exatamente:</p>
+                <p className="text-sm font-mono bg-gray-100 p-2 rounded">ZERAR CONTA</p>
+                <input
+                  type="text"
+                  value={resetConfirmText}
+                  onChange={(e) => setResetConfirmText(e.target.value)}
+                  placeholder="Digite aqui..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                />
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setIsResetDialogOpen(false)
+              setResetConfirmText('')
+            }}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (resetConfirmText === 'ZERAR CONTA') {
+                  try {
+                    const response = await fetch('/api/profile-settings/reset-account', {
+                      method: 'POST',
+                    })
+                    
+                    if (response.ok) {
+                      showToast({
+                        title: 'Sucesso!',
+                        message: 'Transações excluídas com sucesso!',
+                        variant: 'success',
+                        duration: 3000,
+                      })
+                      setIsResetDialogOpen(false)
+                      setResetConfirmText('')
+                    } else {
+                      showToast({
+                        title: 'Erro',
+                        message: 'Erro ao excluir transações',
+                        variant: 'error',
+                        duration: 3000,
+                      })
+                    }
+                  } catch (error) {
+                    console.error('Error resetting account:', error)
+                    showToast({
+                      title: 'Erro',
+                      message: 'Erro ao excluir transações',
+                      variant: 'error',
+                      duration: 3000,
+                    })
+                  }
+                }
+              }}
+              disabled={resetConfirmText !== 'ZERAR CONTA'}
+              className="bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Excluir Transações
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Modal from '@/components/Modal'
 import { showToast } from '@/app/(dashboard)/layout'
-import PageLoading from '@/components/PageLoading'
+import { Spinner } from '@/components/ui/spinner'
 import { 
   Plus, 
   Search,
@@ -80,6 +80,17 @@ export default function CardapiosPage() {
       .replace(/[\u0300-\u036f]/g, '') // Remove acentos
       .replace(/[^a-z0-9\s-]/g, '') // Remove caracteres especiais
       .replace(/\s+/g, '-') // Substitui espaços por hífens
+      .replace(/-+/g, '-') // Remove hífens duplicados
+      .replace(/^-|-$/g, '') // Remove hífens do início e fim
+  }
+
+  // Função para sanitizar URL (permite apenas letras, números e hífens)
+  const sanitizeUrlSlug = (text: string): string => {
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^a-z0-9-]/g, '') // Remove tudo exceto letras, números e hífens
       .replace(/-+/g, '-') // Remove hífens duplicados
       .replace(/^-|-$/g, '') // Remove hífens do início e fim
   }
@@ -193,8 +204,13 @@ export default function CardapiosPage() {
     if (!menuToDelete) return
 
     try {
-      // TODO: Implementar chamada à API
-      // await fetch(`/api/menus/${menuToDelete}`, { method: 'DELETE' })
+      const response = await fetch(`/api/menus/${menuToDelete}`, { 
+        method: 'DELETE' 
+      })
+      
+      if (!response.ok) {
+        throw new Error('Erro ao excluir cardápio')
+      }
       
       showToast({
         title: 'Sucesso!',
@@ -243,10 +259,6 @@ export default function CardapiosPage() {
     
     return matchesSearch && matchesStatus
   })
-
-  if (loading) {
-    return <PageLoading />
-  }
 
   return (
     <div className="p-8">
@@ -369,21 +381,26 @@ export default function CardapiosPage() {
       </div>
 
       {/* Menus List/Grid */}
-      {filteredMenus.length === 0 ? (
-        <div className="text-center py-12">
-          <BookText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Nenhum cardápio encontrado
-          </h3>
-          <p className="text-gray-500 mb-6">
-            {searchQuery
-              ? 'Tente ajustar a busca'
-              : 'Comece criando seu primeiro cardápio'}
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMenus.map((menu) => (
+      <div>
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Spinner size="large" className="text-[var(--color-old-rose)]" />
+          </div>
+        ) : filteredMenus.length === 0 ? (
+          <div className="text-center py-12">
+            <BookText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Nenhum cardápio encontrado
+            </h3>
+            <p className="text-gray-500 mb-6">
+              {searchQuery
+                ? 'Tente ajustar a busca'
+                : 'Comece criando seu primeiro cardápio'}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredMenus.map((menu) => (
             <div
               key={menu.id}
               className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all p-6 cursor-pointer"
@@ -476,7 +493,8 @@ export default function CardapiosPage() {
             </div>
           ))}
         </div>
-      )}
+        )}
+      </div>
 
       {/* Modal Novo Cardápio */}
       <Modal 
@@ -490,7 +508,7 @@ export default function CardapiosPage() {
               <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm text-amber-800">
-                  <strong>Configure sua URL personalizada</strong> em Configurações &gt; Preferências 
+                  <strong>Configure sua URL personalizada</strong> em Configurações &gt; Perfil &gt; Preferências 
                   para ativar o link público do cardápio.
                 </p>
               </div>
@@ -518,7 +536,7 @@ export default function CardapiosPage() {
               </span>
               <Input
                 value={menuUrlSlug}
-                onChange={(e) => setMenuUrlSlug(generateSlug(e.target.value))}
+                onChange={(e) => setMenuUrlSlug(sanitizeUrlSlug(e.target.value))}
                 placeholder="cardapio-bolos"
                 className="flex-1"
               />

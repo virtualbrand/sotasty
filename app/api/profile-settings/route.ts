@@ -108,6 +108,7 @@ export async function PATCH(request: NextRequest) {
     const {
       business_name,
       custom_url_slug,
+      custom_domain,
       logo_url,
       primary_color,
       secondary_color,
@@ -148,6 +149,14 @@ export async function PATCH(request: NextRequest) {
     
     if (business_name !== undefined) updateData.business_name = business_name?.trim() || null
     if (custom_url_slug !== undefined) updateData.custom_url_slug = custom_url_slug?.trim() || null
+    if (custom_domain !== undefined) {
+      // Se custom_domain for definido, resetar verificação
+      updateData.custom_domain = custom_domain?.trim() || null
+      if (custom_domain) {
+        updateData.custom_domain_verified = false
+        updateData.custom_domain_verified_at = null
+      }
+    }
     if (logo_url !== undefined) updateData.logo_url = logo_url?.trim() || null
     if (primary_color !== undefined) updateData.primary_color = primary_color?.trim() || null
     if (secondary_color !== undefined) updateData.secondary_color = secondary_color?.trim() || null

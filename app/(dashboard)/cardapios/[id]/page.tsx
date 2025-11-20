@@ -22,6 +22,15 @@ interface Product {
   image_url?: string
 }
 
+interface ProfileSettings {
+  custom_url_slug?: string
+  logo_url?: string
+  primary_color?: string
+  secondary_color?: string
+  whatsapp_number?: string
+  business_hours?: string
+}
+
 interface MenuFormData {
   name: string
   description: string
@@ -47,7 +56,6 @@ export default function EditarCardapioPage() {
   const [currentStep, setCurrentStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
-  const [loadingProducts, setLoadingProducts] = useState(true)
   const [products, setProducts] = useState<Product[]>([])
   const [customUrlSlug, setCustomUrlSlug] = useState<string>('')
   const [logoFile, setLogoFile] = useState<File | null>(null)
@@ -94,91 +102,78 @@ export default function EditarCardapioPage() {
   ]
 
   useEffect(() => {
-    loadMenuData()
-    loadProducts()
-    loadProfileSettings()
+    loadAllData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menuId])
 
-  const loadMenuData = async () => {
+  const loadAllData = async () => {
     try {
       setLoadingData(true)
-      const response = await fetch(`/api/menus/${menuId}`)
-      if (response.ok) {
-        const menu = await response.json()
-        
-        // Carregar items do cardápio
-        const itemsResponse = await fetch(`/api/menu-items?menu_id=${menuId}`)
-        const items = itemsResponse.ok ? await itemsResponse.json() : []
-        
-        setFormData(prev => ({
-          ...prev,
-          name: menu.name || '',
-          description: menu.description || '',
-          url_slug: menu.url_slug || '',
-          selected_products: items.map((item: { product_id: string }) => item.product_id).filter(Boolean)
-        }))
-      } else {
+      
+      // Parallelize all independent API calls
+      const [menuResponse, itemsResponse, profileResponse, productsResponse] = await Promise.all([
+        fetch(`/api/menus/${menuId}`),
+        fetch(`/api/menu-items?menu_id=${menuId}`),
+        fetch('/api/profile-settings'),
+        fetch('/api/products')
+      ])
+
+      // Process menu data
+      if (!menuResponse.ok) {
         showToast({
           title: 'Erro',
           message: 'Cardápio não encontrado',
           variant: 'error'
         })
         router.push('/cardapios')
+        return
       }
+
+      const [menu, items, profileData, productsData] = await Promise.all([
+        menuResponse.json(),
+        itemsResponse.ok ? itemsResponse.json() : [],
+        profileResponse.ok ? profileResponse.json() : {} as ProfileSettings,
+        productsResponse.ok ? productsResponse.json() : []
+      ])
+
+      // Set products first
+      setProducts(productsData)
+
+      // Set custom URL slug
+      setCustomUrlSlug(profileData.custom_url_slug || '')
+
+      // Set logo preview if exists (construct URL directly)
+      if (profileData.logo_url) {
+        const logoPublicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${profileData.logo_url}`
+        setLogoPreview(logoPublicUrl)
+      }
+
+      // Update form data with all loaded information
+      setFormData({
+        name: menu.name || '',
+        description: menu.description || '',
+        url_slug: menu.url_slug || '',
+        background_color: profileData.primary_color || '#B3736B',
+        text_color: profileData.secondary_color || '#FFFFFF',
+        logo_url: profileData.logo_url || '',
+        whatsapp_number: profileData.whatsapp_number || '',
+        delivery_enabled: true,
+        pickup_enabled: true,
+        delivery_fee: '',
+        estimated_time: '',
+        business_hours: profileData.business_hours || '',
+        accepts_scheduling: false,
+        selected_products: items.map((item: { product_id: string }) => item.product_id).filter(Boolean)
+      })
     } catch (error) {
-      console.error('Erro ao carregar cardápio:', error)
+      console.error('Erro ao carregar dados:', error)
       showToast({
         title: 'Erro',
-        message: 'Não foi possível carregar o cardápio',
+        message: 'Não foi possível carregar os dados do cardápio',
         variant: 'error'
       })
     } finally {
       setLoadingData(false)
-    }
-  }
-
-  const loadProfileSettings = async () => {
-    try {
-      const response = await fetch('/api/profile-settings')
-      if (response.ok) {
-        const data = await response.json()
-        setCustomUrlSlug(data.custom_url_slug || '')
-        setFormData(prev => ({
-          ...prev,
-          background_color: data.primary_color || '#B3736B',
-          text_color: data.secondary_color || '#FFFFFF',
-          logo_url: data.logo_url || '',
-          whatsapp_number: data.whatsapp_number || '',
-          business_hours: data.business_hours || ''
-        }))
-        
-        // Carregar preview do logo se existir
-        if (data.logo_url) {
-          const logoResponse = await fetch(`/api/storage/public-url?bucket=avatars&path=${data.logo_url}`)
-          if (logoResponse.ok) {
-            const { publicUrl } = await logoResponse.json()
-            setLogoPreview(publicUrl)
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao carregar configurações:', error)
-    }
-  }
-
-  const loadProducts = async () => {
-    try {
-      setLoadingProducts(true)
-      const response = await fetch('/api/products')
-      if (response.ok) {
-        const data = await response.json()
-        setProducts(data)
-      }
-    } catch (error) {
-      console.error('Erro ao carregar produtos:', error)
-    } finally {
-      setLoadingProducts(false)
     }
   }
 
@@ -191,6 +186,17 @@ export default function EditarCardapioPage() {
       .trim()
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
+  }
+
+  // Função para sanitizar URL (permite apenas letras, números e hífens)
+  const sanitizeUrlSlug = (text: string): string => {
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^a-z0-9-]/g, '') // Remove tudo exceto letras, números e hífens
+      .replace(/-+/g, '-') // Remove hífens duplicados
+      .replace(/^-|-$/g, '') // Remove hífens do início e fim
   }
 
   const handleNameChange = (name: string) => {
@@ -454,7 +460,7 @@ export default function EditarCardapioPage() {
                         <Input
                           id="url_slug"
                           value={formData.url_slug}
-                          onChange={(e) => setFormData(prev => ({ ...prev, url_slug: e.target.value }))}
+                          onChange={(e) => setFormData(prev => ({ ...prev, url_slug: sanitizeUrlSlug(e.target.value) }))}
                           placeholder="link-do-cardapio"
                         />
                       </div>
@@ -675,7 +681,7 @@ export default function EditarCardapioPage() {
                       </div>
                     </div>
 
-                    {loadingProducts ? (
+                    {loadingData ? (
                       <div className="flex items-center justify-center py-12">
                         <Loader2 className="w-8 h-8 animate-spin text-[#B3736B]" />
                       </div>

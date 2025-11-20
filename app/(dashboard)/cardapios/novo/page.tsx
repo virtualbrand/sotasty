@@ -21,6 +21,15 @@ interface Product {
   image_url?: string
 }
 
+interface ProfileSettings {
+  custom_url_slug?: string
+  logo_url?: string
+  primary_color?: string
+  secondary_color?: string
+  whatsapp_number?: string
+  business_hours?: string
+}
+
 interface MenuFormData {
   // Básico
   name: string
@@ -49,7 +58,7 @@ export default function NovoCardapioPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [loadingProducts, setLoadingProducts] = useState(true)
+  const [loadingData, setLoadingData] = useState(true)
   const [products, setProducts] = useState<Product[]>([])
   const [customUrlSlug, setCustomUrlSlug] = useState<string>('')
   const [logoFile, setLogoFile] = useState<File | null>(null)
@@ -96,45 +105,41 @@ export default function NovoCardapioPage() {
   ]
 
   useEffect(() => {
-    loadProducts()
-    loadProfileSettings()
+    loadInitialData()
   }, [])
 
-  const loadProfileSettings = async () => {
+  const loadInitialData = async () => {
     try {
-      const response = await fetch('/api/profile-settings')
-      if (response.ok) {
-        const data = await response.json()
-        setCustomUrlSlug(data.custom_url_slug || '')
-        
-        // Pré-popular com o logo do estabelecimento se existir
-        if (data.logo_url) {
-          setFormData(prev => ({ ...prev, logo_url: data.logo_url }))
-          // Buscar URL pública do logo
-          const logoResponse = await fetch(`/api/storage/public-url?bucket=avatars&path=${data.logo_url}`)
-          if (logoResponse.ok) {
-            const { publicUrl } = await logoResponse.json()
-            setLogoPreview(publicUrl)
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao carregar configurações:', error)
-    }
-  }
+      setLoadingData(true)
+      
+      // Parallelize API calls
+      const [profileResponse, productsResponse] = await Promise.all([
+        fetch('/api/profile-settings'),
+        fetch('/api/products')
+      ])
 
-  const loadProducts = async () => {
-    try {
-      setLoadingProducts(true)
-      const response = await fetch('/api/products')
-      if (response.ok) {
-        const data = await response.json()
-        setProducts(data)
+      const [profileData, productsData] = await Promise.all([
+        profileResponse.ok ? profileResponse.json() : {} as ProfileSettings,
+        productsResponse.ok ? productsResponse.json() : []
+      ])
+
+      // Set products
+      setProducts(productsData)
+
+      // Set custom URL slug
+      setCustomUrlSlug(profileData.custom_url_slug || '')
+      
+      // Pré-popular com o logo do estabelecimento se existir
+      if (profileData.logo_url) {
+        setFormData(prev => ({ ...prev, logo_url: profileData.logo_url }))
+        // Construct URL directly without extra API call
+        const logoPublicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${profileData.logo_url}`
+        setLogoPreview(logoPublicUrl)
       }
     } catch (error) {
-      console.error('Erro ao carregar produtos:', error)
+      console.error('Erro ao carregar dados:', error)
     } finally {
-      setLoadingProducts(false)
+      setLoadingData(false)
     }
   }
 
@@ -147,6 +152,17 @@ export default function NovoCardapioPage() {
       .trim()
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
+  }
+
+  // Função para sanitizar URL (permite apenas letras, números e hífens)
+  const sanitizeUrlSlug = (text: string): string => {
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^a-z0-9-]/g, '') // Remove tudo exceto letras, números e hífens
+      .replace(/-+/g, '-') // Remove hífens duplicados
+      .replace(/^-|-$/g, '') // Remove hífens do início e fim
   }
 
   const handleNameChange = (name: string) => {
@@ -408,7 +424,7 @@ export default function NovoCardapioPage() {
                     <Input
                       id="url_slug"
                       value={formData.url_slug}
-                      onChange={(e) => setFormData(prev => ({ ...prev, url_slug: e.target.value }))}
+                      onChange={(e) => setFormData(prev => ({ ...prev, url_slug: sanitizeUrlSlug(e.target.value) }))}
                       placeholder="link-do-cardapio"
                     />
                   </div>
@@ -629,7 +645,7 @@ export default function NovoCardapioPage() {
                   </div>
                 </div>
 
-                {loadingProducts ? (
+                {loadingData ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin text-[#B3736B]" />
                   </div>
