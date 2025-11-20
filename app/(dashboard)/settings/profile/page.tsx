@@ -4,9 +4,15 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
-import { User, Mail, Phone, MapPin, Camera, Check, SwitchCamera, CircleX, CreditCard } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
+import { User, Mail, Phone, MapPin, Camera, Check, SwitchCamera, CircleX, CreditCard, Building2, Clock, Plus, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { showToast } from '@/app/(dashboard)/layout'
+
+type BusinessHourInterval = {
+  open: string
+  close: string
+}
 
 type ProfileData = {
   id: string
@@ -15,11 +21,21 @@ type ProfileData = {
   phone: string
   cpf_cnpj: string
   address: string
+  neighborhood: string
   city: string
   state: string
   zip_code: string
   avatar_url: string | null
+  always_open: boolean
+  business_hours: {
+    [key: string]: { 
+      closed: boolean
+      intervals: BusinessHourInterval[]
+    }
+  }
 }
+
+type TabType = 'personal' | 'establishment' | 'hours'
 
 const formatPhone = (value: string): string => {
   // Remove tudo que não é número
@@ -111,6 +127,7 @@ const formatCpfCnpj = (value: string): string => {
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [activeTab, setActiveTab] = useState<TabType>('personal')
   const [profileData, setProfileData] = useState<ProfileData>({
     id: '',
     email: '',
@@ -118,10 +135,21 @@ export default function ProfilePage() {
     phone: '',
     cpf_cnpj: '',
     address: '',
+    neighborhood: '',
     city: '',
     state: '',
     zip_code: '',
-    avatar_url: null
+    avatar_url: null,
+    always_open: false,
+    business_hours: {
+      sunday: { closed: true, intervals: [{ open: '09:00', close: '18:00' }] },
+      monday: { closed: false, intervals: [{ open: '09:00', close: '18:00' }] },
+      tuesday: { closed: false, intervals: [{ open: '09:00', close: '18:00' }] },
+      wednesday: { closed: false, intervals: [{ open: '09:00', close: '18:00' }] },
+      thursday: { closed: false, intervals: [{ open: '09:00', close: '18:00' }] },
+      friday: { closed: false, intervals: [{ open: '09:00', close: '18:00' }] },
+      saturday: { closed: false, intervals: [{ open: '09:00', close: '18:00' }] },
+    }
   })
   const [originalProfileData, setOriginalProfileData] = useState<ProfileData>({
     id: '',
@@ -130,10 +158,21 @@ export default function ProfilePage() {
     phone: '',
     cpf_cnpj: '',
     address: '',
+    neighborhood: '',
     city: '',
     state: '',
     zip_code: '',
-    avatar_url: null
+    avatar_url: null,
+    always_open: false,
+    business_hours: {
+      sunday: { closed: true, intervals: [{ open: '09:00', close: '18:00' }] },
+      monday: { closed: false, intervals: [{ open: '09:00', close: '18:00' }] },
+      tuesday: { closed: false, intervals: [{ open: '09:00', close: '18:00' }] },
+      wednesday: { closed: false, intervals: [{ open: '09:00', close: '18:00' }] },
+      thursday: { closed: false, intervals: [{ open: '09:00', close: '18:00' }] },
+      friday: { closed: false, intervals: [{ open: '09:00', close: '18:00' }] },
+      saturday: { closed: false, intervals: [{ open: '09:00', close: '18:00' }] },
+    }
   })
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -180,7 +219,6 @@ export default function ProfilePage() {
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading profile:', error)
-        // Se o erro for de permissão/RLS, continua sem profile
         if (error.code === '42501' || error.message?.includes('policy')) {
           console.warn('RLS policy error, creating new profile data')
           const newData = {
@@ -190,10 +228,13 @@ export default function ProfilePage() {
             phone: '',
             cpf_cnpj: '',
             address: '',
+            neighborhood: '',
             city: '',
             state: '',
             zip_code: '',
-            avatar_url: null
+            avatar_url: null,
+            always_open: false,
+            business_hours: profileData.business_hours
           }
           setProfileData(newData)
           setOriginalProfileData(newData)
@@ -213,20 +254,22 @@ export default function ProfilePage() {
           phone: data.phone || '',
           cpf_cnpj: data.cpf_cnpj || '',
           address: data.address || '',
+          neighborhood: data.neighborhood || '',
           city: data.city || '',
           state: data.state || '',
           zip_code: data.zip_code || '',
-          avatar_url: data.avatar_url || null
+          avatar_url: data.avatar_url || null,
+          always_open: data.always_open || false,
+          business_hours: data.business_hours ? 
+            (typeof data.business_hours === 'object' && Object.keys(data.business_hours).length > 0 
+              ? data.business_hours 
+              : profileData.business_hours)
+            : profileData.business_hours
         }
         console.log('Setting profile data:', loadedData)
         console.log('Full name from data:', data.full_name)
         setProfileData(loadedData)
         setOriginalProfileData(loadedData)
-        
-        // Force re-render
-        setTimeout(() => {
-          console.log('Profile data after setState:', profileData)
-        }, 100)
         
         if (data.avatar_url) {
           const { data: { publicUrl } } = supabase.storage
@@ -235,7 +278,6 @@ export default function ProfilePage() {
           setAvatarPreview(publicUrl)
         }
       } else {
-        // Se não existe perfil, cria dados iniciais com o email do auth
         const newData = {
           id: user.id,
           email: user.email || '',
@@ -243,10 +285,13 @@ export default function ProfilePage() {
           phone: '',
           cpf_cnpj: '',
           address: '',
+          neighborhood: '',
           city: '',
           state: '',
           zip_code: '',
-          avatar_url: null
+          avatar_url: null,
+          always_open: false,
+          business_hours: profileData.business_hours
         }
         setProfileData(newData)
         setOriginalProfileData(newData)
@@ -267,18 +312,63 @@ export default function ProfilePage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     
-    // Aplica formatação de telefone
     if (name === 'phone') {
       const formatted = formatPhone(value)
       setProfileData(prev => ({ ...prev, [name]: formatted }))
     } else if (name === 'zip_code') {
       const formatted = formatCEP(value)
       setProfileData(prev => ({ ...prev, [name]: formatted }))
+      
+      // Se o CEP estiver completo, busca o endereço
+      const numbers = value.replace(/\D/g, '')
+      if (numbers.length === 8) {
+        fetchAddressByCEP(numbers)
+      }
     } else if (name === 'cpf_cnpj') {
       const formatted = formatCpfCnpj(value)
       setProfileData(prev => ({ ...prev, [name]: formatted }))
     } else {
       setProfileData(prev => ({ ...prev, [name]: value }))
+    }
+  }
+
+  const fetchAddressByCEP = async (cep: string) => {
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+      const data = await response.json()
+      
+      if (data.erro) {
+        showToast({
+          title: 'CEP não encontrado',
+          message: 'Não foi possível encontrar o endereço para este CEP',
+          variant: 'error',
+          duration: 3000,
+        })
+        return
+      }
+      
+      setProfileData(prev => ({
+        ...prev,
+        address: data.logradouro || '',
+        neighborhood: data.bairro || '',
+        city: data.localidade || '',
+        state: data.uf || ''
+      }))
+      
+      showToast({
+        title: 'Endereço encontrado!',
+        message: 'Os campos foram preenchidos automaticamente',
+        variant: 'success',
+        duration: 3000,
+      })
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error)
+      showToast({
+        title: 'Erro',
+        message: 'Erro ao buscar endereço. Tente novamente.',
+        variant: 'error',
+        duration: 3000,
+      })
     }
   }
 
@@ -394,10 +484,13 @@ export default function ProfilePage() {
           phone: profileData.phone,
           cpf_cnpj: profileData.cpf_cnpj,
           address: profileData.address,
+          neighborhood: profileData.neighborhood,
           city: profileData.city,
           state: profileData.state,
           zip_code: profileData.zip_code,
           avatar_url: avatarUrl,
+          always_open: profileData.always_open,
+          business_hours: profileData.business_hours,
           updated_at: new Date().toISOString()
         })
 
@@ -464,6 +557,70 @@ export default function ProfilePage() {
     setAvatarFile(null)
     setAvatarPreview(null)
     setProfileData(prev => ({ ...prev, avatar_url: null }))
+  }
+
+  const daysOfWeek = [
+    { key: 'sunday', label: 'Domingo' },
+    { key: 'monday', label: 'Segunda-feira' },
+    { key: 'tuesday', label: 'Terça-feira' },
+    { key: 'wednesday', label: 'Quarta-feira' },
+    { key: 'thursday', label: 'Quinta-feira' },
+    { key: 'friday', label: 'Sexta-feira' },
+    { key: 'saturday', label: 'Sábado' },
+  ]
+
+  const handleBusinessHourChange = (day: string, field: 'closed', value: boolean) => {
+    setProfileData(prev => ({
+      ...prev,
+      business_hours: {
+        ...prev.business_hours,
+        [day]: {
+          ...prev.business_hours[day],
+          [field]: value
+        }
+      }
+    }))
+  }
+
+  const handleIntervalChange = (day: string, intervalIndex: number, field: 'open' | 'close', value: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      business_hours: {
+        ...prev.business_hours,
+        [day]: {
+          ...prev.business_hours[day],
+          intervals: prev.business_hours[day].intervals.map((interval, idx) => 
+            idx === intervalIndex ? { ...interval, [field]: value } : interval
+          )
+        }
+      }
+    }))
+  }
+
+  const addInterval = (day: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      business_hours: {
+        ...prev.business_hours,
+        [day]: {
+          ...prev.business_hours[day],
+          intervals: [...prev.business_hours[day].intervals, { open: '09:00', close: '18:00' }]
+        }
+      }
+    }))
+  }
+
+  const removeInterval = (day: string, intervalIndex: number) => {
+    setProfileData(prev => ({
+      ...prev,
+      business_hours: {
+        ...prev.business_hours,
+        [day]: {
+          ...prev.business_hours[day],
+          intervals: prev.business_hours[day].intervals.filter((_, idx) => idx !== intervalIndex)
+        }
+      }
+    }))
   }
 
   if (loading) {
@@ -535,84 +692,140 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Personal Information */}
-        <div className="mb-8 pb-8 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Informações Pessoais</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nome completo *
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  name="full_name"
-                  value={profileData.full_name}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
-                  placeholder="Seu nome completo"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                E-mail
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="email"
-                  value={profileData.email}
-                  disabled
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">O e-mail não pode ser alterado</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Telefone
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="tel"
-                  name="phone"
-                  value={profileData.phone}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
-                  placeholder="(00) 00000-0000"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                CPF / CNPJ
-              </label>
-              <div className="relative">
-                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  name="cpf_cnpj"
-                  value={profileData.cpf_cnpj}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
-                  placeholder="000.000.000-00 ou 00.000.000/0000-00"
-                />
-              </div>
-            </div>
+        {/* Tabs */}
+        <div className="border-b border-gray-200 mb-6">
+          <div className="flex gap-8">
+            <button
+              type="button"
+              onClick={() => setActiveTab('personal')}
+              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:outline-none ${
+                activeTab === 'personal'
+                  ? 'border-[var(--color-old-rose)] text-[var(--color-old-rose)]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <User className="w-4 h-4 inline-block mr-2" />
+              Informações Pessoais
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('establishment')}
+              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:outline-none ${
+                activeTab === 'establishment'
+                  ? 'border-[var(--color-old-rose)] text-[var(--color-old-rose)]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Building2 className="w-4 h-4 inline-block mr-2" />
+              Estabelecimento
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('hours')}
+              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:outline-none ${
+                activeTab === 'hours'
+                  ? 'border-[var(--color-old-rose)] text-[var(--color-old-rose)]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Clock className="w-4 h-4 inline-block mr-2" />
+              Horários de Funcionamento
+            </button>
           </div>
         </div>
 
-        {/* Address Information */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Endereço</h2>
-          <div className="grid grid-cols-1 gap-4">
+        {/* Tab Content */}
+        {activeTab === 'personal' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome completo *
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    name="full_name"
+                    value={profileData.full_name}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                    placeholder="Seu nome completo"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  E-mail
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="email"
+                    value={profileData.email}
+                    disabled
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">O e-mail não pode ser alterado</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Telefone
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={profileData.phone}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  CPF / CNPJ
+                </label>
+                <div className="relative">
+                  <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    name="cpf_cnpj"
+                    value={profileData.cpf_cnpj}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                    placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'establishment' && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                CEP
+              </label>
+              <input
+                type="text"
+                name="zip_code"
+                value={profileData.zip_code}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                placeholder="00000-000"
+              />
+              <p className="text-xs text-gray-500 mt-1">Digite o CEP para preencher automaticamente</p>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Endereço
@@ -630,7 +843,21 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Bairro
+              </label>
+              <input
+                type="text"
+                name="neighborhood"
+                value={profileData.neighborhood}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                placeholder="Bairro"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Cidade
@@ -659,26 +886,103 @@ export default function ProfilePage() {
                   maxLength={2}
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CEP
-                </label>
-                <input
-                  type="text"
-                  name="zip_code"
-                  value={profileData.zip_code}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
-                  placeholder="00000-000"
-                />
-              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {activeTab === 'hours' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
+              <div className="flex-1">
+                <label htmlFor="always-open" className="text-sm font-medium text-gray-900 cursor-pointer">
+                  Sempre Aberto
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Estabelecimento funciona 24 horas por dia
+                </p>
+              </div>
+              <Switch
+                id="always-open"
+                checked={profileData.always_open}
+                onCheckedChange={(checked) => setProfileData(prev => ({ ...prev, always_open: checked }))}
+              />
+            </div>
+
+            {!profileData.always_open && (
+              <div className="space-y-3">
+                {daysOfWeek.map(({ key, label }) => (
+                  <div key={key} className="py-3 px-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-4 mb-3">
+                      <div className="flex items-center min-w-[140px]">
+                        <Switch
+                          id={`day-${key}`}
+                          checked={!profileData.business_hours[key].closed}
+                          onCheckedChange={(checked) => handleBusinessHourChange(key, 'closed', !checked)}
+                        />
+                        <label htmlFor={`day-${key}`} className="text-sm font-medium text-gray-900 ml-3 cursor-pointer">
+                          {label}
+                        </label>
+                      </div>
+                      
+                      {!profileData.business_hours[key].closed && (
+                        <button
+                          type="button"
+                          onClick={() => addInterval(key)}
+                          className="ml-auto flex items-center gap-1 text-xs text-[var(--color-old-rose)] hover:text-[var(--color-old-rose)]/80 transition-colors"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Adicionar intervalo
+                        </button>
+                      )}
+                    </div>
+                    
+                    {profileData.business_hours[key].closed ? (
+                      <span className="text-sm text-gray-500 italic ml-[164px]">Fechado</span>
+                    ) : (
+                      <div className="space-y-2 ml-[164px]">
+                        {profileData.business_hours[key].intervals.map((interval, idx) => (
+                          <div key={idx} className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs text-gray-600 min-w-[36px]">Abre:</label>
+                              <input
+                                type="time"
+                                value={interval.open}
+                                onChange={(e) => handleIntervalChange(key, idx, 'open', e.target.value)}
+                                className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs text-gray-600 min-w-[40px]">Fecha:</label>
+                              <input
+                                type="time"
+                                value={interval.close}
+                                onChange={(e) => handleIntervalChange(key, idx, 'close', e.target.value)}
+                                className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                              />
+                            </div>
+                            {profileData.business_hours[key].intervals.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeInterval(key, idx)}
+                                className="p-1 hover:bg-red-50 rounded transition-colors"
+                                title="Remover intervalo"
+                              >
+                                <X className="w-4 h-4 text-red-500" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+        <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
           {hasChanges && (
             <Button
               type="button"

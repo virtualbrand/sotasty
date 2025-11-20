@@ -18,6 +18,8 @@ import {
   Info,
   X,
   Check,
+  ExternalLink,
+  Link2,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import {
@@ -44,6 +46,7 @@ interface Menu {
   id: string
   name: string
   description?: string
+  url_slug?: string
   items: MenuItem[]
   active: boolean
   created_at: string
@@ -59,25 +62,59 @@ export default function CardapiosPage() {
   const [menuToDelete, setMenuToDelete] = useState<string | null>(null)
   const [statusFilters, setStatusFilters] = useState<string[]>([])
   const [showStatusDropdown, setShowStatusDropdown] = useState(false)
+  const [customUrlSlug, setCustomUrlSlug] = useState<string>('')
 
   // Form state
   const [menuName, setMenuName] = useState('')
   const [menuDescription, setMenuDescription] = useState('')
+  const [menuUrlSlug, setMenuUrlSlug] = useState('')
+
+  // Função para gerar slug da URL
+  const generateSlug = (text: string): string => {
+    return text
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^a-z0-9\s-]/g, '') // Remove caracteres especiais
+      .replace(/\s+/g, '-') // Substitui espaços por hífens
+      .replace(/-+/g, '-') // Remove hífens duplicados
+      .replace(/^-|-$/g, '') // Remove hífens do início e fim
+  }
+
+  // Atualiza o slug quando o nome muda
+  const handleMenuNameChange = (value: string) => {
+    setMenuName(value)
+    setMenuUrlSlug(generateSlug(value))
+  }
 
   useEffect(() => {
     loadMenus()
+    loadProfileSettings()
   }, [])
+
+  const loadProfileSettings = async () => {
+    try {
+      const response = await fetch('/api/profile-settings')
+      if (response.ok) {
+        const data = await response.json()
+        setCustomUrlSlug(data.custom_url_slug || '')
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error)
+    }
+  }
 
   const loadMenus = async () => {
     try {
       setLoading(true)
-      // TODO: Implementar chamada à API
-      // const response = await fetch('/api/menus')
-      // const data = await response.json()
-      // setMenus(data)
-      
-      // Mock data temporário
-      setMenus([])
+      const response = await fetch('/api/menus')
+      if (response.ok) {
+        const data = await response.json()
+        setMenus(data)
+      } else {
+        console.error('Erro ao carregar cardápios')
+      }
     } catch (error) {
       console.error('Erro ao carregar cardápios:', error)
       showToast({
@@ -100,30 +137,51 @@ export default function CardapiosPage() {
       return
     }
 
+    if (!menuUrlSlug.trim()) {
+      showToast({
+        title: 'Atenção',
+        message: 'A URL do cardápio é obrigatória',
+        variant: 'error',
+      })
+      return
+    }
+
     try {
-      // TODO: Implementar chamada à API
-      // const response = await fetch('/api/menus', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     name: menuName,
-      //     description: menuDescription,
-      //   }),
-      // })
+      const response = await fetch('/api/menus', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: menuName,
+          description: menuDescription || null,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erro ao criar cardápio')
+      }
+
+      const newMenu = await response.json()
+      
+      const fullUrl = customUrlSlug 
+        ? `sotasty.com.br/${customUrlSlug}/${newMenu.url_slug}`
+        : `sotasty.com.br/[sua-url]/${newMenu.url_slug}`
       
       showToast({
         title: 'Sucesso!',
-        message: 'Cardápio criado com sucesso',
+        message: `Cardápio criado: ${fullUrl}`,
         variant: 'success',
+        duration: 4000,
       })
+      
       setShowNewMenuModal(false)
       resetForm()
-      loadMenus()
+      loadMenus() // Recarregar lista
     } catch (error) {
       console.error('Erro ao criar cardápio:', error)
       showToast({
         title: 'Erro',
-        message: 'Não foi possível criar o cardápio',
+        message: error instanceof Error ? error.message : 'Não foi possível criar o cardápio',
         variant: 'error',
       })
     }
@@ -157,6 +215,7 @@ export default function CardapiosPage() {
   const resetForm = () => {
     setMenuName('')
     setMenuDescription('')
+    setMenuUrlSlug('')
   }
 
   const toggleStatusFilter = (status: string) => {
@@ -202,7 +261,8 @@ export default function CardapiosPage() {
         </div>
         <button
           onClick={() => setShowNewMenuModal(true)}
-          className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold cursor-pointer"
+          className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold cursor-pointer outline-none"
+          type="button"
         >
           + Novo Cardápio
         </button>
@@ -318,15 +378,6 @@ export default function CardapiosPage() {
               ? 'Tente ajustar a busca'
               : 'Comece criando seu primeiro cardápio'}
           </p>
-          {!searchQuery && (
-            <Button
-              onClick={() => setShowNewMenuModal(true)}
-              className="bg-gradient-to-r from-[var(--color-old-rose)] to-[var(--color-melon)] hover:opacity-90 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Criar Primeiro Cardápio
-            </Button>
-          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -341,9 +392,36 @@ export default function CardapiosPage() {
                     {menu.name}
                   </h3>
                   {menu.description && (
-                    <p className="text-sm text-gray-500 line-clamp-2">
+                    <p className="text-sm text-gray-500 line-clamp-2 mb-2">
                       {menu.description}
                     </p>
+                  )}
+                  
+                  {/* URL do Cardápio */}
+                  {menu.url_slug && (
+                    <div className="flex items-center gap-2 mt-2 p-2 bg-gray-50 rounded-lg">
+                      <Link2 className="w-3 h-3 text-gray-400" />
+                      <span className="text-xs text-gray-600 font-mono truncate">
+                        {customUrlSlug ? `sotasty.com.br/${customUrlSlug}/${menu.url_slug}` : `sotasty.com.br/[sua-url]/${menu.url_slug}`}
+                      </span>
+                      <button
+                        onClick={() => {
+                          const url = customUrlSlug 
+                            ? `https://sotasty.com.br/${customUrlSlug}/${menu.url_slug}`
+                            : menu.url_slug
+                          navigator.clipboard.writeText(url)
+                          showToast({
+                            title: 'URL copiada!',
+                            message: 'Link do cardápio copiado para a área de transferência',
+                            variant: 'success',
+                            duration: 2000,
+                          })
+                        }}
+                        className="p-1 hover:bg-gray-200 rounded transition-colors"
+                      >
+                        <Copy className="w-3 h-3 text-gray-500" />
+                      </button>
+                    </div>
                   )}
                 </div>
                 <Badge variant={menu.active ? 'default' : 'secondary'}>
@@ -365,15 +443,8 @@ export default function CardapiosPage() {
                   <Button variant="ghost" size="sm">
                     <Copy className="w-4 h-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setMenuToDelete(menu.id)
-                      setShowDeleteDialog(true)
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
+                  <Button variant="ghost" size="sm">
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
@@ -382,25 +453,54 @@ export default function CardapiosPage() {
         </div>
       )}
 
-      {/* New Menu Modal */}
-      <Modal
+      {/* Modal Novo Cardápio */}
+      <Modal 
         isOpen={showNewMenuModal}
-        onClose={() => {
-          setShowNewMenuModal(false)
-          resetForm()
-        }}
+        onClose={() => setShowNewMenuModal(false)}
         title="Novo Cardápio"
       >
         <div className="space-y-4">
+          {!customUrlSlug && (
+            <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-amber-800">
+                  <strong>Configure sua URL personalizada</strong> em Configurações &gt; Preferências 
+                  para ativar o link público do cardápio.
+                </p>
+              </div>
+            </div>
+          )}
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Nome do Cardápio *
             </label>
             <Input
               value={menuName}
-              onChange={(e) => setMenuName(e.target.value)}
+              onChange={(e) => handleMenuNameChange(e.target.value)}
               placeholder="Ex: Cardápio de Bolos"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              URL do Cardápio *
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500 whitespace-nowrap">
+                sotasty.com.br/{customUrlSlug || '[sua-url]'}/
+              </span>
+              <Input
+                value={menuUrlSlug}
+                onChange={(e) => setMenuUrlSlug(generateSlug(e.target.value))}
+                placeholder="cardapio-bolos"
+                className="flex-1"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              URL gerada automaticamente. Você pode editá-la se desejar.
+            </p>
           </div>
 
           <div>

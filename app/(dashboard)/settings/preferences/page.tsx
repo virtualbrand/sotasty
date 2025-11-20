@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { Check, Layout, BrushCleaning, Trash2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Check, Layout, BrushCleaning, Trash2, Link2, ExternalLink } from 'lucide-react'
 import { showToast } from '@/app/(dashboard)/layout'
+import { Input } from '@/components/ui/input'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,11 +35,69 @@ export default function PreferencesPage() {
   const [savedShowDailyBalance, setSavedShowDailyBalance] = useState(getInitialShowDailyBalance)
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [resetConfirmText, setResetConfirmText] = useState('')
+  
+  // URL personalizada
+  const [customUrlSlug, setCustomUrlSlug] = useState('')
+  const [savedCustomUrlSlug, setSavedCustomUrlSlug] = useState('')
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true)
+  const [isSavingUrl, setIsSavingUrl] = useState(false)
+  const [urlError, setUrlError] = useState('')
 
-  const hasChanges = menuPosition !== savedMenuPosition || showDailyBalance !== savedShowDailyBalance
+  const hasChanges = menuPosition !== savedMenuPosition || 
+                      showDailyBalance !== savedShowDailyBalance ||
+                      customUrlSlug !== savedCustomUrlSlug
   const isResetConfirmed = resetConfirmText === 'ZERAR CONTA'
 
-  const handleSave = () => {
+  // Carregar configurações do perfil
+  useEffect(() => {
+    loadProfileSettings()
+  }, [])
+
+  const loadProfileSettings = async () => {
+    try {
+      const response = await fetch('/api/profile-settings')
+      if (response.ok) {
+        const data = await response.json()
+        setCustomUrlSlug(data.custom_url_slug || '')
+        setSavedCustomUrlSlug(data.custom_url_slug || '')
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error)
+    } finally {
+      setIsLoadingSettings(false)
+    }
+  }
+
+  const validateUrlSlug = (value: string): boolean => {
+    if (!value) return true // Vazio é permitido
+    
+    const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+    if (!slugRegex.test(value)) {
+      setUrlError('Use apenas letras minúsculas, números e hífens')
+      return false
+    }
+    
+    if (value.length < 3) {
+      setUrlError('Mínimo de 3 caracteres')
+      return false
+    }
+    
+    if (value.length > 50) {
+      setUrlError('Máximo de 50 caracteres')
+      return false
+    }
+    
+    setUrlError('')
+    return true
+  }
+
+  const handleUrlChange = (value: string) => {
+    setCustomUrlSlug(value.toLowerCase().trim())
+    validateUrlSlug(value.toLowerCase().trim())
+  }
+
+  const handleSave = async () => {
+    // Salvar preferências locais
     localStorage.setItem('menuPosition', menuPosition)
     localStorage.setItem('showDailyBalance', showDailyBalance.toString())
     
@@ -51,19 +110,62 @@ export default function PreferencesPage() {
     setSavedMenuPosition(menuPosition)
     setSavedShowDailyBalance(showDailyBalance)
 
-    const positionLabels = {
-      sidebar: 'Lateral Esquerda',
-      right: 'Lateral Direita',
-      header: 'Cabeçalho',
-      footer: 'Rodapé'
-    }
+    // Salvar URL personalizada se mudou
+    if (customUrlSlug !== savedCustomUrlSlug) {
+      if (!validateUrlSlug(customUrlSlug)) {
+        return
+      }
 
-    showToast({
-      title: 'Preferências salvas!',
-      message: `Menu posicionado em: ${positionLabels[menuPosition]}`,
-      variant: 'success',
-      duration: 3000,
-    })
+      setIsSavingUrl(true)
+      try {
+        const response = await fetch('/api/profile-settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ custom_url_slug: customUrlSlug || null })
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }))
+          throw new Error(errorData.error || 'Erro ao salvar URL')
+        }
+
+        const data = await response.json()
+        setSavedCustomUrlSlug(customUrlSlug)
+        
+        showToast({
+          title: 'Preferências salvas!',
+          message: customUrlSlug 
+            ? `URL personalizada: sotasty.com.br/${customUrlSlug}`
+            : 'Configurações atualizadas com sucesso',
+          variant: 'success',
+          duration: 3000,
+        })
+      } catch (error) {
+        console.error('Erro ao salvar URL:', error)
+        showToast({
+          title: 'Erro ao salvar',
+          message: error instanceof Error ? error.message : 'Não foi possível salvar. Verifique se as tabelas foram criadas no banco de dados.',
+          variant: 'error',
+          duration: 5000,
+        })
+      } finally {
+        setIsSavingUrl(false)
+      }
+    } else {
+      const positionLabels = {
+        sidebar: 'Lateral Esquerda',
+        right: 'Lateral Direita',
+        header: 'Cabeçalho',
+        footer: 'Rodapé'
+      }
+
+      showToast({
+        title: 'Preferências salvas!',
+        message: `Menu posicionado em: ${positionLabels[menuPosition]}`,
+        variant: 'success',
+        duration: 3000,
+      })
+    }
   }
 
   const handleResetAccount = () => {
@@ -82,6 +184,50 @@ export default function PreferencesPage() {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="p-6 space-y-6">
+        {/* URL Personalizada */}
+        <div className="pb-6 border-b border-gray-200">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Link2 className="w-5 h-5 text-gray-700" />
+                <h3 className="text-base font-semibold text-gray-900">URL Personalizada dos Cardápios</h3>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Configure a URL base para seus cardápios públicos. 
+                Seus clientes poderão acessar através de: <strong>sotasty.com.br/sua-url/nome-do-cardapio</strong>
+              </p>
+              
+              <div className="max-w-md space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">sotasty.com.br/</span>
+                  <Input
+                    value={customUrlSlug}
+                    onChange={(e) => handleUrlChange(e.target.value)}
+                    placeholder="sua-confeitaria"
+                    disabled={isLoadingSettings}
+                    className={`flex-1 ${urlError ? 'border-red-500' : ''}`}
+                  />
+                </div>
+                
+                {urlError && (
+                  <p className="text-sm text-red-600">{urlError}</p>
+                )}
+                
+                {customUrlSlug && !urlError && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Exemplo: sotasty.com.br/<strong>{customUrlSlug}</strong>/cardapio-principal</span>
+                  </div>
+                )}
+                
+                <p className="text-xs text-gray-500">
+                  Use apenas letras minúsculas, números e hífens (mínimo 3 caracteres)
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Posição do Menu */}
         <div className="pb-6 border-b border-gray-200">
           <div className="flex items-start justify-between">
@@ -227,11 +373,11 @@ export default function PreferencesPage() {
         <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
           <button
             onClick={handleSave}
-            disabled={!hasChanges}
+            disabled={!hasChanges || isSavingUrl || !!urlError}
             className="btn-success disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Check className="w-4 h-4" />
-            Salvar alterações
+            {isSavingUrl ? 'Salvando...' : 'Salvar alterações'}
           </button>
         </div>
       </div>

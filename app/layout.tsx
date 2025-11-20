@@ -21,8 +21,8 @@ const kumbhSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "SoTasty - Sistema de Gestão para Gastronomia",
-  description: "Sistema completo para gerenciar seu negócio gastronômico",
+  title: "SoTasty - Sistema de Gestão para Food Service",
+  description: "Sistema completo para gerenciar seu negócio de food service com eficiência e praticidade.",
 };
 
 export default function RootLayout({

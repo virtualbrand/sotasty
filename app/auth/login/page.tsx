@@ -50,7 +50,7 @@ export default function LoginPage() {
             SoTasty
           </h1>
           <p className="mt-2 text-sm text-gray-600">
-            Sistema de Gestão para Gastronomia
+            Sistema de Gestão para Food Service
           </p>
         </div>
 

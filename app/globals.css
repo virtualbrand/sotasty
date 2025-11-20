@@ -194,6 +194,17 @@ h1, h2, h3, h4, h5, h6 {
   outline-offset: 2px;
 }
 
+/* Remove focus styles for specific buttons */
+button:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+button:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
 .btn-info:disabled,
 .btn-success:disabled,
 .btn-warning:disabled,

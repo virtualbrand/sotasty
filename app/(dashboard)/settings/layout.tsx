@@ -15,7 +15,8 @@ import {
   MessageSquare,
   Calendar,
   DollarSign,
-  UserCog
+  UserCog,
+  Info
 } from 'lucide-react'
 
 const settingsNavigation = [
@@ -109,8 +110,15 @@ export default function SettingsLayout({
   return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Configurações</h1>
-          <p className="text-gray-600 mt-2">Gerencie suas configurações e preferências</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-gray-900">Configurações</h1>
+            <div className="group relative">
+              <Info className="w-4 h-4 text-gray-400 cursor-help" />
+              <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[330px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '25px 15px 30px 20px' }}>
+                Gerencie todas as configurações do seu negócio em um só lugar. Personalize seu perfil, configure preferências do sistema, gerencie usuários e permissões e ajuste campos de formulários.
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
