@@ -26,6 +26,7 @@ type ProfileData = {
   state: string
   zip_code: string
   avatar_url: string | null
+  logo_url: string | null
   always_open: boolean
   business_hours: {
     [key: string]: { 
@@ -140,6 +141,7 @@ export default function ProfilePage() {
     state: '',
     zip_code: '',
     avatar_url: null,
+    logo_url: null,
     always_open: false,
     business_hours: {
       sunday: { closed: true, intervals: [{ open: '09:00', close: '18:00' }] },
@@ -163,6 +165,7 @@ export default function ProfilePage() {
     state: '',
     zip_code: '',
     avatar_url: null,
+    logo_url: null,
     always_open: false,
     business_hours: {
       sunday: { closed: true, intervals: [{ open: '09:00', close: '18:00' }] },
@@ -176,6 +179,8 @@ export default function ProfilePage() {
   })
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [hasChanges, setHasChanges] = useState(false)
 
   useEffect(() => {
@@ -187,8 +192,9 @@ export default function ProfilePage() {
   useEffect(() => {
     const dataChanged = JSON.stringify(profileData) !== JSON.stringify(originalProfileData)
     const avatarChanged = avatarFile !== null
-    setHasChanges(dataChanged || avatarChanged)
-  }, [profileData, originalProfileData, avatarFile])
+    const logoChanged = logoFile !== null
+    setHasChanges(dataChanged || avatarChanged || logoChanged)
+  }, [profileData, originalProfileData, avatarFile, logoFile])
 
   const loadProfile = async () => {
     try {
@@ -233,6 +239,7 @@ export default function ProfilePage() {
             state: '',
             zip_code: '',
             avatar_url: null,
+            logo_url: null,
             always_open: false,
             business_hours: profileData.business_hours
           }
@@ -259,6 +266,7 @@ export default function ProfilePage() {
           state: data.state || '',
           zip_code: data.zip_code || '',
           avatar_url: data.avatar_url || null,
+          logo_url: data.logo_url || null,
           always_open: data.always_open || false,
           business_hours: data.business_hours ? 
             (typeof data.business_hours === 'object' && Object.keys(data.business_hours).length > 0 
@@ -277,6 +285,13 @@ export default function ProfilePage() {
             .getPublicUrl(data.avatar_url)
           setAvatarPreview(publicUrl)
         }
+        
+        if (data.logo_url) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(data.logo_url)
+          setLogoPreview(publicUrl)
+        }
       } else {
         const newData = {
           id: user.id,
@@ -290,6 +305,7 @@ export default function ProfilePage() {
           state: '',
           zip_code: '',
           avatar_url: null,
+          logo_url: null,
           always_open: false,
           business_hours: profileData.business_hours
         }
@@ -394,6 +410,34 @@ export default function ProfilePage() {
     }
   }
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        showToast({
+          title: 'Erro',
+          message: 'A imagem deve ter no máximo 2MB',
+          variant: 'error',
+          duration: 3000,
+        })
+        return
+      }
+      
+      setLogoFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const removeLogo = () => {
+    setLogoFile(null)
+    setLogoPreview(null)
+    setProfileData(prev => ({ ...prev, logo_url: null }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -458,6 +502,37 @@ export default function ProfilePage() {
         avatarUrl = fileName
       }
 
+      let logoUrl = profileData.logo_url
+
+      // Upload do logo se houver
+      if (logoFile) {
+        const fileExt = logoFile.name.split('.').pop()
+        const fileName = `${user.id}/logo-${Date.now()}.${fileExt}`
+        
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, logoFile, { upsert: true })
+
+        if (uploadError) {
+          console.error('Erro no upload do logo:', uploadError)
+          showToast({
+            title: 'Erro',
+            message: `Erro ao fazer upload do logo: ${uploadError.message}`,
+            variant: 'error',
+            duration: 4000,
+          })
+          setSaving(false)
+          return
+        }
+
+        // Remove logo antigo se existir
+        if (logoUrl && logoUrl !== fileName) {
+          await supabase.storage.from('avatars').remove([logoUrl])
+        }
+
+        logoUrl = fileName
+      }
+
       // Atualiza o nome no user_metadata do auth para sincronizar com o sidebar
       const { error: authError } = await supabase.auth.updateUser({
         data: { name: profileData.full_name }
@@ -489,6 +564,7 @@ export default function ProfilePage() {
           state: profileData.state,
           zip_code: profileData.zip_code,
           avatar_url: avatarUrl,
+          logo_url: logoUrl,
           always_open: profileData.always_open,
           business_hours: profileData.business_hours,
           updated_at: new Date().toISOString()
@@ -513,11 +589,13 @@ export default function ProfilePage() {
         duration: 3000,
       })
       setAvatarFile(null)
+      setLogoFile(null)
       
       // Atualiza os dados originais após salvar
       setOriginalProfileData({
         ...profileData,
-        avatar_url: avatarUrl
+        avatar_url: avatarUrl,
+        logo_url: logoUrl
       })
       
       // Recarrega o perfil para pegar a URL pública atualizada
@@ -634,71 +712,13 @@ export default function ProfilePage() {
   return (
     <div className="rounded-lg shadow-sm border border-gray-200" style={{ backgroundColor: '#FFFBFB' }}>
       <form onSubmit={handleSubmit} className="p-6">
-        {/* Avatar Section */}
-        <div className="mb-8 pb-8 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Foto de Perfil</h2>
-          <div className="flex items-center gap-6">
-            <div className="relative">
-              <label className="cursor-pointer group">
-                <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative">
-                  {avatarPreview ? (
-                    <>
-                      <Image 
-                        src={avatarPreview} 
-                        alt="Avatar" 
-                        width={128}
-                        height={128}
-                        className="w-full h-full object-cover" 
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="bg-white bg-opacity-90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-                          <SwitchCamera className="w-6 h-6 text-gray-700" />
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <User className="w-16 h-16 text-gray-400 group-hover:text-gray-500 transition-colors" />
-                      <div className="absolute inset-0 bg-gray-100 group-hover:bg-gray-200 transition-colors flex items-center justify-center">
-                        <div className="flex flex-col items-center">
-                          <Camera className="w-8 h-8 text-gray-400" />
-                          <span className="text-xs text-gray-500 mt-1">Adicionar</span>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  className="hidden"
-                />
-              </label>
-              {avatarPreview && (
-                <button
-                  type="button"
-                  onClick={removeAvatar}
-                  className="absolute -top-2 -right-2 hover:scale-110 transition-transform"
-                >
-                  <CircleX className="w-6 h-6 text-[#D67973] hover:text-[#C86561] transition-colors" />
-                </button>
-              )}
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
-              <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
-            </div>
-          </div>
-        </div>
-
         {/* Tabs */}
         <div className="border-b border-gray-200 mb-6">
           <div className="flex gap-8">
             <button
               type="button"
               onClick={() => setActiveTab('personal')}
-              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:outline-none ${
+              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:outline-none cursor-pointer ${
                 activeTab === 'personal'
                   ? 'border-[var(--color-old-rose)] text-[var(--color-old-rose)]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -710,7 +730,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={() => setActiveTab('establishment')}
-              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:outline-none ${
+              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:outline-none cursor-pointer ${
                 activeTab === 'establishment'
                   ? 'border-[var(--color-old-rose)] text-[var(--color-old-rose)]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -722,7 +742,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={() => setActiveTab('hours')}
-              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:outline-none ${
+              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:outline-none cursor-pointer ${
                 activeTab === 'hours'
                   ? 'border-[var(--color-old-rose)] text-[var(--color-old-rose)]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -736,7 +756,65 @@ export default function ProfilePage() {
 
         {/* Tab Content */}
         {activeTab === 'personal' && (
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Avatar Section */}
+            <div className="pb-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Foto de Perfil</h2>
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                  <label className="cursor-pointer group">
+                    <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative">
+                      {avatarPreview ? (
+                        <>
+                          <Image 
+                            src={avatarPreview} 
+                            alt="Avatar" 
+                            width={128}
+                            height={128}
+                            className="w-full h-full object-cover" 
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="bg-white bg-opacity-90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                              <SwitchCamera className="w-6 h-6 text-gray-700" />
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <User className="w-16 h-16 text-gray-400 group-hover:text-gray-500 transition-colors" />
+                          <div className="absolute inset-0 bg-gray-100 group-hover:bg-gray-200 transition-colors flex items-center justify-center">
+                            <div className="flex flex-col items-center">
+                              <Camera className="w-8 h-8 text-gray-400" />
+                              <span className="text-xs text-gray-500 mt-1">Adicionar</span>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                  </label>
+                  {avatarPreview && (
+                    <button
+                      type="button"
+                      onClick={removeAvatar}
+                      className="absolute -top-2 -right-2 hover:scale-110 transition-transform"
+                    >
+                      <CircleX className="w-6 h-6 text-[#D67973] hover:text-[#C86561] transition-colors" />
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
+                  <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -810,7 +888,65 @@ export default function ProfilePage() {
         )}
 
         {activeTab === 'establishment' && (
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Logo Section */}
+            <div className="pb-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Logo do Estabelecimento</h2>
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                  <label className="cursor-pointer group">
+                    <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative">
+                      {logoPreview ? (
+                        <>
+                          <Image 
+                            src={logoPreview} 
+                            alt="Logo" 
+                            width={128}
+                            height={128}
+                            className="w-full h-full object-cover" 
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="bg-white bg-opacity-90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                              <SwitchCamera className="w-6 h-6 text-gray-700" />
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <Building2 className="w-16 h-16 text-gray-400 group-hover:text-gray-500 transition-colors" />
+                          <div className="absolute inset-0 bg-gray-100 group-hover:bg-gray-200 transition-colors flex items-center justify-center">
+                            <div className="flex flex-col items-center">
+                              <Camera className="w-8 h-8 text-gray-400" />
+                              <span className="text-xs text-gray-500 mt-1">Adicionar</span>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoChange}
+                      className="hidden"
+                    />
+                  </label>
+                  {logoPreview && (
+                    <button
+                      type="button"
+                      onClick={removeLogo}
+                      className="absolute -top-2 -right-2 hover:scale-110 transition-transform"
+                    >
+                      <CircleX className="w-6 h-6 text-[#D67973] hover:text-[#C86561] transition-colors" />
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
+                  <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 CEP

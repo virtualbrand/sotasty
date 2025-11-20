@@ -263,9 +263,9 @@ export default function CardapiosPage() {
         </div>
         <Button
           onClick={() => router.push('/cardapios/novo')}
-          className="bg-[var(--color-old-rose)] text-white hover:bg-[var(--color-rosy-brown)]"
+          className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold flex items-center gap-2 cursor-pointer"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="h-4 w-4" />
           Novo Cardápio
         </Button>
       </div>

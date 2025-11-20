@@ -18,14 +18,21 @@ export async function GET() {
       )
     }
 
-    // Buscar configurações
+    // Buscar configurações de profile_settings
     const { data: settings, error } = await supabase
       .from('profile_settings')
       .select('*')
       .eq('user_id', user.id)
       .single()
 
-    console.log('[profile-settings GET] Settings:', settings, 'Error:', error)
+    // Buscar logo_url da tabela profiles
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('logo_url')
+      .eq('id', user.id)
+      .single()
+
+    console.log('[profile-settings GET] Settings:', settings, 'Profile:', profile, 'Error:', error)
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = not found
       console.error('Erro ao buscar configurações:', error)
@@ -57,10 +64,18 @@ export async function GET() {
         )
       }
 
-      return NextResponse.json(newSettings)
+      // Incluir logo_url do profile
+      return NextResponse.json({
+        ...newSettings,
+        logo_url: profile?.logo_url || null
+      })
     }
 
-    return NextResponse.json(settings)
+    // Incluir logo_url do profile
+    return NextResponse.json({
+      ...settings,
+      logo_url: profile?.logo_url || settings.logo_url || null
+    })
   } catch (error) {
     console.error('Erro na API de configurações:', error)
     return NextResponse.json(

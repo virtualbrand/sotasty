@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import Image from 'next/image'
 import { Steps } from "@ark-ui/react/steps"
-import { Check, Palette, Info, Package, Loader2 } from 'lucide-react'
+import { Check, Palette, Info, Package, Loader2, Camera, Building2, CircleX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -49,6 +50,8 @@ export default function EditarCardapioPage() {
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [products, setProducts] = useState<Product[]>([])
   const [customUrlSlug, setCustomUrlSlug] = useState<string>('')
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
   
   const [formData, setFormData] = useState<MenuFormData>({
     name: '',
@@ -149,6 +152,15 @@ export default function EditarCardapioPage() {
           whatsapp_number: data.whatsapp_number || '',
           business_hours: data.business_hours || ''
         }))
+        
+        // Carregar preview do logo se existir
+        if (data.logo_url) {
+          const logoResponse = await fetch(`/api/storage/public-url?bucket=avatars&path=${data.logo_url}`)
+          if (logoResponse.ok) {
+            const { publicUrl } = await logoResponse.json()
+            setLogoPreview(publicUrl)
+          }
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar configurações:', error)
@@ -189,9 +201,58 @@ export default function EditarCardapioPage() {
     }))
   }
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        showToast({
+          title: 'Erro',
+          message: 'A imagem deve ter no máximo 2MB',
+          variant: 'error',
+          duration: 3000,
+        })
+        return
+      }
+      
+      setLogoFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const removeLogo = () => {
+    setLogoFile(null)
+    setLogoPreview(null)
+    setFormData(prev => ({ ...prev, logo_url: '' }))
+  }
+
   const handleSubmit = async () => {
     try {
       setLoading(true)
+
+      let logoUrl = formData.logo_url
+
+      // Upload do logo se houver um novo arquivo
+      if (logoFile) {
+        const formDataUpload = new FormData()
+        formDataUpload.append('file', logoFile)
+        formDataUpload.append('bucket', 'avatars')
+        
+        const uploadResponse = await fetch('/api/storage/upload', {
+          method: 'POST',
+          body: formDataUpload
+        })
+
+        if (uploadResponse.ok) {
+          const { path } = await uploadResponse.json()
+          logoUrl = path
+        } else {
+          throw new Error('Erro ao fazer upload do logo')
+        }
+      }
 
       // 1. Atualizar profile_settings
       await fetch('/api/profile-settings', {
@@ -200,7 +261,7 @@ export default function EditarCardapioPage() {
         body: JSON.stringify({
           primary_color: formData.background_color,
           secondary_color: formData.text_color,
-          logo_url: formData.logo_url,
+          logo_url: logoUrl,
           whatsapp_number: formData.whatsapp_number,
           business_hours: formData.business_hours
         })
@@ -338,7 +399,7 @@ export default function EditarCardapioPage() {
                       className="relative flex not-last:flex-1 items-center"
                     >
                       <Steps.Trigger 
-                        className="flex flex-col items-center gap-2 text-center group cursor-pointer disabled:cursor-not-allowed"
+                        className="flex flex-col items-center gap-2 text-center group cursor-pointer disabled:cursor-not-allowed hover:opacity-80 transition-opacity"
                         disabled={index > currentStep && !isStepValid(currentStep)}
                       >
                         <Steps.Indicator className="flex justify-center items-center shrink-0 rounded-full font-semibold w-12 h-12 text-sm border-2 data-complete:bg-[#B3736B] data-complete:text-white data-complete:border-[#B3736B] data-current:bg-[#B3736B] data-current:text-white data-current:border-[#B3736B] data-incomplete:bg-gray-100 data-incomplete:text-gray-500 data-incomplete:border-gray-200 transition-all">
@@ -417,15 +478,60 @@ export default function EditarCardapioPage() {
                 <Steps.Content index={1}>
                   <div className="space-y-6">
                     <div>
-                      <Label htmlFor="logo_url">URL do Logo</Label>
-                      <Input
-                        id="logo_url"
-                        type="url"
-                        value={formData.logo_url}
-                        onChange={(e) => setFormData(prev => ({ ...prev, logo_url: e.target.value }))}
-                        placeholder="https://..."
-                        className="mt-2"
-                      />
+                      <Label>Logo do Cardápio</Label>
+                      <div className="flex items-center gap-6 mt-2">
+                        <div className="relative">
+                          <label className="cursor-pointer group">
+                            <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative">
+                              {logoPreview ? (
+                                <>
+                                  <Image 
+                                    src={logoPreview} 
+                                    alt="Logo" 
+                                    width={128}
+                                    height={128}
+                                    className="w-full h-full object-cover" 
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="bg-white bg-opacity-90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                                      <Camera className="w-6 h-6 text-gray-700" />
+                                    </div>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <Building2 className="w-16 h-16 text-gray-400 group-hover:text-gray-500 transition-colors" />
+                                  <div className="absolute inset-0 bg-gray-100 group-hover:bg-gray-200 transition-colors flex items-center justify-center">
+                                    <div className="flex flex-col items-center">
+                                      <Camera className="w-8 h-8 text-gray-400" />
+                                      <span className="text-xs text-gray-500 mt-1">Adicionar</span>
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleLogoChange}
+                              className="hidden"
+                            />
+                          </label>
+                          {logoPreview && (
+                            <button
+                              type="button"
+                              onClick={removeLogo}
+                              className="absolute -top-2 -right-2 hover:scale-110 transition-transform"
+                            >
+                              <CircleX className="w-6 h-6 text-[#D67973] hover:text-[#C86561] transition-colors" />
+                            </button>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
+                          <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -652,8 +758,8 @@ export default function EditarCardapioPage() {
               <div className="flex justify-between items-center mt-6">
                 <Button
                   onClick={() => currentStep === 0 ? router.push('/cardapios') : setCurrentStep(prev => prev - 1)}
-                  variant="outline"
                   disabled={loading}
+                  className="btn-outline-grey"
                 >
                   {currentStep === 0 ? 'Cancelar' : 'Voltar'}
                 </Button>
@@ -663,7 +769,7 @@ export default function EditarCardapioPage() {
                     <Steps.NextTrigger asChild>
                       <Button
                         disabled={!isStepValid(currentStep) || loading}
-                        className="bg-[#B3736B] hover:bg-[#A0655D]"
+                        className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold flex items-center gap-2 cursor-pointer"
                       >
                         Continuar
                       </Button>
@@ -672,7 +778,7 @@ export default function EditarCardapioPage() {
                     <Button
                       onClick={handleSubmit}
                       disabled={!isStepValid(3) || loading}
-                      className="bg-[#B3736B] hover:bg-[#A0655D]"
+                      className="btn-success"
                     >
                       {loading ? (
                         <>
@@ -680,7 +786,10 @@ export default function EditarCardapioPage() {
                           Salvando...
                         </>
                       ) : (
-                        'Salvar Alterações'
+                        <>
+                          <Check className="w-4 h-4" />
+                          Salvar Cardápio
+                        </>
                       )}
                     </Button>
                   )}
@@ -714,11 +823,11 @@ export default function EditarCardapioPage() {
                         color: formData.text_color
                       }}
                     >
-                      {formData.logo_url && (
+                      {logoPreview && (
                         <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white overflow-hidden">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img 
-                            src={formData.logo_url} 
+                            src={logoPreview} 
                             alt="Logo"
                             className="w-full h-full object-cover"
                           />
