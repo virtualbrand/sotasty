@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Modal from '@/components/Modal'
@@ -54,6 +55,7 @@ interface Menu {
 }
 
 export default function CardapiosPage() {
+  const router = useRouter()
   const [menus, setMenus] = useState<Menu[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -259,13 +261,13 @@ export default function CardapiosPage() {
             </div>
           </div>
         </div>
-        <button
-          onClick={() => setShowNewMenuModal(true)}
-          className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold cursor-pointer outline-none"
-          type="button"
+        <Button
+          onClick={() => router.push('/cardapios/novo')}
+          className="bg-[var(--color-old-rose)] text-white hover:bg-[var(--color-rosy-brown)]"
         >
-          + Novo Cardápio
-        </button>
+          <Plus className="w-4 h-4 mr-2" />
+          Novo Cardápio
+        </Button>
       </div>
 
       {/* Filters and Search */}
