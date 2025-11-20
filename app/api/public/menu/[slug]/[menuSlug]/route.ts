@@ -31,11 +31,26 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       )
     }
 
+    // Cast data to expected type
+    const menuData = data as {
+      menu_id: string
+      menu_name: string
+      menu_description: string | null
+      menu_active: boolean
+      business_name: string | null
+      business_description: string | null
+      business_logo: string | null
+      business_whatsapp: string | null
+      business_instagram: string | null
+      primary_color: string | null
+      secondary_color: string | null
+    }
+
     // Buscar itens do cardápio
     const { data: items, error: itemsError } = await supabase
       .from('menu_items')
       .select('*')
-      .eq('menu_id', data.menu_id)
+      .eq('menu_id', menuData.menu_id)
       .eq('available', true)
       .order('display_order', { ascending: true })
 
@@ -51,7 +66,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { data: categories } = await supabase
       .from('menu_categories')
       .select('*')
-      .eq('menu_id', data.menu_id)
+      .eq('menu_id', menuData.menu_id)
       .order('display_order', { ascending: true })
 
     // Registrar visualização (analytics)
@@ -64,7 +79,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     await supabase
       .from('menu_views')
       .insert({
-        menu_id: data.menu_id,
+        menu_id: menuData.menu_id,
         ip_address: clientIp,
         user_agent: userAgent,
         referrer: referrer
@@ -73,19 +88,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Montar resposta
     const response = {
       menu: {
-        id: data.menu_id,
-        name: data.menu_name,
-        description: data.menu_description,
-        active: data.menu_active
+        id: menuData.menu_id,
+        name: menuData.menu_name,
+        description: menuData.menu_description,
+        active: menuData.menu_active
       },
       business: {
-        name: data.business_name,
-        description: data.business_description,
-        logo_url: data.business_logo,
-        whatsapp_number: data.business_whatsapp,
-        instagram_handle: data.business_instagram,
-        primary_color: data.primary_color,
-        secondary_color: data.secondary_color
+        name: menuData.business_name,
+        description: menuData.business_description,
+        logo_url: menuData.business_logo,
+        whatsapp_number: menuData.business_whatsapp,
+        instagram_handle: menuData.business_instagram,
+        primary_color: menuData.primary_color,
+        secondary_color: menuData.secondary_color
       },
       items: items || [],
       categories: categories || []
