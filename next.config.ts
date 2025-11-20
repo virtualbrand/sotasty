@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: false,
+  // Aceitar requisições de domínios customizados
+  allowedDevOrigins: ['cardapio.virtualbrand.com.br'],
   images: {
     remotePatterns: [
       {
