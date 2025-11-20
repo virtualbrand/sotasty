@@ -311,7 +311,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                 <button
                   onClick={() => {
                     setShowUserMenu(false)
-                    router.push('/settings/preferences')
+                    router.push('/settings/profile?tab=preferences')
                   }}
                   className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[var(--color-lavender-blush)] flex items-center gap-3 transition-colors cursor-pointer"
                 >
@@ -414,7 +414,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                 <button
                   onClick={() => {
                     setShowUserMenu(false)
-                    router.push('/settings/preferences')
+                    router.push('/settings/profile?tab=preferences')
                   }}
                   className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[var(--color-lavender-blush)] flex items-center gap-3 transition-colors cursor-pointer"
                 >
