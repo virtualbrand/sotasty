@@ -4,9 +4,17 @@ import dns from 'dns'
 import { promisify } from 'util'
 
 const resolveCname = promisify(dns.resolveCname)
+const resolve4 = promisify(dns.resolve4)
 
 // CNAME esperado para apontar para sotasty.com.br
 const EXPECTED_CNAME = 'cname.sotasty.com.br'
+
+// IPs do Cloudflare (quando proxy está ativo)
+const CLOUDFLARE_IPS = [
+  '172.64.', '172.65.', '172.66.', '172.67.', '172.68.', '172.69.', '172.70.', '172.71.',
+  '104.16.', '104.17.', '104.18.', '104.19.', '104.20.', '104.21.', '104.22.', '104.23.',
+  '104.24.', '104.25.', '104.26.', '104.27.', '104.28.', '104.29.', '104.30.', '104.31.'
+]
 
 export async function POST(request: Request) {
   try {
@@ -41,27 +49,67 @@ export async function POST(request: Request) {
     }
 
     let verified = false
+    let verificationMethod = ''
 
+    // Primeiro tentar verificar via CNAME (quando proxy está OFF)
     try {
-      // Verificar via CNAME
       const cnameRecords = await resolveCname(domain)
+      console.log('[verify-domain] CNAME records found:', cnameRecords)
       if (cnameRecords.some(record => record.toLowerCase() === EXPECTED_CNAME.toLowerCase())) {
         verified = true
+        verificationMethod = 'CNAME'
       }
-    } catch {
-      // CNAME não encontrado ou erro na resolução
+    } catch (error) {
+      console.log('[verify-domain] CNAME lookup error, trying A record:', error)
+      
+      // Se CNAME falhar, tentar A record (quando Cloudflare proxy está ON)
+      try {
+        const aRecords = await resolve4(domain)
+        console.log('[verify-domain] A records found:', aRecords)
+        
+        // Verificar se algum IP é do Cloudflare
+        const isCloudflare = aRecords.some(ip => 
+          CLOUDFLARE_IPS.some(prefix => ip.startsWith(prefix))
+        )
+        
+        if (isCloudflare) {
+          verified = true
+          verificationMethod = 'A (Cloudflare Proxy)'
+          console.log('[verify-domain] Domain verified via Cloudflare IP')
+        }
+      } catch (aError) {
+        console.log('[verify-domain] A record lookup error:', aError)
+      }
     }
 
     if (!verified) {
-      return NextResponse.json(
-        { 
-          verified: false,
-          error: 'Domínio não está apontando corretamente',
-          details: `Configure um registro CNAME apontando para ${EXPECTED_CNAME}`
-        },
-        { status: 400 }
-      )
+      console.log('[verify-domain] Domain not verified:', domain)
+      
+      // Tentar mostrar o que foi encontrado para debug
+      try {
+        const debugRecords = await resolve4(domain)
+        console.log('[verify-domain] Debug - A records:', debugRecords)
+        return NextResponse.json(
+          { 
+            verified: false,
+            error: 'Domínio não está apontando corretamente',
+            details: `Configure um registro CNAME apontando para ${EXPECTED_CNAME}. IPs encontrados: ${debugRecords.join(', ')}. Verifique se o DNS propagou (pode levar até 48h, geralmente 5-15 minutos).`
+          },
+          { status: 400 }
+        )
+      } catch {
+        return NextResponse.json(
+          { 
+            verified: false,
+            error: 'Domínio não encontrado',
+            details: `Configure um registro CNAME apontando para ${EXPECTED_CNAME}. Verifique se o DNS propagou (pode levar até 48h, geralmente 5-15 minutos).`
+          },
+          { status: 400 }
+        )
+      }
     }
+
+    console.log('[verify-domain] Domain verified successfully:', domain)
 
     // Buscar configurações do perfil
     const { data: settings, error: settingsError } = await supabase
@@ -118,7 +166,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       verified: true,
-      method: 'CNAME',
+      method: verificationMethod,
       domain,
       message: 'Domínio verificado com sucesso!'
     })
