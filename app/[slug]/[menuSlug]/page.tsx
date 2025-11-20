@@ -236,13 +236,11 @@ export default function PublicMenuPage() {
       {/* Footer */}
       <div className="bg-white border-t border-gray-200 py-6">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <p className="text-sm text-gray-600">
-            {menuData.business.description || 'Cardápio digital'}
+          <p className="text-[11px] text-gray-500">
+                SoTasty<br />
+                Taste the difference
           </p>
-          <p className="text-xs text-gray-400 mt-2">
-            Powered by Sotasty
-          </p>
-        </div>
+      </div>
       </div>
     </div>
   )

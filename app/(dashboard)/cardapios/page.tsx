@@ -386,7 +386,8 @@ export default function CardapiosPage() {
           {filteredMenus.map((menu) => (
             <div
               key={menu.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all p-6"
+              className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all p-6 cursor-pointer"
+              onClick={() => router.push(`/cardapios/${menu.id}`)}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
@@ -407,7 +408,8 @@ export default function CardapiosPage() {
                         {customUrlSlug ? `sotasty.com.br/${customUrlSlug}/${menu.url_slug}` : `sotasty.com.br/[sua-url]/${menu.url_slug}`}
                       </span>
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation()
                           const url = customUrlSlug 
                             ? `https://sotasty.com.br/${customUrlSlug}/${menu.url_slug}`
                             : `https://sotasty.com.br/[sua-url]/${menu.url_slug}`
@@ -435,17 +437,38 @@ export default function CardapiosPage() {
                 <span className="text-sm text-gray-500">
                   {menu.items.length} {menu.items.length === 1 ? 'item' : 'itens'}
                 </span>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm">
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => window.open(`/${customUrlSlug}/${menu.url_slug}`, '_blank')}
+                  >
                     <Eye className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => router.push(`/cardapios/${menu.id}`)}
+                  >
                     <Edit className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      // Duplicar cardápio (futuro)
+                    }}
+                  >
                     <Copy className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      setMenuToDelete(menu.id)
+                      setShowDeleteDialog(true)
+                    }}
+                  >
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>

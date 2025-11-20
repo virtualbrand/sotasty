@@ -27,8 +27,8 @@ interface MenuFormData {
   url_slug: string
   
   // Personalização (será salvo em profile_settings)
-  primary_color: string
-  secondary_color: string
+  background_color: string
+  text_color: string
   logo_url: string
   
   // Informações
@@ -50,13 +50,14 @@ export default function NovoCardapioPage() {
   const [loading, setLoading] = useState(false)
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [products, setProducts] = useState<Product[]>([])
+  const [customUrlSlug, setCustomUrlSlug] = useState<string>('')
   
   const [formData, setFormData] = useState<MenuFormData>({
     name: '',
     description: '',
     url_slug: '',
-    primary_color: '#B3736B',
-    secondary_color: '#E79F9C',
+    background_color: '#B3736B',
+    text_color: '#FFFFFF',
     logo_url: '',
     whatsapp_number: '',
     delivery_enabled: true,
@@ -93,7 +94,20 @@ export default function NovoCardapioPage() {
 
   useEffect(() => {
     loadProducts()
+    loadProfileSettings()
   }, [])
+
+  const loadProfileSettings = async () => {
+    try {
+      const response = await fetch('/api/profile-settings')
+      if (response.ok) {
+        const data = await response.json()
+        setCustomUrlSlug(data.custom_url_slug || '')
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error)
+    }
+  }
 
   const loadProducts = async () => {
     try {
@@ -138,8 +152,8 @@ export default function NovoCardapioPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          primary_color: formData.primary_color,
-          secondary_color: formData.secondary_color,
+          primary_color: formData.background_color,
+          secondary_color: formData.text_color,
           logo_url: formData.logo_url,
           whatsapp_number: formData.whatsapp_number,
           business_hours: formData.business_hours
@@ -235,19 +249,32 @@ export default function NovoCardapioPage() {
     }))
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Criar Novo Cardápio
-          </h1>
-          <p className="text-gray-600">
-            Configure seu cardápio público em alguns passos simples
-          </p>
-        </div>
+  const formatPrice = (price?: number) => {
+    if (!price) return 'R$ 0,00'
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(price)
+  }
 
-        <Steps.Root 
+  const selectedProductsList = products.filter(p => formData.selected_products.includes(p.id))
+
+  return (
+    <div className="min-h-screen p-8">
+      <div className="mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
+          {/* Left Column - Form */}
+          <div className="min-w-0">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Criar Novo Cardápio
+              </h1>
+              <p className="text-gray-600">
+                Configure seu cardápio público em alguns passos simples
+              </p>
+            </div>
+
+            <Steps.Root 
           count={4} 
           step={currentStep}
           onStepChange={(details) => setCurrentStep(details.step)}
@@ -307,19 +334,19 @@ export default function NovoCardapioPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="url_slug">URL do Cardápio *</Label>
+                  <Label htmlFor="url_slug">Link do Cardápio *</Label>
                   <div className="mt-2">
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                      <span>sotasty.com.br/sua-loja/</span>
+                    <div className="flex items-center gap-0.5 text-sm text-gray-600 mb-2">
+                      <span>sotasty.com.br/{customUrlSlug || '[sua-url]'}/</span>
                       <span className="font-semibold text-[#B3736B]">
-                        {formData.url_slug || 'url-do-cardapio'}
+                        {formData.url_slug || 'link-do-cardapio'}
                       </span>
                     </div>
                     <Input
                       id="url_slug"
                       value={formData.url_slug}
                       onChange={(e) => setFormData(prev => ({ ...prev, url_slug: e.target.value }))}
-                      placeholder="url-do-cardapio"
+                      placeholder="link-do-cardapio"
                     />
                   </div>
                 </div>
@@ -355,18 +382,18 @@ export default function NovoCardapioPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="primary_color">Cor Primária</Label>
+                    <Label htmlFor="background_color">Cor de Fundo</Label>
                     <div className="flex gap-2 mt-2">
                       <Input
-                        id="primary_color"
+                        id="background_color"
                         type="color"
-                        value={formData.primary_color}
-                        onChange={(e) => setFormData(prev => ({ ...prev, primary_color: e.target.value }))}
+                        value={formData.background_color}
+                        onChange={(e) => setFormData(prev => ({ ...prev, background_color: e.target.value }))}
                         className="w-20 h-10"
                       />
                       <Input
-                        value={formData.primary_color}
-                        onChange={(e) => setFormData(prev => ({ ...prev, primary_color: e.target.value }))}
+                        value={formData.background_color}
+                        onChange={(e) => setFormData(prev => ({ ...prev, background_color: e.target.value }))}
                         placeholder="#B3736B"
                         className="flex-1"
                       />
@@ -374,33 +401,23 @@ export default function NovoCardapioPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="secondary_color">Cor Secundária</Label>
+                    <Label htmlFor="text_color">Cor da Fonte</Label>
                     <div className="flex gap-2 mt-2">
                       <Input
-                        id="secondary_color"
+                        id="text_color"
                         type="color"
-                        value={formData.secondary_color}
-                        onChange={(e) => setFormData(prev => ({ ...prev, secondary_color: e.target.value }))}
+                        value={formData.text_color}
+                        onChange={(e) => setFormData(prev => ({ ...prev, text_color: e.target.value }))}
                         className="w-20 h-10"
                       />
                       <Input
-                        value={formData.secondary_color}
-                        onChange={(e) => setFormData(prev => ({ ...prev, secondary_color: e.target.value }))}
-                        placeholder="#E79F9C"
+                        value={formData.text_color}
+                        onChange={(e) => setFormData(prev => ({ ...prev, text_color: e.target.value }))}
+                        placeholder="#FFFFFF"
                         className="flex-1"
                       />
                     </div>
                   </div>
-                </div>
-
-                <div className="p-6 rounded-lg border-2 border-dashed border-gray-300">
-                  <p className="text-sm text-gray-600 mb-4">Preview das cores:</p>
-                  <div 
-                    className="h-32 rounded-lg"
-                    style={{
-                      background: `linear-gradient(135deg, ${formData.primary_color} 0%, ${formData.secondary_color} 100%)`
-                    }}
-                  />
                 </div>
               </div>
             </Steps.Content>
@@ -625,6 +642,173 @@ export default function NovoCardapioPage() {
             </div>
           </div>
         </Steps.Root>
+      </div>
+
+      {/* Right Column - iPhone Preview */}
+      <div className="hidden lg:block sticky top-4 h-fit">
+        <div className="relative w-full aspect-[9/19]">
+          {/* iPhone Frame */}
+          <div className="absolute inset-0 z-10 pointer-events-none">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/iphone-17-pro.webp"
+              alt="iPhone Frame"
+              className="w-full h-full object-contain"
+            />
+          </div>
+              
+              {/* Screen Content */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="rounded-[2.5rem] overflow-hidden bg-white shadow-inner" style={{ width: '345px', height: '730px' }}>
+                  <div className="w-full h-full overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent" style={{ scrollbarWidth: 'thin' }}>
+                    {/* Preview Header */}
+                    <div 
+                      className="px-4 text-center pt-12 pb-8"
+                      style={{ 
+                        backgroundColor: formData.background_color,
+                        color: formData.text_color
+                      }}
+                    >
+                      {formData.logo_url && (
+                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white overflow-hidden">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img 
+                            src={formData.logo_url} 
+                            alt="Logo"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      
+                      <h1 className="text-lg font-bold mb-1">
+                        {formData.name || 'Nome do Cardápio'}
+                      </h1>
+                      
+                      {formData.description && (
+                        <p className="text-xs text-white/90">
+                          {formData.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Contact Buttons Preview */}
+                    {formData.whatsapp_number && (
+                      <div className="px-3 -mt-4 mb-4">
+                        <div className="bg-white rounded-xl shadow-lg p-3 flex justify-center">
+                          <div className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-full text-xs font-semibold">
+                            <span>📱</span>
+                            WhatsApp
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Delivery Info Preview */}
+                    {(formData.delivery_enabled || formData.pickup_enabled) && (
+                      <div className="px-4 mb-4">
+                        <div className="bg-gray-50 rounded-lg p-3 space-y-2 text-xs">
+                          {formData.delivery_enabled && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-600">🚚 Delivery</span>
+                              <span className="font-semibold">{formData.delivery_fee || 'Consulte'}</span>
+                            </div>
+                          )}
+                          {formData.pickup_enabled && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-600">🏪 Retirada</span>
+                              <span className="font-semibold text-green-600">Disponível</span>
+                            </div>
+                          )}
+                          {formData.estimated_time && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-600">⏱️ Tempo médio</span>
+                              <span className="font-semibold">{formData.estimated_time}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Products Preview */}
+                    <div className="px-4 pb-4">
+                      {selectedProductsList.length === 0 ? (
+                        <div className="text-center py-8 text-gray-400 text-xs">
+                          <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                          <p>Selecione produtos para visualizar</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {selectedProductsList.slice(0, 5).map((product) => (
+                            <div
+                              key={product.id}
+                              className="bg-white rounded-lg shadow-sm p-3 hover:shadow-md transition-shadow"
+                            >
+                              <div className="flex gap-2">
+                                {product.image_url && (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={product.image_url}
+                                    alt={product.name}
+                                    className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                                  />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-xs text-gray-900 truncate">
+                                    {product.name}
+                                  </h4>
+                                  {product.description && (
+                                    <p className="text-[10px] text-gray-500 truncate">
+                                      {product.description}
+                                    </p>
+                                  )}
+                                  <p 
+                                    className="text-xs font-bold mt-1"
+                                    style={{ color: formData.background_color }}
+                                  >
+                                    {formatPrice(product.sale_price)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          {selectedProductsList.length > 5 && (
+                            <p className="text-center text-[10px] text-gray-400">
+                              +{selectedProductsList.length - 5} produtos
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Business Hours Preview */}
+                    {formData.business_hours && (
+                      <div className="px-4 pb-4">
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <p className="text-xs font-semibold text-gray-700 mb-2">
+                            ⏰ Horário de Atendimento
+                          </p>
+                          <p className="text-[10px] text-gray-600 whitespace-pre-line">
+                            {formData.business_hours}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Footer Preview */}
+                    <div className="px-4 pb-6 pt-2">
+                      <div className="text-center">
+                        <p className="text-[11px] text-gray-500">
+                          SoTasty<br />
+                          Taste the difference
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
