@@ -66,6 +66,23 @@ export default function TransferModal({ isOpen, onClose, onSuccess }: TransferMo
     }
   }, [isOpen])
 
+  // Close modal with ESC key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose()
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown)
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen, onClose])
+
   const handleAmountChange = (value: string) => {
     // Remove tudo que não é número
     const numbers = value.replace(/\D/g, '')

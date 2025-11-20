@@ -264,7 +264,7 @@ export default function ProductsPage() {
         </div>
         <button
           onClick={handleNewButtonClick}
-          className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold cursor-pointer"
+          className="bg-[var(--color-clay-500)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-clay-600)] transition font-semibold cursor-pointer"
         >
           {activeTab === 'ingredients' && '+ Novo Insumo'}
           {activeTab === 'bases' && '+ Nova Base'}
@@ -416,7 +416,7 @@ export default function ProductsPage() {
           {typeFilter.map(filter => (
             <div
               key={filter}
-              className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border bg-[var(--color-lavender-blush)] text-[var(--color-old-rose)] border-[var(--color-old-rose)]"
+              className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border bg-[var(--color-lavender-blush)] text-[var(--color-clay-500)] border-[var(--color-clay-500)]"
             >
               <span className="text-xs font-medium">
                 {filter === 'ingredientes' ? 'Ingredientes' : 'Materiais'}
@@ -433,7 +433,7 @@ export default function ProductsPage() {
           {categoryFilter.map(filter => (
             <div
               key={filter}
-              className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border bg-[var(--color-lavender-blush)] text-[var(--color-old-rose)] border-[var(--color-old-rose)]"
+              className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border bg-[var(--color-lavender-blush)] text-[var(--color-clay-500)] border-[var(--color-clay-500)]"
             >
               <span className="text-xs font-medium">{filter}</span>
               <button
@@ -1032,7 +1032,7 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
       <div className="bg-white border border-gray-200 rounded-lg p-6 overflow-x-auto">
         {loading ? (
           <div className="flex justify-center py-8">
-            <Spinner size="large" className="text-[var(--color-old-rose)]" />
+            <Spinner size="large" className="text-[var(--color-clay-500)]" />
           </div>
         ) : filteredIngredients.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
@@ -1687,7 +1687,7 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
       <div className="space-y-4">
         {loading ? (
           <div className="flex justify-center py-8">
-            <Spinner size="large" className="text-[var(--color-old-rose)]" />
+            <Spinner size="large" className="text-[var(--color-clay-500)]" />
           </div>
         ) : filteredBases.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
@@ -2419,7 +2419,7 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, ca
       <div className="space-y-4">
         {loading ? (
           <div className="flex justify-center py-8">
-            <Spinner size="large" className="text-[var(--color-old-rose)]" />
+            <Spinner size="large" className="text-[var(--color-clay-500)]" />
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-8 text-gray-500">

@@ -775,7 +775,7 @@ export default function EditarCardapioPage() {
                     <Steps.NextTrigger asChild>
                       <Button
                         disabled={!isStepValid(currentStep) || loading}
-                        className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold flex items-center gap-2 cursor-pointer"
+                        className="bg-[var(--color-clay-500)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-clay-600)] transition font-semibold flex items-center gap-2 cursor-pointer"
                       >
                         Continuar
                       </Button>

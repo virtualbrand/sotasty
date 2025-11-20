@@ -460,7 +460,7 @@ export default function ProductsSettingsPage() {
             onClick={() => handleMeasurementUnitChange('metric-small')}
             className={`flex items-center justify-between py-3 px-4 rounded-lg cursor-pointer border-2 transition-all ${
               measurementUnit === 'metric-small' 
-                ? 'bg-pink-50 border-[var(--color-old-rose)]' 
+                ? 'bg-pink-50 border-[var(--color-clay-500)]' 
                 : 'bg-gray-50 border-gray-200 hover:border-gray-300'
             }`}
           >
@@ -472,7 +472,7 @@ export default function ProductsSettingsPage() {
             </div>
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
               measurementUnit === 'metric-small' 
-                ? 'border-[var(--color-old-rose)] bg-[var(--color-old-rose)]' 
+                ? 'border-[var(--color-clay-500)] bg-[var(--color-clay-500)]' 
                 : 'border-gray-300'
             }`}>
               {measurementUnit === 'metric-small' && (
@@ -485,7 +485,7 @@ export default function ProductsSettingsPage() {
             onClick={() => handleMeasurementUnitChange('metric-large')}
             className={`flex items-center justify-between py-3 px-4 rounded-lg cursor-pointer border-2 transition-all ${
               measurementUnit === 'metric-large' 
-                ? 'bg-pink-50 border-[var(--color-old-rose)]' 
+                ? 'bg-pink-50 border-[var(--color-clay-500)]' 
                 : 'bg-gray-50 border-gray-200 hover:border-gray-300'
             }`}
           >
@@ -497,7 +497,7 @@ export default function ProductsSettingsPage() {
             </div>
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
               measurementUnit === 'metric-large' 
-                ? 'border-[var(--color-old-rose)] bg-[var(--color-old-rose)]' 
+                ? 'border-[var(--color-clay-500)] bg-[var(--color-clay-500)]' 
                 : 'border-gray-300'
             }`}>
               {measurementUnit === 'metric-large' && (

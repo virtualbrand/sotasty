@@ -71,7 +71,7 @@ export default function PlansPage() {
               key={plan.name}
               className={`relative rounded-lg border-2 p-6 ${
                 plan.recommended
-                  ? 'border-[var(--color-old-rose)] shadow-lg'
+                  ? 'border-[var(--color-clay-500)] shadow-lg'
                   : plan.current
                   ? 'border-green-500'
                   : 'border-gray-200'
@@ -79,7 +79,7 @@ export default function PlansPage() {
             >
               {plan.recommended && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="bg-[var(--color-old-rose)] text-white text-xs font-semibold px-3 py-1 rounded-full">
+                  <span className="bg-[var(--color-clay-500)] text-white text-xs font-semibold px-3 py-1 rounded-full">
                     Recomendado
                   </span>
                 </div>
@@ -116,7 +116,7 @@ export default function PlansPage() {
                   plan.current
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : plan.recommended
-                    ? 'bg-[var(--color-old-rose)] text-white hover:bg-[var(--color-rosy-brown)]'
+                    ? 'bg-[var(--color-clay-500)] text-white hover:bg-[var(--color-clay-600)]'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >

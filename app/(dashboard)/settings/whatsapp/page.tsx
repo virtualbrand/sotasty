@@ -379,7 +379,7 @@ export default function WhatsAppSettings() {
             <button
               onClick={handleGenerateQRCode}
               disabled={loading || !instanceName.trim()}
-              className="w-full bg-[var(--color-old-rose)] text-white px-6 py-3 rounded-full hover:bg-[var(--color-rosy-brown)] transition-colors font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-[var(--color-clay-500)] text-white px-6 py-3 rounded-full hover:bg-[var(--color-clay-600)] transition-colors font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>

@@ -111,7 +111,7 @@ export default function NotificationsPage() {
           return (
             <div key={notification.id} className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg">
               <div className="w-10 h-10 rounded-full bg-[var(--color-lavender-blush)] flex items-center justify-center flex-shrink-0">
-                <Icon className="w-5 h-5 text-[var(--color-old-rose)]" />
+                <Icon className="w-5 h-5 text-[var(--color-clay-500)]" />
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-gray-900">{notification.title}</h3>

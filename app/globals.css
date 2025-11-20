@@ -5,23 +5,131 @@
 @theme {
   --font-sans: var(--font-kumbh-sans);
   
-  /* CakeCloud Color Palette */
-  --color-snow: #FFFBFB;
-  --color-lavender-blush: #FFEEEB;
-  --color-pale-dogwood: #EBC7C1;
-  --color-rosy-brown: #BE9089;
-  --color-melon: #E79F9C;
-  --color-old-rose: #B3736B;
-  --color-old-rose-dark: #9D635A;
-  --color-licorice: #1B0F0E;
-  --color-bg-app: #f9f5f4;
-  --color-bg-modal: #f9f5f4;
+  /* SoTasty Design System - Cores Base */
+  /* MILK (Neutra Clara) */
+  --color-milk-50: #FFFFFF;
+  --color-milk-100: #FEFEFE;
+  --color-milk-200: #FCFCFC;
+  --color-milk-300: #F9F9F9;
+  --color-milk-400: #F5F5F5;
+  --color-milk-500: #F0F0F0;
+  --color-milk-600: #E8E8E8;
+  --color-milk-700: #D9D9D9;
+  --color-milk-800: #C4C4C4;
+  --color-milk-900: #A8A8A8;
+
+  /* STONE (Neutra Média) */
+  --color-stone-50: #F5F3F0;
+  --color-stone-100: #EDE9E4;
+  --color-stone-200: #E3DED7;
+  --color-stone-300: #D9D2C9;
+  --color-stone-400: #CFC6BA;
+  --color-stone-500: #D0D2C2;
+  --color-stone-600: #B8BAA8;
+  --color-stone-700: #9A9C8A;
+  --color-stone-800: #7C7E6C;
+  --color-stone-900: #5E5F4E;
+
+  /* DESERT CLAY (Principal/Brand) */
+  --color-clay-50: #FBF2EE;
+  --color-clay-100: #F5E0D6;
+  --color-clay-200: #EECCBB;
+  --color-clay-300: #E5B49D;
+  --color-clay-400: #DC9C7F;
+  --color-clay-500: #B17467;
+  --color-clay-600: #9A5E51;
+  --color-clay-700: #824D42;
+  --color-clay-800: #6A3D34;
+  --color-clay-900: #523027;
+
+  /* GRAPHITE (Neutra Escura) */
+  --color-graphite-50: #F5F5F6;
+  --color-graphite-100: #E8E9EB;
+  --color-graphite-200: #D1D3D7;
+  --color-graphite-300: #B4B7BD;
+  --color-graphite-400: #9096A0;
+  --color-graphite-500: #4A4D67;
+  --color-graphite-600: #3D3F54;
+  --color-graphite-700: #313342;
+  --color-graphite-800: #252730;
+  --color-graphite-900: #1A1C23;
+
+  /* Cores de Feedback */
+  /* INFO (Azul) */
+  --color-info-50: #EFF6F9;
+  --color-info-100: #D9EAF2;
+  --color-info-200: #B3D5E6;
+  --color-info-300: #85BAD6;
+  --color-info-400: #5B9FC7;
+  --color-info-500: #4A7C8C;
+  --color-info-600: #3D6673;
+  --color-info-700: #31515C;
+  --color-info-800: #253D46;
+  --color-info-900: #1A2A31;
+
+  /* SUCCESS (Verde) */
+  --color-success-50: #F0F7F3;
+  --color-success-100: #DCEEE3;
+  --color-success-200: #B8DCC7;
+  --color-success-300: #8FC6A7;
+  --color-success-400: #6BB089;
+  --color-success-500: #52A675;
+  --color-success-600: #428760;
+  --color-success-700: #34694C;
+  --color-success-800: #274D38;
+  --color-success-900: #1B3527;
+
+  /* WARNING (Âmbar) */
+  --color-warning-50: #FDF6ED;
+  --color-warning-100: #FAEAD4;
+  --color-warning-200: #F5D4A8;
+  --color-warning-300: #EFBC76;
+  --color-warning-400: #E8A24A;
+  --color-warning-500: #C9935A;
+  --color-warning-600: #A67747;
+  --color-warning-700: #835E38;
+  --color-warning-800: #61462A;
+  --color-warning-900: #43301D;
+
+  /* DANGER (Vermelho) */
+  --color-danger-50: #FDF2F3;
+  --color-danger-100: #FAE0E3;
+  --color-danger-200: #F5C1C7;
+  --color-danger-300: #EE9BA5;
+  --color-danger-400: #E67483;
+  --color-danger-500: #C75D6A;
+  --color-danger-600: #A34C57;
+  --color-danger-700: #7F3C45;
+  --color-danger-800: #5D2D33;
+  --color-danger-900: #3F1F23;
+
+  /* Temas */
+  --color-bg-app: #F0F0F0;
+  --color-bg-modal: #F5F5F5;
+
+  /* Tailwind Color Classes - MILK */
+  --color-milk: var(--color-milk-500);
+
+  /* Tailwind Color Classes - STONE */
+  --color-stone: var(--color-stone-500);
+
+  /* Tailwind Color Classes - CLAY (Brand) */
+  --color-clay: var(--color-clay-500);
+
+  /* Tailwind Color Classes - GRAPHITE */
+  --color-graphite: var(--color-graphite-500);
+
+  /* Tailwind Color Classes - Feedback */
+  --color-info: var(--color-info-500);
+  --color-success: var(--color-success-500);
+  --color-warning: var(--color-warning-500);
+  --color-danger: var(--color-danger-500);
 }
 
 body {
   font-family: var(--font-kumbh-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-weight: 400;
-  background-color: var(--color-snow);
+  background-color: var(--color-milk-100);
 }
 
 /* Títulos em bold */
@@ -157,7 +265,11 @@ h1, h2, h3, h4, h5, h6 {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-/* Button Styles - Based on color palette */
+/* Button Styles - SoTasty Design System */
+.btn-primary,
+.btn-primary-outline,
+.btn-secondary,
+.btn-secondary-outline,
 .btn-info,
 .btn-success,
 .btn-warning,
@@ -165,226 +277,395 @@ h1, h2, h3, h4, h5, h6 {
 .btn-outline-info,
 .btn-outline-success,
 .btn-outline-warning,
-.btn-outline-danger,
-.btn-outline-grey {
+.btn-outline-danger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 8px 22px;
+  padding: 6px 18px;
   border-radius: 9999px;
   font-weight: 600;
   font-size: 0.875rem;
   line-height: 1.25rem;
-  transition: all 0.2s;
+  transition: all 0.2s ease-in-out;
   outline: none;
   cursor: pointer;
+  border: 1px solid transparent;
 }
 
-.btn-info:focus,
-.btn-success:focus,
-.btn-warning:focus,
-.btn-danger:focus,
-.btn-outline-info:focus,
-.btn-outline-success:focus,
-.btn-outline-warning:focus,
-.btn-outline-danger:focus,
-.btn-outline-grey:focus {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-}
-
-/* Remove focus styles for specific buttons */
+/* Focus States */
 button:focus:not(:focus-visible) {
   outline: none;
   box-shadow: none;
 }
 
 button:focus-visible {
-  outline: 2px solid transparent;
+  outline: 2px solid;
   outline-offset: 2px;
 }
 
-.btn-info:disabled,
-.btn-success:disabled,
-.btn-warning:disabled,
-.btn-danger:disabled,
-.btn-outline-info:disabled,
-.btn-outline-success:disabled,
-.btn-outline-warning:disabled,
-.btn-outline-danger:disabled,
-.btn-outline-grey:disabled {
-  opacity: 0.5;
+/* PRIMARY BUTTONS (Desert Clay) - Light Theme */
+.btn-primary {
+  background-color: var(--color-clay-500);
+  color: #FFFFFF;
+  border-color: var(--color-clay-500);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-clay-400);
+  border-color: var(--color-clay-400);
+}
+
+.btn-primary:active:not(:disabled) {
+  background-color: var(--color-clay-300);
+  border-color: var(--color-clay-300);
+}
+
+.btn-primary:disabled {
+  background-color: var(--color-stone-400);
+  color: var(--color-stone-600);
+  border-color: var(--color-stone-400);
   cursor: not-allowed;
 }
 
-/* Info Button - Azul acinzentado suave */
+.btn-primary:focus-visible {
+  outline-color: var(--color-clay-500);
+}
+
+/* PRIMARY OUTLINE - Light Theme */
+.btn-primary-outline {
+  background-color: transparent;
+  color: var(--color-clay-600);
+  border-color: var(--color-clay-500);
+}
+
+.btn-primary-outline:hover:not(:disabled) {
+  background-color: var(--color-clay-50);
+  color: var(--color-clay-700);
+  border-color: var(--color-clay-600);
+}
+
+.btn-primary-outline:active:not(:disabled) {
+  background-color: var(--color-clay-100);
+  border-color: var(--color-clay-700);
+}
+
+.btn-primary-outline:disabled {
+  background-color: transparent;
+  color: var(--color-stone-600);
+  border-color: var(--color-stone-500);
+  cursor: not-allowed;
+}
+
+.btn-primary-outline:focus-visible {
+  outline-color: var(--color-clay-500);
+}
+
+/* SECONDARY BUTTONS (Graphite) - Light Theme */
+.btn-secondary {
+  background-color: var(--color-graphite-600);
+  color: #FFFFFF;
+  border-color: var(--color-graphite-600);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-graphite-700);
+  border-color: var(--color-graphite-700);
+}
+
+.btn-secondary:active:not(:disabled) {
+  background-color: var(--color-graphite-800);
+  border-color: var(--color-graphite-800);
+}
+
+.btn-secondary:disabled {
+  background-color: var(--color-stone-400);
+  color: var(--color-stone-600);
+  border-color: var(--color-stone-400);
+  cursor: not-allowed;
+}
+
+.btn-secondary:focus-visible {
+  outline-color: var(--color-graphite-500);
+}
+
+/* SECONDARY OUTLINE - Light Theme */
+.btn-secondary-outline {
+  background-color: transparent;
+  color: var(--color-graphite-700);
+  border-color: var(--color-graphite-500);
+}
+
+.btn-secondary-outline:hover:not(:disabled) {
+  background-color: var(--color-graphite-50);
+  border-color: var(--color-graphite-600);
+}
+
+.btn-secondary-outline:active:not(:disabled) {
+  background-color: var(--color-graphite-100);
+  border-color: var(--color-graphite-600);
+}
+
+.btn-secondary-outline:disabled {
+  background-color: transparent;
+  color: var(--color-stone-600);
+  border-color: var(--color-stone-500);
+  cursor: not-allowed;
+}
+
+.btn-secondary-outline:focus-visible {
+  outline-color: var(--color-graphite-500);
+}
+
+/* INFO BUTTONS - Light Theme */
 .btn-info {
-  background-color: #A1C7D6;
-  color: #2D3A3F;
-  border: none;
+  background-color: var(--color-info-500);
+  color: #FFFFFF;
+  border-color: var(--color-info-500);
 }
 
 .btn-info:hover:not(:disabled) {
-  background-color: #8BB9CA;
+  background-color: var(--color-info-600);
+  border-color: var(--color-info-600);
 }
 
-.btn-info:focus {
-  box-shadow: 0 0 0 1px white, 0 0 0 2px #A1C7D6;
+.btn-info:active:not(:disabled) {
+  background-color: var(--color-info-700);
+  border-color: var(--color-info-700);
+}
+
+.btn-info:disabled {
+  background-color: var(--color-stone-400);
+  color: var(--color-stone-600);
+  border-color: var(--color-stone-400);
+  cursor: not-allowed;
+}
+
+.btn-info:focus-visible {
+  outline-color: var(--color-info-500);
 }
 
 .btn-outline-info {
   background-color: transparent;
-  color: #A1C7D6;
-  border: 1px solid #A1C7D6;
+  color: var(--color-info-600);
+  border-color: var(--color-info-500);
 }
 
 .btn-outline-info:hover:not(:disabled) {
-  background-color: #A1C7D6;
-  color: #2D3A3F;
+  background-color: var(--color-info-50);
+  border-color: var(--color-info-600);
 }
 
-.btn-outline-info:focus {
-  box-shadow: 0 0 0 1px white, 0 0 0 2px #A1C7D6;
+.btn-outline-info:active:not(:disabled) {
+  background-color: var(--color-info-100);
+  border-color: var(--color-info-600);
 }
 
-/* Success Button - Verde sálvia natural */
+.btn-outline-info:disabled {
+  background-color: transparent;
+  color: var(--color-stone-600);
+  border-color: var(--color-stone-500);
+  cursor: not-allowed;
+}
+
+.btn-outline-info:focus-visible {
+  outline-color: var(--color-info-500);
+}
+
+/* SUCCESS BUTTONS - Light Theme */
 .btn-success {
-  background-color: #A8C9A1;
-  color: #2D3A3F;
-  border: none;
+  background-color: var(--color-success-500);
+  color: #FFFFFF;
+  border-color: var(--color-success-500);
 }
 
 .btn-success:hover:not(:disabled) {
-  background-color: #97BA91;
+  background-color: var(--color-success-600);
+  border-color: var(--color-success-600);
 }
 
-.btn-success:focus {
-  box-shadow: 0 0 0 1px white, 0 0 0 2px #A8C9A1;
+.btn-success:active:not(:disabled) {
+  background-color: var(--color-success-700);
+  border-color: var(--color-success-700);
+}
+
+.btn-success:disabled {
+  background-color: var(--color-stone-400);
+  color: var(--color-stone-600);
+  border-color: var(--color-stone-400);
+  cursor: not-allowed;
+}
+
+.btn-success:focus-visible {
+  outline-color: var(--color-success-500);
 }
 
 .btn-outline-success {
   background-color: transparent;
-  color: #A8C9A1;
-  border: 1px solid #A8C9A1;
+  color: var(--color-success-600);
+  border-color: var(--color-success-500);
 }
 
 .btn-outline-success:hover:not(:disabled) {
-  background-color: #A8C9A1;
-  color: #2D3A3F;
+  background-color: var(--color-success-50);
+  border-color: var(--color-success-600);
 }
 
-.btn-outline-success:focus {
-  box-shadow: 0 0 0 1px white, 0 0 0 2px #A8C9A1;
+.btn-outline-success:active:not(:disabled) {
+  background-color: var(--color-success-100);
+  border-color: var(--color-success-600);
 }
 
-/* Warning Button - Dourado damasco quente */
+.btn-outline-success:disabled {
+  background-color: transparent;
+  color: var(--color-stone-600);
+  border-color: var(--color-stone-500);
+  cursor: not-allowed;
+}
+
+.btn-outline-success:focus-visible {
+  outline-color: var(--color-success-500);
+}
+
+/* WARNING BUTTONS - Light Theme */
 .btn-warning {
-  background-color: #E7B97C;
-  color: #3A2F29;
-  border: none;
+  background-color: var(--color-warning-500);
+  color: #FFFFFF;
+  border-color: var(--color-warning-500);
 }
 
 .btn-warning:hover:not(:disabled) {
-  background-color: #DDA96B;
+  background-color: var(--color-warning-600);
+  border-color: var(--color-warning-600);
 }
 
-.btn-warning:focus {
-  box-shadow: 0 0 0 1px white, 0 0 0 2px #E7B97C;
+.btn-warning:active:not(:disabled) {
+  background-color: var(--color-warning-700);
+  border-color: var(--color-warning-700);
+}
+
+.btn-warning:disabled {
+  background-color: var(--color-stone-400);
+  color: var(--color-stone-600);
+  border-color: var(--color-stone-400);
+  cursor: not-allowed;
+}
+
+.btn-warning:focus-visible {
+  outline-color: var(--color-warning-500);
 }
 
 .btn-outline-warning {
   background-color: transparent;
-  color: #E7B97C;
-  border: 1px solid #E7B97C;
+  color: var(--color-warning-600);
+  border-color: var(--color-warning-500);
 }
 
 .btn-outline-warning:hover:not(:disabled) {
-  background-color: #E7B97C;
-  color: #3A2F29;
+  background-color: var(--color-warning-50);
+  border-color: var(--color-warning-600);
 }
 
-.btn-outline-warning:focus {
-  box-shadow: 0 0 0 1px white, 0 0 0 2px #E7B97C;
+.btn-outline-warning:active:not(:disabled) {
+  background-color: var(--color-warning-100);
+  border-color: var(--color-warning-600);
 }
 
-/* Danger Button - Vermelho rosado harmonioso */
+.btn-outline-warning:disabled {
+  background-color: transparent;
+  color: var(--color-stone-600);
+  border-color: var(--color-stone-500);
+  cursor: not-allowed;
+}
+
+.btn-outline-warning:focus-visible {
+  outline-color: var(--color-warning-500);
+}
+
+/* DANGER BUTTONS - Light Theme */
 .btn-danger {
-  background-color: #D67973;
-  color: #FFF6F5;
-  border: none;
+  background-color: var(--color-danger-500);
+  color: #FFFFFF;
+  border-color: var(--color-danger-500);
 }
 
 .btn-danger:hover:not(:disabled) {
-  background-color: #C86561;
+  background-color: var(--color-danger-600);
+  border-color: var(--color-danger-600);
 }
 
-.btn-danger:focus {
-  box-shadow: 0 0 0 1px white, 0 0 0 2px #D67973;
+.btn-danger:active:not(:disabled) {
+  background-color: var(--color-danger-700);
+  border-color: var(--color-danger-700);
+}
+
+.btn-danger:disabled {
+  background-color: var(--color-stone-400);
+  color: var(--color-stone-600);
+  border-color: var(--color-stone-400);
+  cursor: not-allowed;
+}
+
+.btn-danger:focus-visible {
+  outline-color: var(--color-danger-500);
 }
 
 .btn-outline-danger {
   background-color: transparent;
-  color: #D67973;
-  border: 1px solid #D67973;
+  color: var(--color-danger-600);
+  border-color: var(--color-danger-500);
 }
 
 .btn-outline-danger:hover:not(:disabled) {
-  background-color: #D67973;
-  color: #FFF6F5;
+  background-color: var(--color-danger-50);
+  border-color: var(--color-danger-600);
 }
 
-.btn-outline-danger:focus {
-  box-shadow: 0 0 0 1px white, 0 0 0 2px #D67973;
+.btn-outline-danger:active:not(:disabled) {
+  background-color: var(--color-danger-100);
+  border-color: var(--color-danger-600);
 }
 
-/* Danger Ghost Button - Sem borda, outline apenas no hover */
+.btn-outline-danger:disabled {
+  background-color: transparent;
+  color: var(--color-stone-600);
+  border-color: var(--color-stone-500);
+  cursor: not-allowed;
+}
+
+.btn-outline-danger:focus-visible {
+  outline-color: var(--color-danger-500);
+}
+
+/* GHOST DANGER BUTTON */
 .btn-ghost-danger {
   background-color: transparent;
-  color: #D67973;
+  color: var(--color-danger-600);
   border: 1px solid transparent;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
   font-weight: 500;
-  border-radius: 0.375rem;
-  transition: all 0.2s;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
-  font-weight: 500;
 }
 
 .btn-ghost-danger:hover:not(:disabled) {
-  border-color: #D67973;
-  border-radius:50px;
+  border-color: var(--color-danger-500);
+  background-color: var(--color-danger-50);
 }
 
-.btn-ghost-danger:focus {
-  outline: none;
-  box-shadow: 0 0 0 1px white, 0 0 0 2px #D67973;
+.btn-ghost-danger:focus-visible {
+  outline: 2px solid var(--color-danger-500);
+  outline-offset: 2px;
 }
 
 .btn-ghost-danger:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-/* Grey Outline Button - Para cancelar */
-.btn-outline-grey {
-  background-color: transparent;
-  color: #6B7280;
-  border: 1px solid #D1D5DB;
-}
-
-.btn-outline-grey:hover:not(:disabled) {
-  background-color: #F3F4F6;
-  color: #374151;
-  border-color: #9CA3AF;
-}
-
-.btn-outline-grey:focus {
-  box-shadow: 0 0 0 1px white, 0 0 0 2px #D1D5DB;
 }
 
 /* Input and Select Focus Styles */
@@ -398,17 +679,17 @@ input[type="search"]:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: #BE9089;
-  box-shadow: 0 0 0 2px rgba(190, 144, 137, 0.15);
+  border-color: var(--color-clay-500);
+  box-shadow: 0 0 0 2px rgba(177, 116, 103, 0.15);
 }
 
 /* Remove autofill background color */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px white inset, 0 0 0 2px rgba(190, 144, 137, 0.15) !important;
-  box-shadow: 0 0 0 1000px white inset, 0 0 0 2px rgba(190, 144, 137, 0.15) !important;
-  border-color: #BE9089 !important;
+  -webkit-box-shadow: 0 0 0 1000px white inset, 0 0 0 2px rgba(177, 116, 103, 0.15) !important;
+  box-shadow: 0 0 0 1000px white inset, 0 0 0 2px rgba(177, 116, 103, 0.15) !important;
+  border-color: var(--color-clay-500) !important;
 }
 
 /* Custom Radio Button Styles */
@@ -418,7 +699,7 @@ input[type="radio"] {
   -moz-appearance: none;
   width: 1rem;
   height: 1rem;
-  border: 2px solid #d1d5db;
+  border: 2px solid var(--color-stone-400);
   border-radius: 50%;
   outline: none;
   cursor: pointer;
@@ -428,11 +709,11 @@ input[type="radio"] {
 }
 
 input[type="radio"]:hover {
-  border-color: #BE9089;
+  border-color: var(--color-clay-500);
 }
 
 input[type="radio"]:checked {
-  border-color: #BE9089;
+  border-color: var(--color-clay-500);
   background-color: white;
 }
 
@@ -445,11 +726,11 @@ input[type="radio"]:checked::before {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
-  background-color: #BE9089;
+  background-color: var(--color-clay-500);
 }
 
 input[type="radio"]:focus {
-  box-shadow: 0 0 0 2px rgba(190, 144, 137, 0.2);
+  box-shadow: 0 0 0 2px rgba(177, 116, 103, 0.2);
 }
 
 input[type="radio"]:focus:not(:focus-visible) {
@@ -463,8 +744,8 @@ input[type="checkbox"] {
   -moz-appearance: none;
   width: 1rem;
   height: 1rem;
-  border: 2px solid #d1d5db;
-  border-radius: 50px;
+  border: 2px solid var(--color-stone-400);
+  border-radius: 4px;
   outline: none;
   cursor: pointer;
   position: relative;
@@ -473,12 +754,12 @@ input[type="checkbox"] {
 }
 
 input[type="checkbox"]:hover {
-  border-color: #BE9089;
+  border-color: var(--color-clay-500);
 }
 
 input[type="checkbox"]:checked {
-  border-color: #BE9089;
-  background-color: #BE9089;
+  border-color: var(--color-clay-500);
+  background-color: var(--color-clay-500);
 }
 
 input[type="checkbox"]:checked::before {
@@ -495,7 +776,7 @@ input[type="checkbox"]:checked::before {
 }
 
 input[type="checkbox"]:focus {
-  box-shadow: 0 0 0 2px rgba(190, 144, 137, 0.2);
+  box-shadow: 0 0 0 2px rgba(177, 116, 103, 0.2);
 }
 
 input[type="checkbox"]:focus:not(:focus-visible) {

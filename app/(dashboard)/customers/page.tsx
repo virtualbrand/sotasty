@@ -490,7 +490,7 @@ export default function CustomersPage() {
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold cursor-pointer"
+          className="bg-[var(--color-clay-500)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-clay-600)] transition font-semibold cursor-pointer"
         >
           + Novo Cliente
         </button>
@@ -564,7 +564,7 @@ export default function CustomersPage() {
                           />
                         </div>
                       ) : (
-                        <div className="w-12 h-12 rounded-full border border-gray-200 bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-full border border-gray-200 bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-clay-500)] flex items-center justify-center">
                           <User className="w-5 h-5 text-white" />
                         </div>
                       )}
@@ -581,7 +581,7 @@ export default function CustomersPage() {
                       <Link 
                         href={`/orders?customer=${encodeURIComponent(customer.name)}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-[var(--color-old-rose)] font-semibold hover:text-[var(--color-rosy-brown)] transition-colors"
+                        className="inline-flex items-center gap-1 text-[var(--color-clay-500)] font-semibold hover:text-[var(--color-clay-600)] transition-colors"
                       >
                         <ShoppingBag className="w-3.5 h-3.5" />
                         {customer.orders_count}
@@ -608,8 +608,8 @@ export default function CustomersPage() {
             }
           }}
         >
-          <div className="bg-[var(--color-snow)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-[var(--color-snow)] border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <div className="bg-[var(--color-bg-app)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-[var(--color-bg-app)] border-b border-gray-200 px-6 py-4 flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900">
                 {editingCustomer ? 'Editar Cliente' : 'Novo Cliente'}
               </h2>
@@ -696,7 +696,7 @@ export default function CustomersPage() {
                   onBlur={() => handleBlur('name')}
                   className={`w-full px-3 py-2 border ${
                     touched.name && errors.name ? 'border-[#D67973]' : 'border-gray-300'
-                  } rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
+                  } rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
                   placeholder="Digite o nome"
                 />
                 {touched.name && errors.name && (
@@ -718,7 +718,7 @@ export default function CustomersPage() {
                     maxLength={18}
                     className={`w-full px-3 py-2 border ${
                       touched.cpf_cnpj && errors.cpf_cnpj ? 'border-[#D67973]' : 'border-gray-300'
-                    } rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
+                    } rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
                     placeholder="000.000.000-00 ou 00.000.000/0000-00"
                   />
                   {touched.cpf_cnpj && errors.cpf_cnpj && (
@@ -740,7 +740,7 @@ export default function CustomersPage() {
                   maxLength={15}
                   className={`w-full px-3 py-2 border ${
                     touched.phone && errors.phone ? 'border-[#D67973]' : 'border-gray-300'
-                  } rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
+                  } rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
                   placeholder="(00) 00000-0000"
                 />
                 {touched.phone && errors.phone && (
@@ -760,7 +760,7 @@ export default function CustomersPage() {
                   onBlur={() => handleBlur('email')}
                   className={`w-full px-3 py-2 border ${
                     touched.email && errors.email ? 'border-[#D67973]' : 'border-gray-300'
-                  } rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
+                  } rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
                   placeholder="cliente@email.com"
                 />
                 {touched.email && errors.email && (
@@ -778,7 +778,7 @@ export default function CustomersPage() {
                   onChange={handleInputChange}
                   onBlur={() => handleBlur('notes')}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors resize-none bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors resize-none bg-white"
                   placeholder="Adicione observações sobre o cliente..."
                 />
               </div>
@@ -828,7 +828,7 @@ export default function CustomersPage() {
             <div className="p-6 space-y-6">
               {/* Avatar e Info Básica */}
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center overflow-hidden relative">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-clay-500)] flex items-center justify-center overflow-hidden relative">
                   {selectedCustomer.avatar_url ? (
                     <Image
                       src={selectedCustomer.avatar_url}
@@ -853,13 +853,13 @@ export default function CustomersPage() {
                   <div className="space-y-2">
                     {selectedCustomer.phone && (
                       <div className="flex items-center gap-3 text-gray-700">
-                        <Phone className="w-4 h-4 text-[var(--color-old-rose)]" />
+                        <Phone className="w-4 h-4 text-[var(--color-clay-500)]" />
                         <span>{selectedCustomer.phone}</span>
                       </div>
                     )}
                     {selectedCustomer.email && (
                       <div className="flex items-center gap-3 text-gray-700">
-                        <Mail className="w-4 h-4 text-[var(--color-old-rose)]" />
+                        <Mail className="w-4 h-4 text-[var(--color-clay-500)]" />
                         <span>{selectedCustomer.email}</span>
                       </div>
                     )}
@@ -872,10 +872,10 @@ export default function CustomersPage() {
                 <div className="bg-[var(--color-lavender-blush)] rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <ShoppingBag className="w-6 h-6 text-[var(--color-old-rose)]" />
+                      <ShoppingBag className="w-6 h-6 text-[var(--color-clay-500)]" />
                       <div>
                         <p className="text-sm text-gray-600">Total de Pedidos</p>
-                        <p className="text-2xl font-bold text-[var(--color-old-rose)]">
+                        <p className="text-2xl font-bold text-[var(--color-clay-500)]">
                           {selectedCustomer.orders_count}
                         </p>
                       </div>

@@ -308,7 +308,7 @@ export default function TransactionModal({ isOpen, onClose, type, transaction, o
                     value={amount}
                     onChange={handleAmountChange}
                     placeholder="0,00"
-                    className="w-full pl-12 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                    className="w-full pl-12 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
                   />
                 </div>
               </div>
@@ -370,7 +370,7 @@ export default function TransactionModal({ isOpen, onClose, type, transaction, o
                         onClose()
                         router.push('/settings/financeiro')
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 text-[var(--color-old-rose)] border-t border-gray-200 mt-1"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 text-[var(--color-clay-500)] border-t border-gray-200 mt-1"
                     >
                       <Plus className="w-4 h-4" />
                       <span className="text-sm">Adicionar</span>
@@ -418,7 +418,7 @@ export default function TransactionModal({ isOpen, onClose, type, transaction, o
                         const tabType = type === 'receita' ? 'receitas' : 'despesas'
                         router.push(`/settings/financeiro?tab=${tabType}`)
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 text-[var(--color-old-rose)] border-t border-gray-200 mt-1"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 text-[var(--color-clay-500)] border-t border-gray-200 mt-1"
                     >
                       <Plus className="w-4 h-4" />
                       <span className="text-sm">Adicionar</span>

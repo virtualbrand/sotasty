@@ -224,12 +224,12 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                 className={`
                   flex items-center gap-2 px-4 py-2 rounded-[10px] transition-all group
                   ${active 
-                    ? 'bg-gradient-to-r from-[var(--color-old-rose)] to-[var(--color-melon)] text-white shadow-lg shadow-[var(--color-old-rose)]/30' 
+                    ? 'bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-melon)] text-white shadow-lg shadow-[var(--color-clay-500)]/30' 
                     : 'text-gray-600 hover:bg-[var(--color-lavender-blush)]'
                   }
                 `}
               >
-                <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-gray-500 group-hover:text-[var(--color-old-rose)]'}`} />
+                <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-gray-500 group-hover:text-[var(--color-clay-500)]'}`} />
                 <span className="font-medium text-sm">{item.label}</span>
               </Link>
             )
@@ -241,12 +241,12 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
               className={`
                 flex items-center gap-2 px-4 py-2 rounded-[10px] transition-all group
                 ${isActive('/activities')
-                  ? 'bg-gradient-to-r from-[var(--color-old-rose)] to-[var(--color-melon)] text-white shadow-lg shadow-[var(--color-old-rose)]/30' 
+                  ? 'bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-melon)] text-white shadow-lg shadow-[var(--color-clay-500)]/30' 
                   : 'text-gray-600 hover:bg-[var(--color-lavender-blush)]'
                 }
               `}
             >
-              <Activity className={`w-5 h-5 flex-shrink-0 ${isActive('/activities') ? 'text-white' : 'text-gray-500 group-hover:text-[var(--color-old-rose)]'}`} />
+              <Activity className={`w-5 h-5 flex-shrink-0 ${isActive('/activities') ? 'text-white' : 'text-gray-500 group-hover:text-[var(--color-clay-500)]'}`} />
               <span className="font-medium text-sm">Atividades</span>
             </Link>
           )}
@@ -268,7 +268,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                 href={item.href}
                 className="p-2 hover:bg-gray-50 rounded-lg transition-all"
               >
-                <Icon className="w-5 h-5 text-gray-500 hover:text-[var(--color-old-rose)]" />
+                <Icon className="w-5 h-5 text-gray-500 hover:text-[var(--color-clay-500)]" />
               </Link>
             )
           })}
@@ -279,7 +279,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="flex items-center gap-2 p-2 hover:bg-[var(--color-lavender-blush)] rounded-lg transition-all cursor-pointer"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center shadow-md overflow-hidden">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-clay-500)] flex items-center justify-center shadow-md overflow-hidden">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
@@ -359,7 +359,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
         {/* Collapse Button */}
         <button
           onClick={toggleSidebar}
-          className={`absolute ${sidePosition === 'left' ? '-right-3' : '-left-3'} top-8 w-6 h-6 bg-[var(--color-old-rose)] hover:bg-[var(--color-rosy-brown)] rounded-full flex items-center justify-center shadow-lg transition-all cursor-pointer ${isCollapsed ? (sidePosition === 'left' ? 'rotate-180' : '') : (sidePosition === 'right' ? 'rotate-180' : '')}`}
+          className={`absolute ${sidePosition === 'left' ? '-right-3' : '-left-3'} top-8 w-6 h-6 bg-[var(--color-clay-500)] hover:bg-[var(--color-clay-600)] rounded-full flex items-center justify-center shadow-lg transition-all cursor-pointer ${isCollapsed ? (sidePosition === 'left' ? 'rotate-180' : '') : (sidePosition === 'right' ? 'rotate-180' : '')}`}
         >
           <ChevronLeft className="w-4 h-4 text-white" />
         </button>
@@ -371,7 +371,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
               onClick={() => setShowUserMenu(!showUserMenu)}
               className={`flex items-center gap-3 p-3 hover:bg-[var(--color-lavender-blush)] rounded-xl transition-all w-full cursor-pointer ${isCollapsed ? 'justify-center' : ''}`}
             >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center shadow-md flex-shrink-0 overflow-hidden">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-clay-500)] flex items-center justify-center shadow-md flex-shrink-0 overflow-hidden">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
@@ -450,14 +450,14 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                   className={`
                     flex items-center gap-3 px-4 py-3 rounded-[10px] transition-all group
                     ${active 
-                      ? 'bg-gradient-to-r from-[var(--color-old-rose)] to-[var(--color-melon)] text-white shadow-lg shadow-[var(--color-old-rose)]/30' 
+                      ? 'bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-melon)] text-white shadow-lg shadow-[var(--color-clay-500)]/30' 
                       : 'text-gray-600 hover:bg-[var(--color-lavender-blush)]'
                     }
                     ${isCollapsed ? 'justify-center' : ''}
                   `}
                   title={isCollapsed ? item.label : ''}
                 >
-                  <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-gray-500 group-hover:text-[var(--color-old-rose)]'}`} />
+                  <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-gray-500 group-hover:text-[var(--color-clay-500)]'}`} />
                   {!isCollapsed && <span className="font-medium text-sm">{item.label}</span>}
                 </Link>
               )
@@ -470,14 +470,14 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                 className={`
                   flex items-center gap-3 px-4 py-3 rounded-[10px] transition-all group
                   ${isActive('/activities')
-                    ? 'bg-gradient-to-r from-[var(--color-old-rose)] to-[var(--color-melon)] text-white shadow-lg shadow-[var(--color-old-rose)]/30' 
+                    ? 'bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-melon)] text-white shadow-lg shadow-[var(--color-clay-500)]/30' 
                     : 'text-gray-600 hover:bg-[var(--color-lavender-blush)]'
                   }
                   ${isCollapsed ? 'justify-center' : ''}
                 `}
                 title={isCollapsed ? 'Atividades' : ''}
               >
-                <Activity className={`w-5 h-5 flex-shrink-0 ${isActive('/activities') ? 'text-white' : 'text-gray-500 group-hover:text-[var(--color-old-rose)]'}`} />
+                <Activity className={`w-5 h-5 flex-shrink-0 ${isActive('/activities') ? 'text-white' : 'text-gray-500 group-hover:text-[var(--color-clay-500)]'}`} />
                 {!isCollapsed && <span className="font-medium text-sm">Atividades</span>}
               </Link>
             )}
@@ -491,7 +491,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-all text-gray-600 hover:bg-[var(--color-lavender-blush)] relative group ${isCollapsed ? 'justify-center' : ''}`}
             title={isCollapsed ? 'Notificações' : ''}
           >
-            <Bell className="w-5 h-5 flex-shrink-0 text-gray-500 group-hover:text-[var(--color-old-rose)]" />
+            <Bell className="w-5 h-5 flex-shrink-0 text-gray-500 group-hover:text-[var(--color-clay-500)]" />
             {!isCollapsed && <span className="font-medium text-sm">Notificações</span>}
             <span className="absolute top-2 left-7 w-2 h-2 bg-red-500 rounded-full"></span>
           </button>
@@ -507,14 +507,14 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                 className={`
                   flex items-center gap-3 px-4 py-3 rounded-[10px] transition-all group
                   ${active 
-                    ? 'bg-[var(--color-lavender-blush)] text-[var(--color-old-rose)]' 
+                    ? 'bg-[var(--color-lavender-blush)] text-[var(--color-clay-500)]' 
                     : 'text-gray-600 hover:bg-[var(--color-lavender-blush)]'
                   }
                   ${isCollapsed ? 'justify-center' : ''}
                 `}
                 title={isCollapsed ? item.label : ''}
               >
-                <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-[var(--color-old-rose)]' : 'text-gray-500 group-hover:text-[var(--color-old-rose)]'}`} />
+                <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-[var(--color-clay-500)]' : 'text-gray-500 group-hover:text-[var(--color-clay-500)]'}`} />
                 {!isCollapsed && <span className="font-medium text-sm">{item.label}</span>}
               </Link>
             )

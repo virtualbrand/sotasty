@@ -293,7 +293,7 @@ export default function MensagensPage() {
     if (loading) {
       return (
         <div className="w-full flex items-center justify-center bg-gray-100 rounded-lg" style={{ aspectRatio: '4/3' }}>
-          <Spinner size="large" className="text-[var(--color-old-rose)]" />
+          <Spinner size="large" className="text-[var(--color-clay-500)]" />
         </div>
       )
     }
@@ -402,7 +402,7 @@ export default function MensagensPage() {
     if (loading) {
       return (
         <div className="flex items-center gap-2 min-w-[200px]">
-          <Spinner size="large" className="text-[var(--color-old-rose)]" />
+          <Spinner size="large" className="text-[var(--color-clay-500)]" />
           <span className="text-sm">Carregando áudio...</span>
         </div>
       )
@@ -450,7 +450,7 @@ export default function MensagensPage() {
                 key={i}
                 className={`w-0.5 rounded-full transition-colors ${
                   isActive 
-                    ? fromMe ? 'bg-white' : 'bg-[var(--color-old-rose)]'
+                    ? fromMe ? 'bg-white' : 'bg-[var(--color-clay-500)]'
                     : fromMe ? 'bg-white/30' : 'bg-gray-300'
                 }`}
                 style={{ height: `${height}px` }}
@@ -575,7 +575,7 @@ export default function MensagensPage() {
                   >
                     {/* Avatar */}
                     <div className="relative flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center overflow-hidden">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-clay-500)] flex items-center justify-center overflow-hidden">
                         {contact.avatar ? (
                           <img 
                             src={contact.avatar} 
@@ -616,7 +616,7 @@ export default function MensagensPage() {
 
                     {/* Badge de não lidas */}
                     {contact.unreadCount && contact.unreadCount > 0 && (
-                      <div className="flex-shrink-0 bg-[var(--color-old-rose)] text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                      <div className="flex-shrink-0 bg-[var(--color-clay-500)] text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                         {contact.unreadCount}
                       </div>
                     )}
@@ -634,7 +634,7 @@ export default function MensagensPage() {
               {/* Header do Chat */}
               <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center overflow-hidden relative">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-clay-500)] flex items-center justify-center overflow-hidden relative">
                     {selectedContact.avatar ? (
                       <img 
                         src={selectedContact.avatar} 
@@ -665,7 +665,7 @@ export default function MensagensPage() {
               <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 bg-gray-50">
                 {loading ? (
                   <div className="flex items-center justify-center h-full">
-                    <Spinner size="large" className="text-[var(--color-old-rose)]" />
+                    <Spinner size="large" className="text-[var(--color-clay-500)]" />
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center">
@@ -698,7 +698,7 @@ export default function MensagensPage() {
                                 message.mediaType === 'image' || message.mediaType === 'audio' ? 'px-1 py-1' : 'px-4 py-2'
                               } ${
                                 message.fromMe
-                                  ? 'bg-[var(--color-old-rose)] text-white rounded-lg rounded-br-sm'
+                                  ? 'bg-[var(--color-clay-500)] text-white rounded-lg rounded-br-sm'
                                   : 'bg-white text-gray-900 border border-gray-200 rounded-lg rounded-bl-sm'
                               }`}
                             >
@@ -760,7 +760,7 @@ export default function MensagensPage() {
                   <button
                     type="submit"
                     disabled={!newMessage.trim() || !connected}
-                    className="bg-[var(--color-old-rose)] text-white p-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    className="bg-[var(--color-clay-500)] text-white p-2.5 rounded-full hover:bg-[var(--color-clay-600)] transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <Send className="w-5 h-5" />
                   </button>
@@ -770,7 +770,7 @@ export default function MensagensPage() {
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center p-6">
               <div className="w-20 h-20 bg-gradient-to-br from-[var(--color-lavender-blush)] to-[var(--color-melon)] rounded-full flex items-center justify-center mb-4">
-                <MessageCircle className="w-10 h-10 text-[var(--color-old-rose)]" />
+                <MessageCircle className="w-10 h-10 text-[var(--color-clay-500)]" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 {connected ? 'Selecione uma conversa' : 'WhatsApp não conectado'}

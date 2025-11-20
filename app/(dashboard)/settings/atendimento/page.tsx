@@ -222,7 +222,7 @@ export default function AtendimentoSettingsPage() {
       {/* Header */}
       <Card className="p-6">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-clay-500)] flex items-center justify-center flex-shrink-0">
             <FileText className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1">
@@ -276,7 +276,7 @@ export default function AtendimentoSettingsPage() {
               onChange={(e) => setTextContent(e.target.value)}
               placeholder="Cole ou digite as informações aqui...&#10;&#10;Exemplo:&#10;Quem é a Duda Berger?&#10;Duda Berger é confeiteira há anos, especializada em bolos artesanais.&#10;Já produziu centenas de encomendas e trabalha com visão estratégica."
               rows={10}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent resize-y"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent resize-y"
               disabled={isSavingText}
             />
             <p className="text-xs text-gray-500 mt-2">
@@ -287,7 +287,7 @@ export default function AtendimentoSettingsPage() {
           <Button
             onClick={handleSaveText}
             disabled={!textContent.trim() || !fileName.trim() || isSavingText}
-            className="w-full bg-gradient-to-r from-[var(--color-old-rose)] to-[var(--color-melon)] hover:from-[var(--color-rosy-brown)] hover:to-[var(--color-old-rose)] text-white"
+            className="w-full bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-melon)] hover:from-[var(--color-clay-600)] hover:to-[var(--color-clay-500)] text-white"
           >
             {isSavingText ? (
               <>
@@ -308,7 +308,7 @@ export default function AtendimentoSettingsPage() {
       <Card className="p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Ou Fazer Upload de Arquivos</h3>
         
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[var(--color-old-rose)] transition-colors">
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[var(--color-clay-500)] transition-colors">
           <input
             type="file"
             id="file-upload"
@@ -344,7 +344,7 @@ export default function AtendimentoSettingsPage() {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
-                className="bg-gradient-to-r from-[var(--color-old-rose)] to-[var(--color-melon)] h-2 rounded-full transition-all duration-300"
+                className="bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-melon)] h-2 rounded-full transition-all duration-300"
                 style={{ width: `${uploadProgress}%` }}
               ></div>
             </div>
@@ -429,15 +429,15 @@ export default function AtendimentoSettingsPage() {
         <h4 className="text-sm font-semibold text-gray-900 mb-3">Como funciona?</h4>
         <ul className="space-y-2 text-sm text-gray-600">
           <li className="flex gap-2">
-            <span className="text-[var(--color-old-rose)] font-bold">1.</span>
+            <span className="text-[var(--color-clay-500)] font-bold">1.</span>
             <span>Faça upload dos seus documentos (manuais, FAQs, políticas, catálogos, etc.)</span>
           </li>
           <li className="flex gap-2">
-            <span className="text-[var(--color-old-rose)] font-bold">2.</span>
+            <span className="text-[var(--color-clay-500)] font-bold">2.</span>
             <span>O sistema processa e indexa o conteúdo automaticamente</span>
           </li>
           <li className="flex gap-2">
-            <span className="text-[var(--color-old-rose)] font-bold">3.</span>
+            <span className="text-[var(--color-clay-500)] font-bold">3.</span>
             <span>O assistente usa essas informações para responder perguntas com precisão</span>
           </li>
         </ul>

@@ -894,7 +894,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Spinner size="large" className="text-[var(--color-old-rose)]" />
+        <Spinner size="large" className="text-[var(--color-clay-500)]" />
       </div>
     )
   }
@@ -910,7 +910,7 @@ export default function ProfilePage() {
               onClick={() => setActiveTab('personal')}
               className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:outline-none cursor-pointer ${
                 activeTab === 'personal'
-                  ? 'border-[var(--color-old-rose)] text-[var(--color-old-rose)]'
+                  ? 'border-[var(--color-clay-500)] text-[var(--color-clay-500)]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -922,7 +922,7 @@ export default function ProfilePage() {
               onClick={() => setActiveTab('establishment')}
               className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:outline-none cursor-pointer ${
                 activeTab === 'establishment'
-                  ? 'border-[var(--color-old-rose)] text-[var(--color-old-rose)]'
+                  ? 'border-[var(--color-clay-500)] text-[var(--color-clay-500)]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -934,7 +934,7 @@ export default function ProfilePage() {
               onClick={() => setActiveTab('hours')}
               className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:outline-none cursor-pointer ${
                 activeTab === 'hours'
-                  ? 'border-[var(--color-old-rose)] text-[var(--color-old-rose)]'
+                  ? 'border-[var(--color-clay-500)] text-[var(--color-clay-500)]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -946,7 +946,7 @@ export default function ProfilePage() {
               onClick={() => setActiveTab('preferences')}
               className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:outline-none cursor-pointer ${
                 activeTab === 'preferences'
-                  ? 'border-[var(--color-old-rose)] text-[var(--color-old-rose)]'
+                  ? 'border-[var(--color-clay-500)] text-[var(--color-clay-500)]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -1030,7 +1030,7 @@ export default function ProfilePage() {
                     value={profileData.full_name}
                     onChange={handleInputChange}
                     required
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
                     placeholder="Seu nome completo"
                   />
                 </div>
@@ -1063,7 +1063,7 @@ export default function ProfilePage() {
                     name="phone"
                     value={profileData.phone}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
                     placeholder="(00) 00000-0000"
                   />
                 </div>
@@ -1080,7 +1080,7 @@ export default function ProfilePage() {
                     name="cpf_cnpj"
                     value={profileData.cpf_cnpj}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
                     placeholder="000.000.000-00 ou 00.000.000/0000-00"
                   />
                 </div>
@@ -1158,7 +1158,7 @@ export default function ProfilePage() {
                 name="zip_code"
                 value={profileData.zip_code}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
                 placeholder="00000-000"
               />
               <p className="text-xs text-gray-500 mt-1">Digite o CEP para preencher automaticamente</p>
@@ -1175,7 +1175,7 @@ export default function ProfilePage() {
                   name="address"
                   value={profileData.address}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
                   placeholder="Rua, número, complemento"
                 />
               </div>
@@ -1190,7 +1190,7 @@ export default function ProfilePage() {
                 name="neighborhood"
                 value={profileData.neighborhood}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
                 placeholder="Bairro"
               />
             </div>
@@ -1205,7 +1205,7 @@ export default function ProfilePage() {
                   name="city"
                   value={profileData.city}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
                   placeholder="Cidade"
                 />
               </div>
@@ -1219,7 +1219,7 @@ export default function ProfilePage() {
                   name="state"
                   value={profileData.state}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
                   placeholder="UF"
                   maxLength={2}
                 />
@@ -1266,7 +1266,7 @@ export default function ProfilePage() {
                         <button
                           type="button"
                           onClick={() => addInterval(key)}
-                          className="ml-auto flex items-center gap-1 text-xs text-[var(--color-old-rose)] hover:text-[var(--color-old-rose)]/80 transition-colors"
+                          className="ml-auto flex items-center gap-1 text-xs text-[var(--color-clay-500)] hover:text-[var(--color-clay-500)]/80 transition-colors"
                         >
                           <Plus className="w-3 h-3" />
                           Adicionar intervalo
@@ -1286,7 +1286,7 @@ export default function ProfilePage() {
                                 type="time"
                                 value={interval.open}
                                 onChange={(e) => handleIntervalChange(key, idx, 'open', e.target.value)}
-                                className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                                className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
                               />
                             </div>
                             <div className="flex items-center gap-2">
@@ -1295,7 +1295,7 @@ export default function ProfilePage() {
                                 type="time"
                                 value={interval.close}
                                 onChange={(e) => handleIntervalChange(key, idx, 'close', e.target.value)}
-                                className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                                className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
                               />
                             </div>
                             {profileData.business_hours[key].intervals.length > 1 && (
@@ -1358,7 +1358,7 @@ export default function ProfilePage() {
                           }
                         }}
                         placeholder="sua-confeitaria"
-                        className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent ${urlError ? 'border-red-500' : 'border-gray-300'}`}
+                        className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent ${urlError ? 'border-red-500' : 'border-gray-300'}`}
                       />
                     </div>
                     
@@ -1404,7 +1404,7 @@ export default function ProfilePage() {
                             }
                           }}
                           placeholder="cardapios.minhaconfeitaria.com.br"
-                          className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent ${domainError ? 'border-red-500' : isDomainVerified ? 'border-green-500' : 'border-gray-300'}`}
+                          className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent ${domainError ? 'border-red-500' : isDomainVerified ? 'border-green-500' : 'border-gray-300'}`}
                         />
                         <button
                           type="button"
@@ -1624,7 +1624,7 @@ export default function ProfilePage() {
                   value={resetConfirmText}
                   onChange={(e) => setResetConfirmText(e.target.value)}
                   placeholder="Digite aqui..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
                 />
               </div>
             </AlertDialogDescription>

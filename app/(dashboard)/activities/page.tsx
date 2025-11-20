@@ -214,7 +214,7 @@ export default function ActivitiesPage() {
               </div>
             </div>
           </div>
-          <button className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold flex items-center gap-2">
+          <button className="bg-[var(--color-clay-500)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-clay-600)] transition font-semibold flex items-center gap-2">
             <Download className="h-4 w-4" />
             Exportar
           </button>
@@ -375,7 +375,7 @@ export default function ActivitiesPage() {
                   <div className="flex items-start gap-4">
                     {/* Ícone */}
                     <div className="w-12 h-12 rounded-full bg-[var(--color-lavender-blush)] flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-6 h-6 text-[var(--color-old-rose)]" />
+                      <Icon className="w-6 h-6 text-[var(--color-clay-500)]" />
                     </div>
 
                     {/* Conteúdo */}
@@ -431,7 +431,7 @@ export default function ActivitiesPage() {
                 <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                   Anterior
                 </button>
-                <button className="px-4 py-2 bg-[var(--color-old-rose)] text-white rounded-lg hover:bg-[var(--color-rosy-brown)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <button className="px-4 py-2 bg-[var(--color-clay-500)] text-white rounded-lg hover:bg-[var(--color-clay-600)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                   Próxima
                 </button>
               </div>

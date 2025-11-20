@@ -1324,7 +1324,7 @@ export default function AgendaPage() {
 
           <button 
             onClick={handleNewOrder}
-            className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold flex items-center gap-2 cursor-pointer"
+            className="bg-[var(--color-clay-500)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-clay-600)] transition font-semibold flex items-center gap-2 cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             Nova Tarefa
@@ -1977,7 +1977,7 @@ export default function AgendaPage() {
                 value={formData.task_name}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
                 placeholder="Ex: Post Instagram, Reunião Cliente, Ideia Produto"
               />
             </div>
@@ -2004,7 +2004,7 @@ export default function AgendaPage() {
                 value={formData.status}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-500 bg-white"
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-500 bg-white"
               >
                 {allStatuses.map(status => (
                   <option key={status.id} value={status.id}>
@@ -2116,7 +2116,7 @@ export default function AgendaPage() {
 
               {/* Botão de upload */}
               {formData.images.length < 10 && (
-                <label className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[var(--color-old-rose)] hover:bg-pink-50 transition-colors">
+                <label className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[var(--color-clay-500)] hover:bg-pink-50 transition-colors">
                   <div className="flex items-center gap-2 text-gray-600">
                     <Upload className="h-5 w-5" />
                     <span className="text-sm font-medium">
@@ -2144,7 +2144,7 @@ export default function AgendaPage() {
                 value={formData.notes}
                 onChange={handleInputChange}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500 resize-none bg-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 resize-none bg-white"
                 placeholder="Anotações, detalhes ou lembretes sobre esta tarefa"
               />
             </div>
@@ -2192,7 +2192,7 @@ export default function AgendaPage() {
                 value={newCustomerData.name}
                 onChange={(e) => setNewCustomerData(prev => ({ ...prev, name: e.target.value }))}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
                 placeholder="Nome completo"
               />
             </div>
@@ -2205,7 +2205,7 @@ export default function AgendaPage() {
                 type="email"
                 value={newCustomerData.email}
                 onChange={(e) => setNewCustomerData(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
                 placeholder="email@exemplo.com"
               />
             </div>
@@ -2218,7 +2218,7 @@ export default function AgendaPage() {
                 type="tel"
                 value={newCustomerData.phone}
                 onChange={(e) => setNewCustomerData(prev => ({ ...prev, phone: formatPhone(e.target.value) }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
                 placeholder="(00) 00000-0000"
               />
             </div>
@@ -2265,7 +2265,7 @@ export default function AgendaPage() {
                 value={newProductData.name}
                 onChange={(e) => setNewProductData(prev => ({ ...prev, name: e.target.value }))}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
                 placeholder="Nome do produto"
               />
             </div>
@@ -2281,7 +2281,7 @@ export default function AgendaPage() {
                   category: e.target.value as 'cake' | 'cupcake' | 'cookie' | 'pie' | 'other'
                 }))}
                 required
-                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-500 bg-white"
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-500 bg-white"
               >
                 <option value="cake">Bolo</option>
                 <option value="cupcake">Cupcake</option>
@@ -2301,7 +2301,7 @@ export default function AgendaPage() {
                 onChange={(e) => setNewProductData(prev => ({ ...prev, selling_price: e.target.value }))}
                 step="0.01"
                 min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500"
                 placeholder="0,00"
               />
             </div>
@@ -2314,7 +2314,7 @@ export default function AgendaPage() {
                 value={newProductData.description}
                 onChange={(e) => setNewProductData(prev => ({ ...prev, description: e.target.value }))}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent text-gray-900 placeholder:text-gray-500 resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 resize-none"
                 placeholder="Descrição do produto"
               />
             </div>

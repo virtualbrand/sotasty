@@ -7,7 +7,7 @@ interface PageLoadingProps {
 export default function PageLoading({ message }: PageLoadingProps) {
   return (
     <div className="flex justify-center py-8">
-      <Spinner size="large" className="text-[var(--color-old-rose)] !w-[40px] !h-[40px]" />
+      <Spinner size="large" className="text-[var(--color-clay-500)] !w-[40px] !h-[40px]" />
     </div>
   )
 }

@@ -357,7 +357,7 @@ export default function FinanceiroPage() {
           <div className="relative transaction-menu">
             <button 
               onClick={() => setShowTransactionMenu(!showTransactionMenu)}
-              className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold cursor-pointer"
+              className="bg-[var(--color-clay-500)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-clay-600)] transition font-semibold cursor-pointer"
             >
               + Transação
             </button>
@@ -687,7 +687,7 @@ export default function FinanceiroPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 rounded-full bg-[var(--color-lavender-blush)] flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-[var(--color-old-rose)]" />
+              <DollarSign className="w-6 h-6 text-[var(--color-clay-500)]" />
             </div>
           </div>
           <div className="mb-1">

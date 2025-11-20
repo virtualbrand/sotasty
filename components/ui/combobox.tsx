@@ -140,7 +140,7 @@ export function Combobox({
         disabled={disabled || loading}
         className={cn(
           "w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg bg-white",
-          "focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent",
+          "focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent",
           "hover:border-gray-400 transition-colors",
           "disabled:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50",
           "text-gray-900 placeholder:text-gray-500",
@@ -213,7 +213,7 @@ export function Combobox({
                           setSelectedIndex(-1)
                           onCreateNew(searchValue)
                         }}
-                        className="relative flex cursor-pointer select-none items-center rounded-sm px-3 py-2.5 text-sm outline-none transition-colors hover:bg-gray-50 text-[var(--color-old-rose)]"
+                        className="relative flex cursor-pointer select-none items-center rounded-sm px-3 py-2.5 text-sm outline-none transition-colors hover:bg-gray-50 text-[var(--color-clay-500)]"
                       >
                         <Plus className="mr-2 h-4 w-4" />
                         <span className="font-medium">{createNewLabel}</span>

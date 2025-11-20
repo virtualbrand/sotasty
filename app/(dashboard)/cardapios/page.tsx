@@ -275,7 +275,7 @@ export default function CardapiosPage() {
         </div>
         <Button
           onClick={() => router.push('/cardapios/novo')}
-          className="bg-[var(--color-old-rose)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-rosy-brown)] transition font-semibold flex items-center gap-2 cursor-pointer"
+          className="bg-[var(--color-clay-500)] text-white px-6 py-2.5 rounded-full hover:bg-[var(--color-clay-600)] transition font-semibold flex items-center gap-2 cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           Novo Cardápio
@@ -364,7 +364,7 @@ export default function CardapiosPage() {
             {statusFilters.map((filter) => (
               <div
                 key={filter}
-                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border bg-[var(--color-lavender-blush)] text-[var(--color-old-rose)] border-[var(--color-old-rose)]"
+                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border bg-[var(--color-lavender-blush)] text-[var(--color-clay-500)] border-[var(--color-clay-500)]"
               >
                 <span className="text-xs font-medium">{filter}</span>
                 <button
@@ -384,7 +384,7 @@ export default function CardapiosPage() {
       <div>
         {loading ? (
           <div className="flex justify-center py-8">
-            <Spinner size="large" className="text-[var(--color-old-rose)]" />
+            <Spinner size="large" className="text-[var(--color-clay-500)]" />
           </div>
         ) : filteredMenus.length === 0 ? (
           <div className="text-center py-12">
@@ -554,7 +554,7 @@ export default function CardapiosPage() {
               value={menuDescription}
               onChange={(e) => setMenuDescription(e.target.value)}
               placeholder="Descreva seu cardápio..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-old-rose)] focus:border-transparent resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent resize-none"
               rows={3}
             />
           </div>
@@ -571,7 +571,7 @@ export default function CardapiosPage() {
             </Button>
             <Button
               onClick={handleCreateMenu}
-              className="bg-gradient-to-r from-[var(--color-old-rose)] to-[var(--color-melon)] hover:opacity-90 text-white"
+              className="bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-melon)] hover:opacity-90 text-white"
             >
               Criar Cardápio
             </Button>

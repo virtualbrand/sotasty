@@ -482,7 +482,7 @@ function FinanceiroSettingsContent() {
             onClick={() => setActiveTab('contas')}
             className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:outline-none ${
               activeTab === 'contas'
-                ? 'border-[var(--color-old-rose)] text-[var(--color-old-rose)]'
+                ? 'border-[var(--color-clay-500)] text-[var(--color-clay-500)]'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -510,7 +510,7 @@ function FinanceiroSettingsContent() {
         <div 
           className={`space-y-2 mb-6 rounded-lg border-2 border-dashed transition-colors p-2 ${
             dragOverCategory === 'root' 
-              ? 'border-[var(--color-old-rose)] bg-[var(--color-old-rose)]/5' 
+              ? 'border-[var(--color-clay-500)] bg-[var(--color-clay-500)]/5' 
               : 'border-transparent'
           }`}
           onDragOver={(e) => handleDragOver(e)}
@@ -542,14 +542,14 @@ function FinanceiroSettingsContent() {
                 <div key={category.id} className="relative">
                   {/* Drop indicator before */}
                   {dragOverCategory === category.id && dropPosition === 'before' && (
-                    <div className="absolute -top-1 left-0 right-0 h-0.5 bg-[var(--color-old-rose)] z-10 rounded-full" />
+                    <div className="absolute -top-1 left-0 right-0 h-0.5 bg-[var(--color-clay-500)] z-10 rounded-full" />
                   )}
                   
                   <SortableItem value={category.id}>
                     <div 
                       className={`rounded-lg border transition-all bg-white overflow-hidden ${
                         dragOverCategory === category.id && dropPosition === 'inside'
-                          ? 'border-[var(--color-old-rose)] bg-[var(--color-old-rose)]/5 border-2' 
+                          ? 'border-[var(--color-clay-500)] bg-[var(--color-clay-500)]/5 border-2' 
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                       onDragOver={(e) => handleDragOver(e, category.id)}
@@ -612,7 +612,7 @@ function FinanceiroSettingsContent() {
                               <div key={subcat.id} className="relative">
                                 {/* Drop indicator before subcategory */}
                                 {dragOverSubcategory === subcat.id && dropPositionSub === 'before' && (
-                                  <div className="absolute -top-0.5 left-4 right-4 h-0.5 bg-[var(--color-old-rose)] z-10 rounded-full" />
+                                  <div className="absolute -top-0.5 left-4 right-4 h-0.5 bg-[var(--color-clay-500)] z-10 rounded-full" />
                                 )}
                                 
                                 <SortableItem value={subcat.id}>
@@ -655,7 +655,7 @@ function FinanceiroSettingsContent() {
                                 
                                 {/* Drop indicator after subcategory */}
                                 {dragOverSubcategory === subcat.id && dropPositionSub === 'after' && (
-                                  <div className="absolute -bottom-0.5 left-4 right-4 h-0.5 bg-[var(--color-old-rose)] z-10 rounded-full" />
+                                  <div className="absolute -bottom-0.5 left-4 right-4 h-0.5 bg-[var(--color-clay-500)] z-10 rounded-full" />
                                 )}
                               </div>
                             )
@@ -667,7 +667,7 @@ function FinanceiroSettingsContent() {
                   
                   {/* Drop indicator after */}
                   {dragOverCategory === category.id && dropPosition === 'after' && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[var(--color-old-rose)] z-10 rounded-full" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[var(--color-clay-500)] z-10 rounded-full" />
                   )}
                 </div>
               )})}

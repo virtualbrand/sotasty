@@ -109,7 +109,7 @@ export default function AtendimentoPage() {
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center shadow-md">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-clay-500)] flex items-center justify-center shadow-md">
             <Bot className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -129,7 +129,7 @@ export default function AtendimentoPage() {
             {/* Avatar */}
             <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
               message.role === 'assistant' 
-                ? 'bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)]' 
+                ? 'bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-clay-500)]' 
                 : 'bg-gray-200'
             }`}>
               {message.role === 'assistant' ? (
@@ -144,7 +144,7 @@ export default function AtendimentoPage() {
               <div className={`px-4 py-3 rounded-2xl ${
                 message.role === 'assistant' 
                   ? 'bg-gray-100 text-gray-900' 
-                  : 'bg-gradient-to-r from-[var(--color-old-rose)] to-[var(--color-melon)] text-white'
+                  : 'bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-melon)] text-white'
               }`}>
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>
               </div>
@@ -157,7 +157,7 @@ export default function AtendimentoPage() {
 
         {isLoading && (
           <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-old-rose)] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-clay-500)] flex items-center justify-center">
               <Bot className="w-5 h-5 text-white" />
             </div>
             <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-100">
@@ -183,7 +183,7 @@ export default function AtendimentoPage() {
           <Button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="bg-gradient-to-r from-[var(--color-old-rose)] to-[var(--color-melon)] hover:from-[var(--color-rosy-brown)] hover:to-[var(--color-old-rose)] text-white shadow-lg"
+            className="bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-melon)] hover:from-[var(--color-clay-600)] hover:to-[var(--color-clay-500)] text-white shadow-lg"
           >
             {isLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />

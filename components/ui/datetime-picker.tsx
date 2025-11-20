@@ -82,7 +82,7 @@ export function DateTimePicker({ value, onChange, placeholder }: DateTimePickerP
                     className={cn(
                       'w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors',
                       !date && 'opacity-50 cursor-not-allowed',
-                      date && 'hover:bg-[var(--color-old-rose)] hover:text-white'
+                      date && 'hover:bg-[var(--color-clay-500)] hover:text-white'
                     )}
                   >
                     {preset.label}

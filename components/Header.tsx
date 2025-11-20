@@ -5,21 +5,21 @@ export default function Header() {
     <header className="bg-[var(--color-snow)] shadow-sm border-b">
       <nav className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-[var(--color-old-rose)]">
+          <Link href="/" className="text-2xl font-bold text-[var(--color-clay-500)]">
             🍰 SoTasty
           </Link>
           
           <div className="flex gap-6">
-            <Link href="/" className="text-gray-700 hover:text-[var(--color-old-rose)] transition">
+            <Link href="/" className="text-gray-700 hover:text-[var(--color-clay-500)] transition">
               Início
             </Link>
-            <Link href="/products" className="text-gray-700 hover:text-[var(--color-old-rose)] transition">
+            <Link href="/products" className="text-gray-700 hover:text-[var(--color-clay-500)] transition">
               Produtos
             </Link>
-            <Link href="/orders" className="text-gray-700 hover:text-[var(--color-old-rose)] transition">
+            <Link href="/orders" className="text-gray-700 hover:text-[var(--color-clay-500)] transition">
               Pedidos
             </Link>
-            <Link href="/customers" className="text-gray-700 hover:text-[var(--color-old-rose)] transition">
+            <Link href="/customers" className="text-gray-700 hover:text-[var(--color-clay-500)] transition">
               Clientes
             </Link>
           </div>

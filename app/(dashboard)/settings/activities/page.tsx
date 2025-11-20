@@ -78,7 +78,7 @@ export default function ActivitiesPage() {
           <button
             onClick={handleToggle}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              showInSidebar ? 'bg-[var(--color-old-rose)]' : 'bg-gray-200'
+              showInSidebar ? 'bg-[var(--color-clay-500)]' : 'bg-gray-200'
             }`}
           >
             <span
@@ -104,7 +104,7 @@ export default function ActivitiesPage() {
             <div key={index} className="p-6 hover:bg-gray-50 transition">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-full bg-[var(--color-lavender-blush)] flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-5 h-5 text-[var(--color-old-rose)]" />
+                  <Icon className="w-5 h-5 text-[var(--color-clay-500)]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900">{activity.action}</p>
@@ -118,7 +118,7 @@ export default function ActivitiesPage() {
       </div>
 
       <div className="p-6 border-t border-gray-200 text-center">
-        <button className="text-sm text-[var(--color-old-rose)] hover:text-[var(--color-rosy-brown)] font-medium">
+        <button className="text-sm text-[var(--color-clay-500)] hover:text-[var(--color-clay-600)] font-medium">
           Ver todas as atividades
         </button>
       </div>
