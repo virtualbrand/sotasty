@@ -2,6 +2,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Remove all focus styles */
+*:focus,
+*:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 @theme {
   --font-sans: var(--font-kumbh-sans);
   
@@ -282,7 +289,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 6px 18px;
+  padding: 8px 18px;
   border-radius: 9999px;
   font-weight: 600;
   font-size: 0.875rem;
@@ -425,8 +432,8 @@ button:focus-visible {
 }
 
 .btn-info:hover:not(:disabled) {
-  background-color: var(--color-info-600);
-  border-color: var(--color-info-600);
+  background-color: var(--color-info-400);
+  border-color: var(--color-info-400);
 }
 
 .btn-info:active:not(:disabled) {
@@ -435,9 +442,9 @@ button:focus-visible {
 }
 
 .btn-info:disabled {
-  background-color: var(--color-stone-400);
-  color: var(--color-stone-600);
-  border-color: var(--color-stone-400);
+  background-color: var(--color-info-200);
+  color: #FFFFFF;
+  border-color: var(--color-info-200);
   cursor: not-allowed;
 }
 
@@ -452,8 +459,9 @@ button:focus-visible {
 }
 
 .btn-outline-info:hover:not(:disabled) {
-  background-color: var(--color-info-50);
-  border-color: var(--color-info-600);
+  background-color: var(--color-info-500);
+  color: #FFFFFF;
+  border-color: var(--color-info-500);
 }
 
 .btn-outline-info:active:not(:disabled) {
@@ -480,8 +488,8 @@ button:focus-visible {
 }
 
 .btn-success:hover:not(:disabled) {
-  background-color: var(--color-success-600);
-  border-color: var(--color-success-600);
+  background-color: var(--color-success-400);
+  border-color: var(--color-success-400);
 }
 
 .btn-success:active:not(:disabled) {
@@ -490,9 +498,9 @@ button:focus-visible {
 }
 
 .btn-success:disabled {
-  background-color: var(--color-stone-400);
-  color: var(--color-stone-600);
-  border-color: var(--color-stone-400);
+  background-color: var(--color-success-200);
+  color: #FFFFFF;
+  border-color: var(--color-success-200);
   cursor: not-allowed;
 }
 
@@ -507,8 +515,9 @@ button:focus-visible {
 }
 
 .btn-outline-success:hover:not(:disabled) {
-  background-color: var(--color-success-50);
-  border-color: var(--color-success-600);
+  background-color: var(--color-success-500);
+  color: #FFFFFF;
+  border-color: var(--color-success-500);
 }
 
 .btn-outline-success:active:not(:disabled) {
@@ -535,8 +544,8 @@ button:focus-visible {
 }
 
 .btn-warning:hover:not(:disabled) {
-  background-color: var(--color-warning-600);
-  border-color: var(--color-warning-600);
+  background-color: var(--color-warning-400);
+  border-color: var(--color-warning-400);
 }
 
 .btn-warning:active:not(:disabled) {
@@ -545,9 +554,9 @@ button:focus-visible {
 }
 
 .btn-warning:disabled {
-  background-color: var(--color-stone-400);
-  color: var(--color-stone-600);
-  border-color: var(--color-stone-400);
+  background-color: var(--color-warning-200);
+  color: #FFFFFF;
+  border-color: var(--color-warning-200);
   cursor: not-allowed;
 }
 
@@ -562,8 +571,9 @@ button:focus-visible {
 }
 
 .btn-outline-warning:hover:not(:disabled) {
-  background-color: var(--color-warning-50);
-  border-color: var(--color-warning-600);
+  background-color: var(--color-warning-500);
+  color: #FFFFFF;
+  border-color: var(--color-warning-500);
 }
 
 .btn-outline-warning:active:not(:disabled) {
@@ -590,8 +600,8 @@ button:focus-visible {
 }
 
 .btn-danger:hover:not(:disabled) {
-  background-color: var(--color-danger-600);
-  border-color: var(--color-danger-600);
+  background-color: var(--color-danger-400);
+  border-color: var(--color-danger-400);
 }
 
 .btn-danger:active:not(:disabled) {
@@ -600,9 +610,9 @@ button:focus-visible {
 }
 
 .btn-danger:disabled {
-  background-color: var(--color-stone-400);
-  color: var(--color-stone-600);
-  border-color: var(--color-stone-400);
+  background-color: var(--color-danger-200);
+  color: #FFFFFF;
+  border-color: var(--color-danger-200);
   cursor: not-allowed;
 }
 
@@ -617,8 +627,9 @@ button:focus-visible {
 }
 
 .btn-outline-danger:hover:not(:disabled) {
-  background-color: var(--color-danger-50);
-  border-color: var(--color-danger-600);
+  background-color: var(--color-danger-500);
+  color: #FFFFFF;
+  border-color: var(--color-danger-500);
 }
 
 .btn-outline-danger:active:not(:disabled) {

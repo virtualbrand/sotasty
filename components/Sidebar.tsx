@@ -224,8 +224,8 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                 className={`
                   flex items-center gap-2 px-4 py-2 rounded-[10px] transition-all group
                   ${active 
-                    ? 'bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-melon)] text-white shadow-lg shadow-[var(--color-clay-500)]/30' 
-                    : 'text-gray-600 hover:bg-[var(--color-lavender-blush)]'
+                    ? 'bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-clay-300)] text-white shadow-lg shadow-[var(--color-clay-500)]/30' 
+                    : 'text-gray-600 hover:bg-[var(--color-clay-50)]'
                   }
                 `}
               >
@@ -241,8 +241,8 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
               className={`
                 flex items-center gap-2 px-4 py-2 rounded-[10px] transition-all group
                 ${isActive('/activities')
-                  ? 'bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-melon)] text-white shadow-lg shadow-[var(--color-clay-500)]/30' 
-                  : 'text-gray-600 hover:bg-[var(--color-lavender-blush)]'
+                  ? 'bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-clay-300)] text-white shadow-lg shadow-[var(--color-clay-500)]/30' 
+                  : 'text-gray-600 hover:bg-[var(--color-clay-50)]'
                 }
               `}
             >
@@ -450,8 +450,8 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                   className={`
                     flex items-center gap-3 px-4 py-3 rounded-[10px] transition-all group
                     ${active 
-                      ? 'bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-melon)] text-white shadow-lg shadow-[var(--color-clay-500)]/30' 
-                      : 'text-gray-600 hover:bg-[var(--color-lavender-blush)]'
+                      ? 'bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-clay-300)] text-white shadow-lg shadow-[var(--color-clay-500)]/30' 
+                      : 'text-gray-600 hover:bg-[var(--color-clay-50)]'
                     }
                     ${isCollapsed ? 'justify-center' : ''}
                   `}
@@ -470,8 +470,8 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                 className={`
                   flex items-center gap-3 px-4 py-3 rounded-[10px] transition-all group
                   ${isActive('/activities')
-                    ? 'bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-melon)] text-white shadow-lg shadow-[var(--color-clay-500)]/30' 
-                    : 'text-gray-600 hover:bg-[var(--color-lavender-blush)]'
+                    ? 'bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-clay-300)] text-white shadow-lg shadow-[var(--color-clay-500)]/30' 
+                    : 'text-gray-600 hover:bg-[var(--color-clay-50)]'
                   }
                   ${isCollapsed ? 'justify-center' : ''}
                 `}
@@ -488,7 +488,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
         <div className="border-t border-gray-100 p-3 space-y-2">
           {/* Notifications */}
           <button 
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-all text-gray-600 hover:bg-[var(--color-lavender-blush)] relative group ${isCollapsed ? 'justify-center' : ''}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-all text-gray-600 hover:bg-[var(--color-clay-50)] relative group ${isCollapsed ? 'justify-center' : ''}`}
             title={isCollapsed ? 'Notificações' : ''}
           >
             <Bell className="w-5 h-5 flex-shrink-0 text-gray-500 group-hover:text-[var(--color-clay-500)]" />
@@ -508,7 +508,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
                   flex items-center gap-3 px-4 py-3 rounded-[10px] transition-all group
                   ${active 
                     ? 'bg-[var(--color-lavender-blush)] text-[var(--color-clay-500)]' 
-                    : 'text-gray-600 hover:bg-[var(--color-lavender-blush)]'
+                    : 'text-gray-600 hover:bg-[var(--color-clay-50)]'
                   }
                   ${isCollapsed ? 'justify-center' : ''}
                 `}

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { User, Phone, Mail, ShoppingBag, X, Search, Info, ArrowDownAZ, ArrowDownZA, Camera, SwitchCamera, CircleX, Trash2, CircleAlert } from 'lucide-react'
+import { User, Phone, Mail, ShoppingBag, X, Search, Info, ArrowDownAZ, ArrowDownZA, Camera, SwitchCamera, CircleX, Trash2, CircleAlert, Check } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { showToast } from '@/app/(dashboard)/layout'
 import { useCustomerSettings } from '@/hooks/useCustomerSettings'
@@ -95,6 +95,7 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loadingCustomers, setLoadingCustomers] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -103,6 +104,11 @@ export default function CustomersPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [userRole, setUserRole] = useState<string>('admin')
   const [loadingRole, setLoadingRole] = useState(true)
+  const [profile, setProfile] = useState<any>(null)
+  const [hasChanges, setHasChanges] = useState(false)
+  const [displayedCustomers, setDisplayedCustomers] = useState(20) // Inicia com ~20 clientes (aprox 150vh)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -128,12 +134,15 @@ export default function CustomersPage() {
 
   const fetchCustomers = async () => {
     try {
+      setLoadingCustomers(true)
       const response = await fetch('/api/customers')
       if (!response.ok) throw new Error('Failed to fetch customers')
       const data = await response.json()
       setCustomers(data)
     } catch (error) {
       console.error('Error fetching customers:', error)
+    } finally {
+      setLoadingCustomers(false)
     }
   }
 
@@ -142,14 +151,15 @@ export default function CustomersPage() {
     const { data: { user } } = await supabase.auth.getUser()
     
     if (user) {
-      const { data: profile } = await supabase
+      const { data: profileData } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, is_superadmin')
         .eq('id', user.id)
         .single()
       
-      if (profile?.role) {
-        setUserRole(profile.role)
+      if (profileData) {
+        setProfile(profileData)
+        setUserRole(profileData.role)
       }
     }
     setLoadingRole(false)
@@ -160,6 +170,44 @@ export default function CustomersPage() {
     loadUserRole()
     fetchCustomers()
   }, [])
+
+  // Infinite scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!scrollContainerRef.current || isLoadingMore || loadingCustomers) return
+
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current
+      const scrollPercentage = (scrollTop + clientHeight) / scrollHeight
+      
+      // Calcula filteredCustomers dentro do handler
+      const filtered = customers.filter(customer => 
+        customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (customer.email && customer.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        customer.phone.includes(searchQuery)
+      )
+      
+      // Carrega mais quando estiver a 80vh do final (aproximadamente 80% do scroll)
+      if (scrollPercentage > 0.8 && displayedCustomers < filtered.length) {
+        setIsLoadingMore(true)
+        // Simulação de delay de rede para UX suave
+        setTimeout(() => {
+          setDisplayedCustomers(prev => Math.min(prev + 15, filtered.length))
+          setIsLoadingMore(false)
+        }, 300)
+      }
+    }
+
+    const container = scrollContainerRef.current
+    if (container) {
+      container.addEventListener('scroll', handleScroll)
+      return () => container.removeEventListener('scroll', handleScroll)
+    }
+  }, [displayedCustomers, isLoadingMore, loadingCustomers, customers, searchQuery])
+
+  // Reset displayed customers quando filtro/busca mudar
+  useEffect(() => {
+    setDisplayedCustomers(20)
+  }, [searchQuery, sortOrder])
 
   // Fechar modal com ESC
   useEffect(() => {
@@ -178,19 +226,6 @@ export default function CustomersPage() {
     return () => window.removeEventListener('keydown', handleEsc)
   }, [isModalOpen, selectedCustomer])
 
-  // Se for superadmin, mostrar componente diferente
-  if (loadingRole) {
-    return (
-      <div className="p-8 flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Carregando...</div>
-      </div>
-    )
-  }
-
-  if (userRole === 'superadmin') {
-    return <SuperAdminCustomers />
-  }
-
   const closeModal = () => {
     setIsModalOpen(false)
     setEditingCustomer(null)
@@ -198,12 +233,14 @@ export default function CustomersPage() {
     setTouched({ name: false, phone: false, email: false, cpf_cnpj: false, notes: false })
     setErrors({ name: '', phone: '', email: '', cpf_cnpj: '', notes: '' })
     setAvatarPreview(null)
+    setHasChanges(false)
   }
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       setFormData(prev => ({ ...prev, avatar: file }))
+      setHasChanges(true)
       const reader = new FileReader()
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string)
@@ -214,6 +251,8 @@ export default function CustomersPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
+    
+    setHasChanges(true)
     
     if (name === 'phone') {
       const formatted = formatPhone(value)
@@ -289,6 +328,7 @@ export default function CustomersPage() {
     e.preventDefault()
     
     if (!validateForm()) {
+      console.log('Validação falhou')
       return
     }
 
@@ -298,12 +338,14 @@ export default function CustomersPage() {
       // Preparar dados para envio
       const dataToSend = {
         name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        cpf_cnpj: formData.cpf_cnpj,
-        notes: formData.notes,
+        phone: formData.phone || null,
+        email: formData.email || null,
+        cpf_cnpj: formData.cpf_cnpj || null,
+        notes: formData.notes || null,
         avatar_url: avatarPreview // Usar o preview que já está em base64
       }
+
+      console.log('Enviando dados:', dataToSend)
 
       const response = await fetch('/api/customers', {
         method: 'POST',
@@ -313,9 +355,16 @@ export default function CustomersPage() {
         body: JSON.stringify(dataToSend),
       })
 
-      if (!response.ok) throw new Error('Failed to create customer')
+      console.log('Response status:', response.status)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Erro da API:', errorData)
+        throw new Error(errorData.error || 'Failed to create customer')
+      }
 
       const newCustomer = await response.json()
+      console.log('Cliente criado:', newCustomer)
       
       // Adicionar orders_count ao novo cliente
       const customerWithCount = {
@@ -347,8 +396,8 @@ export default function CustomersPage() {
   const handleEditCustomer = async (customer: Customer) => {
     setFormData({
       name: customer.name,
-      phone: customer.phone,
-      email: customer.email,
+      phone: customer.phone || '',
+      email: customer.email || '',
       cpf_cnpj: customer.cpf_cnpj || '',
       notes: customer.notes || '',
       avatar: null
@@ -358,6 +407,7 @@ export default function CustomersPage() {
     }
     setEditingCustomer(customer)
     setSelectedCustomer(null)
+    setHasChanges(false)
     setIsModalOpen(true)
   }
 
@@ -375,10 +425,10 @@ export default function CustomersPage() {
       const dataToSend = {
         id: editingCustomer.id,
         name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        cpf_cnpj: formData.cpf_cnpj,
-        notes: formData.notes,
+        phone: formData.phone || null,
+        email: formData.email || null,
+        cpf_cnpj: formData.cpf_cnpj || null,
+        notes: formData.notes || null,
         avatar_url: avatarPreview // Usar o preview que já está em base64
       }
 
@@ -432,6 +482,7 @@ export default function CustomersPage() {
       setSelectedCustomer(null)
       setDeleteDialogOpen(false)
       setCustomerToDelete(null)
+      closeModal() // Fechar o modal de edição
       showToast({
         title: 'Cliente excluído!',
         message: 'O cliente foi excluído com sucesso.',
@@ -454,19 +505,23 @@ export default function CustomersPage() {
   }
 
   // Filtrar e ordenar clientes
-  let filteredCustomers = customers.filter(customer => 
-    customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.phone.includes(searchQuery)
-  )
+  const filteredCustomers = useMemo(() => {
+    let filtered = customers.filter(customer => 
+      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (customer.email && customer.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      customer.phone.includes(searchQuery)
+    )
 
-  // Ordena somente se sortOrder foi definido
-  if (sortOrder !== null) {
-    filteredCustomers = filteredCustomers.sort((a, b) => {
-      const comparison = a.name.localeCompare(b.name, 'pt-BR')
-      return sortOrder === 'asc' ? comparison : -comparison
-    })
-  }
+    // Ordena somente se sortOrder foi definido
+    if (sortOrder !== null) {
+      filtered = filtered.sort((a, b) => {
+        const comparison = a.name.localeCompare(b.name, 'pt-BR')
+        return sortOrder === 'asc' ? comparison : -comparison
+      })
+    }
+
+    return filtered
+  }, [customers, searchQuery, sortOrder])
 
   const toggleSortOrder = () => {
     setSortOrder(prev => {
@@ -527,26 +582,34 @@ export default function CustomersPage() {
       </div>
 
       {/* Lista de Clientes */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-6">
-        {filteredCustomers.length === 0 ? (
+      <div 
+        ref={scrollContainerRef}
+        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden max-h-[calc(100vh-250px)] overflow-y-auto p-6"
+      >
+        {loadingCustomers ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="inline-block w-8 h-8 border-4 border-[var(--color-clay-500)] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : filteredCustomers.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             {searchQuery ? 'Nenhum cliente encontrado.' : 'Nenhum cliente cadastrado. Clique em "+ Novo Cliente" para começar.'}
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
+          <>
+            <table className="w-full -mx-6 px-6" style={{ width: 'calc(100% + 48px)' }}>
+            <thead className="sticky top-0 bg-white z-10 shadow-sm">
               <tr className="border-b border-gray-200">
-                {customerSettings.showPhoto && <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm w-20"></th>}
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Cliente</th>
-                {customerSettings.showCpfCnpj && <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">CPF/CNPJ</th>}
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Telefone</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">E-mail</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Pedidos</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Cliente desde</th>
+                {customerSettings.showPhoto && <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm w-20 bg-white before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10"></th>}
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Cliente</th>
+                {customerSettings.showCpfCnpj && <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">CPF/CNPJ</th>}
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Telefone</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">E-mail</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Pedidos</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Cliente desde</th>
               </tr>
             </thead>
             <tbody>
-              {filteredCustomers.map((customer) => (
+              {filteredCustomers.slice(0, displayedCustomers).map((customer) => (
                 <tr 
                   key={customer.id} 
                   className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
@@ -564,8 +627,8 @@ export default function CustomersPage() {
                           />
                         </div>
                       ) : (
-                        <div className="w-12 h-12 rounded-full border border-gray-200 bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-clay-500)] flex items-center justify-center">
-                          <User className="w-5 h-5 text-white" />
+                        <div className="w-12 h-12 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center">
+                          <User className="w-5 h-5 text-gray-400" />
                         </div>
                       )}
                     </td>
@@ -581,7 +644,7 @@ export default function CustomersPage() {
                       <Link 
                         href={`/orders?customer=${encodeURIComponent(customer.name)}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-[var(--color-clay-500)] font-semibold hover:text-[var(--color-clay-600)] transition-colors"
+                        className="inline-flex items-center gap-1 text-[var(--color-clay-500)] font-semibold hover:text-[var(--color-clay-600)] transition-colors no-underline"
                       >
                         <ShoppingBag className="w-3.5 h-3.5" />
                         {customer.orders_count}
@@ -592,9 +655,24 @@ export default function CustomersPage() {
                   </td>
                   <td className="py-3 px-4 text-sm text-gray-600">{formatDate(customer.created_at)}</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+            
+            {/* Loading indicator para infinite scroll */}
+            {isLoadingMore && displayedCustomers < filteredCustomers.length && (
+              <div className="flex items-center justify-center py-6">
+                <div className="inline-block w-6 h-6 border-3 border-[var(--color-clay-500)] border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+            
+            {/* Indicador de fim da lista */}
+            {displayedCustomers >= filteredCustomers.length && filteredCustomers.length > 20 && (
+              <div className="text-center py-4 text-gray-400 text-sm">
+                {filteredCustomers.length} {filteredCustomers.length === 1 ? 'cliente' : 'clientes'} no total
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -615,7 +693,7 @@ export default function CustomersPage() {
               </h2>
               <button
                 onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600 transition"
+                className="text-gray-400 hover:text-gray-600 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -783,22 +861,44 @@ export default function CustomersPage() {
                 />
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="btn-outline-grey flex-1"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-success flex-1"
-                >
-                  {loading ? 'Salvando...' : (editingCustomer ? 'Atualizar' : 'Salvar Cliente')}
-                </button>
-              </div>
+              {/* Botões de ação */}
+              {editingCustomer ? (
+                <div className="flex gap-2 justify-end pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (editingCustomer) {
+                        setCustomerToDelete(editingCustomer.id)
+                        setDeleteDialogOpen(true)
+                      }
+                    }}
+                    disabled={loading}
+                    className="btn-outline-danger disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Excluir Cliente
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading || !hasChanges}
+                    className="btn-success"
+                  >
+                    <Check className="w-4 h-4" />
+                    {loading ? 'Salvando...' : 'Atualizar Cliente'}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex justify-end pt-4">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn-success"
+                  >
+                    <Check className="w-4 h-4" />
+                    {loading ? 'Salvando...' : 'Salvar Cliente'}
+                  </button>
+                </div>
+              )}
             </form>
           </div>
         </div>
@@ -816,10 +916,10 @@ export default function CustomersPage() {
         >
           <div className="bg-[var(--color-snow)] rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-[var(--color-snow)] border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Perfil do Cliente</h2>
+              <h2 className="text-xl font-bold text-gray-900">Detalhes do Cliente</h2>
               <button
                 onClick={() => setSelectedCustomer(null)}
-                className="text-gray-400 hover:text-gray-600 transition"
+                className="text-gray-400 hover:text-gray-600 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -828,7 +928,7 @@ export default function CustomersPage() {
             <div className="p-6 space-y-6">
               {/* Avatar e Info Básica */}
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-clay-500)] flex items-center justify-center overflow-hidden relative">
+                <div className="w-16 h-16 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden relative">
                   {selectedCustomer.avatar_url ? (
                     <Image
                       src={selectedCustomer.avatar_url}
@@ -837,7 +937,7 @@ export default function CustomersPage() {
                       className="object-cover"
                     />
                   ) : (
-                    <User className="w-8 h-8 text-white" />
+                    <User className="w-8 h-8 text-gray-400" />
                   )}
                 </div>
                 <div>
@@ -931,7 +1031,7 @@ export default function CustomersPage() {
             </AlertDialogHeader>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel className="btn-outline-grey">Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="btn-secondary-outline">Cancelar</AlertDialogCancel>
             <AlertDialogAction 
               className="btn-danger flex items-center gap-2"
               onClick={() => customerToDelete && handleDeleteCustomer(customerToDelete)}
