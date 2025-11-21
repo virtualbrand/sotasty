@@ -90,25 +90,79 @@ export async function proxy(request: NextRequest) {
   console.log('[Proxy] App domain, applying auth logic')
 
   // Rotas públicas que não precisam de autenticação
-  const publicRoutes = ['/auth/login', '/auth/signup']
+  const publicRoutes = [
+    '/auth/login', 
+    '/auth/signup',
+    '/p/' // Cardápios públicos via /p/[profileId]/[menuSlug]
+  ]
+  
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
   
-  // Rotas de API sempre permitem acesso
-  if (pathname.startsWith('/api/')) {
+  console.log('[Proxy] Is public route?', isPublicRoute, 'for pathname:', pathname)
+  
+  // Rotas de API e rotas públicas sempre permitem acesso
+  if (pathname.startsWith('/api/') || isPublicRoute) {
+    console.log('[Proxy] Allowing public route without auth check')
     return await updateSession(request)
   }
 
-  // Atualizar sessão do Supabase
-  const response = await updateSession(request)
+  // Verificar se é rota com padrão de custom URL: /[slug]/[menu-slug]
+  // Exemplo: /conto/cardapio-natal
+  const pathSegments = pathname.split('/').filter(Boolean)
+  const isCustomUrlPattern = pathSegments.length === 2 && 
+                              !pathSegments[0].startsWith('_') &&
+                              !['api', 'auth', 'dashboard', 'p'].includes(pathSegments[0])
+  
+  console.log('[Proxy] Path segments:', pathSegments, 'Is custom URL pattern?', isCustomUrlPattern)
+  
+  if (isCustomUrlPattern) {
+    console.log('[Proxy] Custom URL pattern detected:', pathname)
+    
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+          }
+        }
+      )
 
-  // Se for rota pública, permitir acesso
-  if (isPublicRoute) {
-    return response
+      const [customUrlSlug, menuSlug] = pathSegments
+      
+      const { data: settings, error } = await supabase
+        .from('profile_settings')
+        .select('id')
+        .eq('custom_url_slug', customUrlSlug)
+        .single()
+
+      console.log('[Proxy] Custom URL lookup:', { customUrlSlug, settings, error })
+
+      if (!error && settings) {
+        // Rewrite para /p/[profileId]/[menuSlug]
+        const url = request.nextUrl.clone()
+        url.pathname = `/p/${settings.id}/${menuSlug}`
+        
+        console.log('[Proxy] Rewriting custom URL to:', url.pathname)
+        
+        return NextResponse.rewrite(url)
+      }
+    } catch (error) {
+      console.error('[Proxy] Erro ao processar custom URL:', error)
+    }
+    
+    // Se chegou aqui, não encontrou o custom_url_slug, mas ainda é uma rota pública
+    // Deixar passar para o Next.js mostrar 404 sem exigir autenticação
+    return NextResponse.next()
   }
+
+  // Atualizar sessão do Supabase para rotas protegidas
+  const response = await updateSession(request)
 
   // Para rotas protegidas, verificar autenticação
   try {
-    const supabaseResponse = response as any
     const accessToken = request.cookies.get('sb-shjyjqryrnqicobkrrdq-auth-token')
 
     // Se não tiver token, redirecionar para login

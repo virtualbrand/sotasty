@@ -190,13 +190,16 @@ export default function EditarCardapioPage() {
 
   // Função para sanitizar URL (permite apenas letras, números e hífens)
   const sanitizeUrlSlug = (text: string): string => {
-    return text
+    const sanitized = text
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/\s+/g, '-') // Converte espaços em hífens
       .replace(/[^a-z0-9-]/g, '') // Remove tudo exceto letras, números e hífens
       .replace(/-+/g, '-') // Remove hífens duplicados
       .replace(/^-|-$/g, '') // Remove hífens do início e fim
+    console.log('Input:', text, '| Output:', sanitized)
+    return sanitized
   }
 
   const handleNameChange = (name: string) => {
@@ -260,39 +263,42 @@ export default function EditarCardapioPage() {
         }
       }
 
-      // 1. Atualizar profile_settings
-      await fetch('/api/profile-settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          primary_color: formData.background_color,
-          secondary_color: formData.text_color,
-          logo_url: logoUrl,
-          whatsapp_number: formData.whatsapp_number,
-          business_hours: formData.business_hours
+      // Executar atualizações em paralelo
+      const [profileResponse, menuResponse] = await Promise.all([
+        // 1. Atualizar profile_settings
+        fetch('/api/profile-settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            primary_color: formData.background_color,
+            secondary_color: formData.text_color,
+            logo_url: logoUrl,
+            whatsapp_number: formData.whatsapp_number,
+            business_hours: formData.business_hours
+          })
+        }),
+        // 2. Atualizar cardápio
+        fetch(`/api/menus/${menuId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            description: formData.description,
+            url_slug: formData.url_slug
+          })
         })
-      })
-
-      // 2. Atualizar cardápio
-      const menuResponse = await fetch(`/api/menus/${menuId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
-          url_slug: formData.url_slug
-        })
-      })
+      ])
 
       if (!menuResponse.ok) {
         throw new Error('Erro ao atualizar cardápio')
       }
 
-      // 3. Atualizar produtos (deletar todos e recriar)
-      // Primeiro, buscar items existentes para deletar se necessário
-      await fetch(`/api/menu-items?menu_id=${menuId}`)
+      // 3. Deletar items antigos e adicionar novos
+      await fetch(`/api/menu-items?menu_id=${menuId}`, {
+        method: 'DELETE'
+      })
 
-      // Adicionar novos produtos
+      // Adicionar novos produtos em paralelo
       if (formData.selected_products.length > 0) {
         const itemsPromises = formData.selected_products.map(async (productId, index) => {
           const product = products.find(p => p.id === productId)
@@ -765,7 +771,7 @@ export default function EditarCardapioPage() {
                 <Button
                   onClick={() => currentStep === 0 ? router.push('/cardapios') : setCurrentStep(prev => prev - 1)}
                   disabled={loading}
-                  className="btn-outline-grey"
+                  className="btn-secondary-outline"
                 >
                   {currentStep === 0 ? 'Cancelar' : 'Voltar'}
                 </Button>

@@ -90,6 +90,7 @@ export default function CardapiosPage() {
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/\s+/g, '-') // Converte espaços em hífens
       .replace(/[^a-z0-9-]/g, '') // Remove tudo exceto letras, números e hífens
       .replace(/-+/g, '-') // Remove hífens duplicados
       .replace(/^-|-$/g, '') // Remove hífens do início e fim

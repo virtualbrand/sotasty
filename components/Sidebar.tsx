@@ -277,7 +277,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
           <div className="relative user-menu-container">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2 p-2 hover:bg-[var(--color-lavender-blush)] rounded-lg transition-all cursor-pointer"
+              className="flex items-center gap-2 p-2 rounded-lg transition-all cursor-pointer"
             >
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-clay-500)] flex items-center justify-center shadow-md overflow-hidden">
                 {avatarUrl ? (
@@ -289,7 +289,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
             </button>
 
             {showUserMenu && (
-              <div className="absolute right-0 top-full mt-2 w-64 bg-[var(--color-snow)] rounded-xl shadow-xl border border-gray-100 py-2 z-[100]">
+              <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-[100]">
                 <div className="px-4 py-3 border-b border-gray-100">
                   <p className="text-sm font-semibold text-gray-900">
                     {user?.user_metadata?.name || 'Usuário'}
@@ -347,7 +347,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
         {/* Logo & Toggle */}
         <div className="p-6 flex items-center justify-between">
           {!isCollapsed && (
-            <Link href="/" className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3 outline-none focus:outline-none">
               <img src="/logo.svg" alt="SoTasty" className="w-25 h-25" />
             </Link>
           )}
@@ -369,7 +369,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
           <div className="relative user-menu-container">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className={`flex items-center gap-3 p-3 hover:bg-[var(--color-lavender-blush)] rounded-xl transition-all w-full cursor-pointer ${isCollapsed ? 'justify-center' : ''}`}
+              className={`flex items-center gap-3 p-3 rounded-xl transition-all w-full cursor-pointer ${isCollapsed ? 'justify-center' : ''}`}
             >
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--color-melon)] to-[var(--color-clay-500)] flex items-center justify-center shadow-md flex-shrink-0 overflow-hidden">
                 {avatarUrl ? (
@@ -392,7 +392,7 @@ export default function Sidebar({ position = 'sidebar' }: SidebarProps) {
 
             {/* Dropdown Menu */}
             {showUserMenu && (
-              <div className={`absolute ${isCollapsed ? 'left-full ml-2' : 'left-0'} top-0 w-64 bg-[var(--color-snow)] rounded-xl shadow-xl border border-gray-100 py-2 z-[100]`}>
+              <div className={`absolute ${isCollapsed ? 'left-full ml-2' : 'left-0'} top-0 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-[100]`}>
                 <div className="px-4 py-3 border-b border-gray-100">
                   <p className="text-sm font-semibold text-gray-900">
                     {user?.user_metadata?.name || 'Usuário'}

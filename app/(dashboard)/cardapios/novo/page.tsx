@@ -160,6 +160,7 @@ export default function NovoCardapioPage() {
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/\s+/g, '-') // Converte espaços em hífens
       .replace(/[^a-z0-9-]/g, '') // Remove tudo exceto letras, números e hífens
       .replace(/-+/g, '-') // Remove hífens duplicados
       .replace(/^-|-$/g, '') // Remove hífens do início e fim
@@ -226,33 +227,35 @@ export default function NovoCardapioPage() {
         }
       }
 
-      // 1. Atualizar profile_settings com personalização
-      const profileResponse = await fetch('/api/profile-settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          primary_color: formData.background_color,
-          secondary_color: formData.text_color,
-          logo_url: logoUrl,
-          whatsapp_number: formData.whatsapp_number,
-          business_hours: formData.business_hours
+      // Executar atualizações em paralelo
+      const [profileResponse, menuResponse] = await Promise.all([
+        // 1. Atualizar profile_settings com personalização
+        fetch('/api/profile-settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            primary_color: formData.background_color,
+            secondary_color: formData.text_color,
+            logo_url: logoUrl,
+            whatsapp_number: formData.whatsapp_number,
+            business_hours: formData.business_hours
+          })
+        }),
+        // 2. Criar o cardápio
+        fetch('/api/menus', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            description: formData.description,
+            url_slug: formData.url_slug
+          })
         })
-      })
+      ])
 
       if (!profileResponse.ok) {
         throw new Error('Erro ao salvar configurações do perfil')
       }
-
-      // 2. Criar o cardápio
-      const menuResponse = await fetch('/api/menus', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
-          url_slug: formData.url_slug
-        })
-      })
 
       if (!menuResponse.ok) {
         throw new Error('Erro ao criar cardápio')
@@ -260,7 +263,7 @@ export default function NovoCardapioPage() {
 
       const menu = await menuResponse.json()
 
-      // 3. Adicionar produtos ao cardápio
+      // 3. Adicionar produtos ao cardápio em paralelo
       if (formData.selected_products.length > 0) {
         const itemsPromises = formData.selected_products.map(async (productId, index) => {
           const product = products.find(p => p.id === productId)
@@ -732,7 +735,7 @@ export default function NovoCardapioPage() {
             <Button
               onClick={() => currentStep === 0 ? router.push('/cardapios') : setCurrentStep(prev => prev - 1)}
               disabled={loading}
-              className="btn-outline-grey"
+              className="btn-secondary-outline"
             >
               {currentStep === 0 ? 'Cancelar' : 'Voltar'}
             </Button>

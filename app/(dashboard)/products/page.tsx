@@ -792,7 +792,7 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <label className="cursor-pointer group">
-                      <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative">
+                      <div className="w-24 h-24 rounded-full overflow-hidden bg-[#FEFEFE] flex items-center justify-center relative">
                         {imagePreview ? (
                           <>
                             <Image
@@ -810,7 +810,7 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
                         ) : (
                           <>
                             <Package className="w-12 h-12 text-gray-400 group-hover:text-gray-500 transition-colors" />
-                            <div className="absolute inset-0 bg-gray-100 group-hover:bg-gray-200 transition-colors flex items-center justify-center">
+                            <div className="absolute inset-0 bg-[#FEFEFE] group-hover:bg-[#F9F9F9] transition-colors flex items-center justify-center">
                               <div className="flex flex-col items-center">
                                 <Camera className="w-6 h-6 text-gray-400" />
                                 <span className="text-xs text-gray-500 mt-1">Adicionar</span>
@@ -1403,7 +1403,7 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <label className="cursor-pointer group">
-                      <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative">
+                      <div className="w-24 h-24 rounded-full overflow-hidden bg-[#FEFEFE] flex items-center justify-center relative">
                         {imagePreview ? (
                           <>
                             <Image
@@ -1421,7 +1421,7 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
                         ) : (
                           <>
                             <Layers className="w-12 h-12 text-gray-400 group-hover:text-gray-500 transition-colors" />
-                            <div className="absolute inset-0 bg-gray-100 group-hover:bg-gray-200 transition-colors flex items-center justify-center">
+                            <div className="absolute inset-0 bg-[#FEFEFE] group-hover:bg-[#F9F9F9] transition-colors flex items-center justify-center">
                               <div className="flex flex-col items-center">
                                 <Camera className="w-6 h-6 text-gray-400" />
                                 <span className="text-xs text-gray-500 mt-1">Adicionar</span>
@@ -2111,7 +2111,7 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, ca
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <label className="cursor-pointer group">
-                      <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative">
+                      <div className="w-24 h-24 rounded-full overflow-hidden bg-[#FEFEFE] flex items-center justify-center relative">
                       {imagePreview ? (
                         <>
                           <Image 
@@ -2129,7 +2129,7 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, ca
                       ) : (
                         <>
                           <ShoppingBag className="w-12 h-12 text-gray-400 group-hover:text-gray-500 transition-colors" />
-                          <div className="absolute inset-0 bg-gray-100 group-hover:bg-gray-200 transition-colors flex items-center justify-center">
+                          <div className="absolute inset-0 bg-[#FEFEFE] group-hover:bg-[#F9F9F9] transition-colors flex items-center justify-center">
                             <div className="flex flex-col items-center">
                               <Camera className="w-6 h-6 text-gray-400" />
                               <span className="text-xs text-gray-500 mt-1">Adicionar</span>
