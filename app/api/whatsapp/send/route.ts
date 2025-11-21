@@ -57,7 +57,7 @@ async function sendViaOfficialAPI(to: string, message: string, config: any) {
     const phoneNumber = to.replace(/\D/g, '')
     
     const response = await fetch(
-      `https://graph.facebook.com/v18.0/${config.phone_number_id}/messages`,
+      `https://graph.facebook.com/v24.0/${config.phone_number_id}/messages`,
       {
         method: 'POST',
         headers: {

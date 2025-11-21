@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     // Testar credenciais fazendo uma chamada à API do WhatsApp
     const testResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${phoneNumberId}`,
+      `https://graph.facebook.com/v24.0/${phoneNumberId}`,
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
