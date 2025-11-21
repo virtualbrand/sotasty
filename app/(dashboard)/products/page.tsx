@@ -504,10 +504,12 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [hasIngredientsChanges, setHasIngredientsChanges] = useState(false)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [ingredientUsage, setIngredientUsage] = useState<Record<string, string[]>>({})
   const [bases, setBases] = useState<BaseRecipe[]>([])
+  const [originalIngredientData, setOriginalIngredientData] = useState<any>(null)
   
   // Função auxiliar para obter unidade padrão baseada nas configurações
   const getDefaultUnit = useCallback(() => {
@@ -528,6 +530,14 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
     fetchIngredients()
     fetchBases()
   }, [])
+
+  // Detectar mudanças no formData de ingredientes
+  useEffect(() => {
+    if (editingId && originalIngredientData) {
+      const hasChanged = JSON.stringify(formData) !== JSON.stringify(originalIngredientData)
+      setHasIngredientsChanges(hasChanged)
+    }
+  }, [formData, originalIngredientData, editingId])
 
   const fetchBases = async () => {
     try {
@@ -749,7 +759,7 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
       setImagePreview((ingredient as any).image_url)
     }
     
-    setFormData({
+    const formDataObj = {
       type: ingredient.type || 'ingredientes',
       name: ingredient.name || '',
       volume: convertedVolume.toString(),
@@ -757,7 +767,11 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
       average_cost: ingredient.average_cost?.toString() || '',
       loss_factor: ingredient.loss_factor?.toString() || '2',
       image_url: (ingredient as any).image_url || ''
-    })
+    }
+    
+    setFormData(formDataObj)
+    setOriginalIngredientData(formDataObj)
+    setHasIngredientsChanges(false)
     setIsModalOpen(true)
   }
 
@@ -788,7 +802,6 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">{settings.showIngredientPhoto && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Foto do Insumo</label>
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <label className="cursor-pointer group">
@@ -838,8 +851,8 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
                     )}
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
-                    <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
+                    <p className="text-sm text-gray-500">Foto do Insumo</p>
+                    <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP, AVIF ou GIF (máx. 1MB)</p>
                   </div>
                 </div>
               </div>
@@ -945,7 +958,7 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
                   type="button"
                   onClick={() => setDeleteDialogOpen(true)}
                   disabled={!!(editingId && ingredientUsage[editingId]?.length > 0)}
-                  className="btn-outline-danger disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-outline-danger"
                 >
                   <Trash2 className="w-4 h-4" />
                   Excluir Insumo
@@ -967,6 +980,7 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
             )}
             <button 
               type="submit"
+              disabled={editingId ? !hasIngredientsChanges : false}
               className="btn-success"
             >
               <Check className="w-4 h-4" />
@@ -986,7 +1000,7 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="btn-outline-grey">
+            <AlertDialogCancel className="btn-secondary-outline">
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
@@ -1110,6 +1124,8 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [hasBasesChanges, setHasBasesChanges] = useState(false)
+  const [originalBaseData, setOriginalBaseData] = useState<any>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [baseUsage, setBaseUsage] = useState<Record<string, string[]>>({})
@@ -1136,6 +1152,14 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
     fetchIngredients()
     fetchProducts()
   }, [])
+
+  // Detectar mudanças no formData de bases
+  useEffect(() => {
+    if (editingId && originalBaseData) {
+      const hasChanged = JSON.stringify(formData) !== JSON.stringify(originalBaseData)
+      setHasBasesChanges(hasChanged)
+    }
+  }, [formData, originalBaseData, editingId])
 
   const fetchProducts = async () => {
     try {
@@ -1341,7 +1365,7 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
       setImagePreview((base as any).image_url)
     }
     
-    setFormData({
+    const formDataObj = {
       name: base.name,
       description: base.description || '',
       loss_factor: base.loss_factor.toString(),
@@ -1352,7 +1376,11 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
         quantity: item.quantity.toString()
       })),
       image_url: (base as any).image_url || ''
-    })
+    }
+    
+    setFormData(formDataObj)
+    setOriginalBaseData(formDataObj)
+    setHasBasesChanges(false)
     setIsModalOpen(true)
   }
 
@@ -1399,7 +1427,6 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
           <div className="space-y-4 mb-4">
             {settings.showBasePhoto && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Foto da Base</label>
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <label className="cursor-pointer group">
@@ -1449,8 +1476,8 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
                     )}
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
-                    <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
+                    <p className="text-sm text-gray-500">Foto da Base</p>
+                    <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP, AVIF ou GIF (máx. 1MB)</p>
                   </div>
                 </div>
               </div>
@@ -1585,7 +1612,7 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
                   type="button"
                   onClick={() => setDeleteDialogOpen(true)}
                   disabled={!!(editingId && baseUsage[editingId]?.length > 0)}
-                  className="btn-outline-danger disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-outline-danger"
                 >
                   <Trash2 className="w-4 h-4" />
                   Excluir Base
@@ -1607,6 +1634,7 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
             )}
             <button 
               type="submit"
+              disabled={editingId ? !hasBasesChanges : false}
               className="btn-success"
             >
               <Check className="w-4 h-4" />
@@ -1639,7 +1667,7 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="btn-outline-grey">
+            <AlertDialogCancel className="btn-secondary-outline">
               {editingId && baseUsage[editingId]?.length > 0 ? 'Fechar' : 'Cancelar'}
             </AlertDialogCancel>
             {(!editingId || !baseUsage[editingId] || baseUsage[editingId].length === 0) && (
@@ -1823,6 +1851,8 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, ca
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [hasProductsChanges, setHasProductsChanges] = useState(false)
+  const [originalProductData, setOriginalProductData] = useState<any>(null)
   const [categories, setCategories] = useState<string[]>([])
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -1853,6 +1883,14 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, ca
       clearInterval(intervalId)
     }
   }, [])
+
+  // Detectar mudanças no formData de produtos
+  useEffect(() => {
+    if (editingId && originalProductData) {
+      const hasChanged = JSON.stringify(formData) !== JSON.stringify(originalProductData)
+      setHasProductsChanges(hasChanged)
+    }
+  }, [formData, originalProductData, editingId])
 
   const loadCategories = async () => {
     try {
@@ -2080,7 +2118,7 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, ca
 
   const handleEdit = (product: FinalProduct) => {
     setEditingId(product.id)
-    setFormData({
+    const formDataObj = {
       name: product.name,
       category: product.category,
       description: product.description || '',
@@ -2093,7 +2131,10 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, ca
         item_id: item.item_type === 'material' ? item.ingredients?.id || item.ingredient_id : item.base_recipes?.id || item.base_recipe_id,
         quantity: item.quantity.toString()
       }))
-    })
+    }
+    setFormData(formDataObj)
+    setOriginalProductData(formDataObj)
+    setHasProductsChanges(false)
     if (product.image_url) {
       setImagePreview(product.image_url)
     }
@@ -2170,8 +2211,8 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, ca
                   )}
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
-                  <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
+                  <p className="text-sm text-gray-500">Foto do Produto</p>
+                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP, AVIF ou GIF (máx. 1MB)</p>
                 </div>
               </div>
             </div>
@@ -2344,7 +2385,7 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, ca
             )}
             <button 
               type="submit"
-              disabled={saving}
+              disabled={saving || (editingId ? !hasProductsChanges : false)}
               className="btn-success disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? (
@@ -2373,7 +2414,7 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, ca
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="btn-outline-grey">
+            <AlertDialogCancel className="btn-secondary-outline">
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction

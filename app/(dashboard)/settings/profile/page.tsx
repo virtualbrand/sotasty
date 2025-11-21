@@ -961,7 +961,6 @@ export default function ProfilePage() {
           <div className="space-y-6">
             {/* Avatar Section */}
             <div className="pb-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Foto de Perfil</h2>
               <div className="flex items-center gap-6">
                 <div className="relative">
                   <label className="cursor-pointer group">
@@ -1011,8 +1010,8 @@ export default function ProfilePage() {
                   )}
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
-                  <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
+                  <p className="text-sm text-gray-500">Foto de Perfil</p>
+                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP, AVIF ou GIF (máx. 1MB)</p>
                 </div>
               </div>
             </div>
@@ -1093,7 +1092,6 @@ export default function ProfilePage() {
           <div className="space-y-6">
             {/* Logo Section */}
             <div className="pb-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Logo do Estabelecimento</h2>
               <div className="flex items-center gap-6">
                 <div className="relative">
                   <label className="cursor-pointer group">
@@ -1143,8 +1141,8 @@ export default function ProfilePage() {
                   )}
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
-                  <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
+                  <p className="text-sm text-gray-500">Logo do Estabelecimento</p>
+                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP, AVIF ou GIF (máx. 1MB)</p>
                 </div>
               </div>
             </div>

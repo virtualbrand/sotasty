@@ -755,8 +755,8 @@ export default function CustomersPage() {
                       )}
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
-                      <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
+                      <p className="text-sm text-gray-500">Foto do Cliente</p>
+                      <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP, AVIF ou GIF (máx. 1MB)</p>
                     </div>
                   </div>
                 </div>

@@ -72,22 +72,19 @@ export default function CustomersSettingsPage() {
         <div className="group relative">
           <Info className="w-4 h-4 text-gray-400 cursor-help" />
           <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[330px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '25px 15px 30px 20px' }}>
-            Configure a visibilidade dos campos no formulário de cadastro de clientes.
+            Configure a visibilidade dos campos no formulário de cadastro e edição de clientes.
           </div>
         </div>
       </div>
 
       <div>
         <h3 className="text-base font-semibold text-gray-900 mb-4">Campos do Formulário</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Configure quais campos devem ser exibidos no formulário de cadastro e edição de clientes.
-        </p>
 
         <div className="space-y-4">
           {/* CPF/CNPJ */}
           <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
             <div className="flex-1">
-              <label htmlFor="show-cpf-cnpj" className="text-sm font-medium text-gray-900 cursor-pointer">
+              <label htmlFor="show-cpf-cnpj" className="text-sm font-semibold text-gray-900 cursor-pointer">
                 CPF/CNPJ
               </label>
               <p className="text-xs text-gray-500 mt-1">
@@ -104,7 +101,7 @@ export default function CustomersSettingsPage() {
           {/* Foto */}
           <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
             <div className="flex-1">
-              <label htmlFor="show-photo" className="text-sm font-medium text-gray-900 cursor-pointer">
+              <label htmlFor="show-photo" className="text-sm font-semibold text-gray-900 cursor-pointer">
                 Foto do Cliente
               </label>
               <p className="text-xs text-gray-500 mt-1">

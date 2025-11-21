@@ -639,8 +639,8 @@ button:focus-visible {
 
 .btn-outline-danger:disabled {
   background-color: transparent;
-  color: var(--color-stone-600);
-  border-color: var(--color-stone-500);
+  color: var(--color-danger-200);
+  border-color: var(--color-danger-200);
   cursor: not-allowed;
 }
 

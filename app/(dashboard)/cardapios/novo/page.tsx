@@ -451,7 +451,6 @@ export default function NovoCardapioPage() {
             <Steps.Content index={1}>
               <div className="space-y-6">
                 <div>
-                  <Label>Logo do Cardápio</Label>
                   <div className="flex items-center gap-6 mt-2">
                     <div className="relative">
                       <label className="cursor-pointer group">
@@ -501,8 +500,8 @@ export default function NovoCardapioPage() {
                       )}
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">JPG, PNG ou GIF (máx. 2MB)</p>
-                      <p className="text-sm text-gray-400 mt-1">Clique na foto para alterar</p>
+                      <p className="text-sm text-gray-500">Logo do Cardápio</p>
+                      <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP, AVIF ou GIF (máx. 1MB)</p>
                     </div>
                   </div>
                 </div>
