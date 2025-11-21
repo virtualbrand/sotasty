@@ -130,8 +130,8 @@ export default function SettingsLayout({
                     className={`
                       flex items-center gap-3 px-4 py-2.5 rounded-[10px] transition-all group
                       ${isActive 
-                        ? 'bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-melon)] text-white shadow-lg shadow-[var(--color-clay-500)]/30' 
-                        : 'text-gray-600 hover:bg-[var(--color-lavender-blush)]'
+                        ? 'bg-gradient-to-r from-[var(--color-clay-500)] to-[var(--color-clay-300)] text-white shadow-lg shadow-[var(--color-clay-500)]/30' 
+                        : 'text-gray-600 hover:bg-[var(--color-clay-50)]'
                       }
                     `}
                   >
