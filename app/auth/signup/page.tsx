@@ -79,11 +79,8 @@ export default function SignUpPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <img src="/logo.svg" alt="SoTasty" className="w-16 h-16" />
+            <img src="/logo.svg" alt="SoTasty" className="w-32 h-32" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            SoTasty
-          </h1>
           <p className="mt-2 text-sm text-gray-600">
             Sistema de Gestão para Food Service
           </p>
