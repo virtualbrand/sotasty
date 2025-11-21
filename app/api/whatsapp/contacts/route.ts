@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
 const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || ''
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || ''
@@ -6,7 +7,24 @@ const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || ''
 
 export async function GET(request: NextRequest) {
   try {
-    // Pegar o nome da instância da query string ou da variável de ambiente
+    // Verificar se está usando API Oficial
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (user) {
+      const { data: config } = await supabase
+        .from('whatsapp_config')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      // Se tiver configuração da API Oficial, usar endpoint específico
+      if (config && config.auth_method === 'official' && config.connected) {
+        return await fetchContactsOfficialAPI(user.id, supabase)
+      }
+    }
+
+    // Fallback para Evolution API
     const { searchParams } = new URL(request.url);
     const instanceName = searchParams.get('instance') || EVOLUTION_INSTANCE;
 
@@ -268,5 +286,118 @@ export async function GET(request: NextRequest) {
       { error: 'Erro ao buscar contatos' },
       { status: 500 }
     )
+  }
+}
+
+// Buscar contatos via API Oficial
+async function fetchContactsOfficialAPI(userId: string, supabase: any) {
+  try {
+    // Buscar contatos únicos do histórico de mensagens
+    const { data: messages, error } = await supabase
+      .from('whatsapp_messages')
+      .select('contact_id, contact_name, contact_phone, timestamp, content, media_type, from_me')
+      .eq('user_id', userId)
+      .order('timestamp', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao buscar contatos:', error);
+      return NextResponse.json(
+        { error: 'Erro ao buscar contatos' },
+        { status: 500 }
+      );
+    }
+
+    // Agrupar por contact_id
+    const contactsMap = new Map();
+    
+    (messages || []).forEach((msg: any) => {
+      if (!contactsMap.has(msg.contact_id)) {
+        const timestamp = new Date(msg.timestamp);
+        
+        // Formatar telefone
+        const formatPhone = (num: string) => {
+          const cleaned = num.replace(/\D/g, '');
+          if (cleaned.startsWith('55') && cleaned.length >= 12) {
+            const countryCode = cleaned.slice(0, 2);
+            const areaCode = cleaned.slice(2, 4);
+            const firstPart = cleaned.slice(4, 9);
+            const secondPart = cleaned.slice(9);
+            return `+${countryCode} (${areaCode}) ${firstPart}-${secondPart}`;
+          }
+          return num;
+        };
+
+        contactsMap.set(msg.contact_id, {
+          id: msg.contact_id,
+          name: msg.contact_name || formatPhone(msg.contact_phone),
+          phone: formatPhone(msg.contact_phone),
+          rawPhone: msg.contact_phone,
+          lastMessage: '',
+          lastMessageTime: timestamp.toLocaleTimeString('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+          lastMessageTimestamp: timestamp.getTime(),
+          unreadCount: 0,
+          isOnline: false,
+        });
+      }
+    });
+
+    // Buscar última mensagem e não lidas para cada contato
+    const formattedContacts = await Promise.all(
+      Array.from(contactsMap.values()).map(async (contact: any) => {
+        // Última mensagem
+        const { data: lastMsg } = await supabase
+          .from('whatsapp_messages')
+          .select('content, media_type')
+          .eq('user_id', userId)
+          .eq('contact_id', contact.id)
+          .order('timestamp', { ascending: false })
+          .limit(1)
+          .single();
+
+        // Contagem de não lidas
+        const { count: unreadCount } = await supabase
+          .from('whatsapp_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('contact_id', contact.id)
+          .eq('from_me', false)
+          .eq('read', false);
+
+        let lastMessage = '';
+        if (lastMsg) {
+          if (lastMsg.media_type === 'image') {
+            lastMessage = '📷 Imagem';
+          } else if (lastMsg.media_type === 'audio') {
+            lastMessage = '🎵 Áudio';
+          } else if (lastMsg.media_type === 'video') {
+            lastMessage = '🎥 Vídeo';
+          } else if (lastMsg.media_type === 'document') {
+            lastMessage = '📄 Documento';
+          } else {
+            lastMessage = lastMsg.content || '';
+          }
+        }
+
+        return {
+          ...contact,
+          lastMessage,
+          unreadCount: unreadCount || 0,
+        };
+      })
+    );
+
+    // Ordenar por timestamp
+    formattedContacts.sort((a: any, b: any) => b.lastMessageTimestamp - a.lastMessageTimestamp);
+
+    return NextResponse.json(formattedContacts);
+  } catch (error) {
+    console.error('Erro ao buscar contatos via API Oficial:', error);
+    return NextResponse.json(
+      { error: 'Erro ao buscar contatos' },
+      { status: 500 }
+    );
   }
 }

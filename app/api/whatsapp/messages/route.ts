@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
 const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || ''
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || ''
@@ -8,7 +9,6 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const contactId = searchParams.get('contactId')
-    const instanceName = searchParams.get('instance') || EVOLUTION_INSTANCE
 
     if (!contactId) {
       return NextResponse.json(
@@ -16,6 +16,26 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Verificar se está usando API Oficial
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (user) {
+      const { data: config } = await supabase
+        .from('whatsapp_config')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      // Se tiver configuração da API Oficial
+      if (config && config.auth_method === 'official' && config.connected) {
+        return await fetchMessagesOfficialAPI(user.id, contactId, supabase)
+      }
+    }
+
+    // Fallback para Evolution API
+    const instanceName = searchParams.get('instance') || EVOLUTION_INSTANCE
 
     if (!instanceName) {
       return NextResponse.json({ error: 'Instância não configurada' }, { status: 400 })
@@ -133,5 +153,47 @@ export async function GET(request: NextRequest) {
       { error: 'Erro ao buscar mensagens' },
       { status: 500 }
     )
+  }
+}
+
+// Buscar mensagens via API Oficial (do banco de dados local)
+async function fetchMessagesOfficialAPI(userId: string, contactId: string, supabase: any) {
+  try {
+    // Buscar mensagens do Supabase
+    const { data: messages, error } = await supabase
+      .from('whatsapp_messages')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('contact_id', contactId)
+      .order('timestamp', { ascending: true })
+      .limit(100);
+
+    if (error) {
+      console.error('Erro ao buscar mensagens:', error);
+      return NextResponse.json(
+        { error: 'Erro ao buscar mensagens' },
+        { status: 500 }
+      );
+    }
+
+    // Formatar mensagens
+    const formattedMessages = (messages || []).map((msg: any) => ({
+      id: msg.message_id,
+      content: msg.content,
+      timestamp: msg.timestamp,
+      fromMe: msg.from_me,
+      status: msg.status || 'sent',
+      mediaUrl: msg.media_url,
+      mediaType: msg.media_type,
+      messageTimestamp: new Date(msg.timestamp).getTime() / 1000,
+    }));
+
+    return NextResponse.json(formattedMessages);
+  } catch (error) {
+    console.error('Erro ao buscar mensagens via API Oficial:', error);
+    return NextResponse.json(
+      { error: 'Erro ao buscar mensagens' },
+      { status: 500 }
+    );
   }
 }

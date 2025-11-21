@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { QrCode, Smartphone, CheckCircle2, XCircle, RefreshCw, LogOut, X } from 'lucide-react';
+import { QrCode, CheckCircle2, XCircle, RefreshCw, LogOut, X, Info } from 'lucide-react';
 import { showToast } from '@/app/(dashboard)/layout';
 
 export default function WhatsAppSettings() {
@@ -13,12 +13,27 @@ export default function WhatsAppSettings() {
   const [instanceCreated, setInstanceCreated] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [checkInterval, setCheckInterval] = useState<NodeJS.Timeout | null>(null);
+  const [authMethod, setAuthMethod] = useState<'evolution' | 'official'>('evolution');
+  const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
+  
+  // Credenciais da API Oficial
+  const [phoneNumberId, setPhoneNumberId] = useState('');
+  const [accessToken, setAccessToken] = useState('');
+  const [businessAccountId, setBusinessAccountId] = useState('');
 
   console.log('Instance name:', instanceName, 'Loading:', loading);
 
   // Verificar status da conexão ao carregar
   useEffect(() => {
-    checkConnectionStatus();
+    const loadData = async () => {
+      await Promise.all([
+        checkConnectionStatus(),
+        loadSavedCredentials()
+      ]);
+    };
+    loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -31,9 +46,58 @@ export default function WhatsAppSettings() {
     };
   }, [checkInterval]);
 
+  const loadSavedCredentials = async () => {
+    try {
+      console.log('Carregando credenciais salvas...');
+      const response = await fetch('/api/whatsapp/official/config');
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Config carregada:', data);
+        
+        if (data.config) {
+          const config = data.config;
+          setAuthMethod(config.auth_method || 'evolution');
+          
+          if (config.auth_method === 'official') {
+            setPhoneNumberId(config.phone_number_id || '');
+            setAccessToken(config.access_token || '');
+            setBusinessAccountId(config.business_account_id || '');
+            
+            if (config.connected) {
+              console.log('API Oficial já conectada');
+              setConnectionStatus('connected');
+              setInstanceCreated(true);
+            }
+          } else if (config.auth_method === 'evolution') {
+            setInstanceName(config.instance_name || 'sotasty-whatsapp');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar credenciais salvas:', error);
+    } finally {
+      setIsLoadingConfig(false);
+    }
+  };
+
   const checkConnectionStatus = async () => {
     try {
       console.log('Checking connection status for:', instanceName);
+      
+      // Primeiro, verificar se tem config da API Oficial
+      const configResponse = await fetch('/api/whatsapp/official/config');
+      if (configResponse.ok) {
+        const configData = await configResponse.json();
+        if (configData.config && configData.config.auth_method === 'official' && configData.config.connected) {
+          console.log('Conexão API Oficial encontrada');
+          setConnectionStatus('connected');
+          setInstanceCreated(true);
+          setAuthMethod('official');
+          return;
+        }
+      }
+      
+      // Se não tem API Oficial, verifica Evolution API
       const response = await fetch(`/api/whatsapp/status?instance=${instanceName}`);
       console.log('Response status:', response.status);
       const data = await response.json();
@@ -42,12 +106,15 @@ export default function WhatsAppSettings() {
       if (data.connected) {
         setConnectionStatus('connected');
         setInstanceCreated(true);
+        setAuthMethod('evolution');
       } else {
         setConnectionStatus('disconnected');
       }
     } catch (error) {
       console.error('Erro ao verificar status:', error);
       setConnectionStatus('disconnected');
+    } finally {
+      setIsLoadingStatus(false);
     }
   };
 
@@ -211,22 +278,45 @@ export default function WhatsAppSettings() {
       setLoading(true);
       setError('');
 
-      const response = await fetch('/api/whatsapp/instance/disconnect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instanceName }),
-      });
+      if (authMethod === 'official') {
+        // Desconectar API Oficial
+        const response = await fetch('/api/whatsapp/official/disconnect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao desconectar');
+        if (!response.ok) {
+          throw new Error(data.error || 'Erro ao desconectar');
+        }
+      } else {
+        // Desconectar Evolution API
+        const response = await fetch('/api/whatsapp/instance/disconnect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ instanceName }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Erro ao desconectar');
+        }
       }
 
       setConnectionStatus('disconnected');
       setQrCode('');
       setInstanceCreated(false);
       setShowQRModal(false);
+      setShowDisconnectDialog(false);
+      
+      // Limpar credenciais da API Oficial
+      if (authMethod === 'official') {
+        setPhoneNumberId('');
+        setAccessToken('');
+        setBusinessAccountId('');
+      }
       
       showToast({
         title: '👋 WhatsApp Desconectado',
@@ -237,68 +327,63 @@ export default function WhatsAppSettings() {
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       setError(errorMessage);
+      
+      showToast({
+        title: '❌ Erro ao Desconectar',
+        message: errorMessage,
+        variant: 'error',
+        duration: 5000,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const deleteInstance = async () => {
-    if (!confirm('Tem certeza que deseja deletar a instância do WhatsApp? Você precisará reconectar depois.')) {
-      return;
-    }
+  const handleDisconnect = () => {
+    setShowDisconnectDialog(true);
+  };
 
+  const connectOfficialAPI = async () => {
     try {
       setLoading(true);
       setError('');
 
-      // Primeiro tenta desconectar se estiver conectado
-      if (connectionStatus === 'connected') {
-        console.log('Desconectando antes de deletar...');
-        try {
-          await fetch('/api/whatsapp/instance/disconnect', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ instanceName }),
-          });
-          // Aguardar 1 segundo para garantir que desconectou
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        } catch (err) {
-          console.log('Erro ao desconectar (continuando com delete):', err);
-        }
+      // Validar campos
+      if (!phoneNumberId.trim() || !accessToken.trim() || !businessAccountId.trim()) {
+        throw new Error('Por favor, preencha todos os campos');
       }
 
-      console.log('Deletando instância:', instanceName);
-      const response = await fetch('/api/whatsapp/instance/delete', {
-        method: 'DELETE',
+      // Salvar credenciais no Supabase (ou localStorage temporariamente)
+      const response = await fetch('/api/whatsapp/official/connect', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instanceName }),
+        body: JSON.stringify({
+          phoneNumberId,
+          accessToken,
+          businessAccountId,
+        }),
       });
 
       const data = await response.json();
-      console.log('Response delete:', data);
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao deletar instância');
+        throw new Error(data.error || 'Erro ao conectar com API Oficial');
       }
 
-      // Resetar todos os estados
-      setConnectionStatus('disconnected');
-      setQrCode('');
-      setInstanceCreated(false);
-      setShowQRModal(false);
+      setConnectionStatus('connected');
       
       showToast({
-        title: '🗑️ Instância Deletada',
-        message: 'A instância do WhatsApp foi removida. Você pode conectar novamente quando quiser.',
+        title: '🎉 API Oficial Conectada!',
+        message: 'Suas credenciais foram salvas e validadas com sucesso.',
         variant: 'success',
-        duration: 4000,
+        duration: 5000,
       });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       setError(errorMessage);
       
       showToast({
-        title: '❌ Erro ao Deletar',
+        title: '❌ Erro ao Conectar',
         message: errorMessage,
         variant: 'error',
         duration: 5000,
@@ -310,96 +395,317 @@ export default function WhatsAppSettings() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Configuração WhatsApp</h1>
-        <p className="text-[var(--slate-gray)] mt-2">
-          Conecte seu WhatsApp para enviar e receber mensagens
-        </p>
-      </div>
-
-      {/* Status de Conexão */}
-      <div className="bg-white rounded-lg border border-[var(--lavender-blush)] p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Smartphone className="w-8 h-8 text-[var(--old-rose)]" />
-            <div>
-              <h2 className="text-lg font-semibold">Status da Conexão</h2>
-              <p className="text-sm text-[var(--slate-gray)]">
-                {connectionStatus === 'connected' && 'WhatsApp conectado e pronto'}
-                {connectionStatus === 'connecting' && 'Aguardando conexão...'}
-                {connectionStatus === 'disconnected' && 'WhatsApp não conectado'}
-              </p>
+      {/* Status de Conexão - Sempre visível */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Configuração WhatsApp</h2>
+          <div className="group relative">
+            <Info className="w-4 h-4 text-gray-400 cursor-help" />
+            <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[330px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '25px 15px 30px 20px' }}>
+              Conecte seu WhatsApp para enviar e receber mensagens diretamente pela plataforma. Escolha entre Evolution API (auto-hospedado) ou API Oficial do WhatsApp (Meta).
             </div>
           </div>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {isLoadingStatus ? (
+              <>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full">
+                  <RefreshCw className="w-8 h-8 text-gray-400 animate-spin" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900">Status da Conexão</h3>
+                  <p className="text-sm text-gray-600 mt-1">Carregando...</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-circle-check w-8 h-8 text-green-500" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="m9 12 2 2 4-4"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900">Status da Conexão</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {connectionStatus === 'connected' && (
+                      <span className="flex items-center gap-2">
+                        <span className="text-green-600 font-medium">✓ WhatsApp conectado</span>
+                        <span className="badge-status btn-outline-info text-xs px-2 py-0" style={{ fontSize: '0.6rem', padding: '2px 12px', lineHeight: '13px', cursor: 'default', pointerEvents: 'none' }}>
+                          {authMethod === 'evolution' ? 'Evolution API' : 'API Oficial'}
+                        </span>
+                      </span>
+                    )}
+                    {connectionStatus === 'connecting' && 'Aguardando conexão...'}
+                    {connectionStatus === 'disconnected' && 'WhatsApp não conectado'}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
           <div className="flex items-center gap-2">
-            {connectionStatus === 'connected' && (
-              <CheckCircle2 className="w-6 h-6 text-green-500" />
-            )}
-            {connectionStatus === 'connecting' && (
-              <RefreshCw className="w-6 h-6 text-yellow-500 animate-spin" />
-            )}
-            {connectionStatus === 'disconnected' && (
-              <button
-                onClick={deleteInstance}
-                disabled={loading}
-                className="p-2 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50"
-                title="Deletar instância"
-              >
-                <XCircle className="w-6 h-6 text-red-500 hover:text-red-600" />
-              </button>
+            {!isLoadingStatus && (
+              <>
+                {connectionStatus === 'connected' && (
+                  <button
+                    onClick={handleDisconnect}
+                    disabled={loading}
+                    className="btn-outline-danger px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        <LogOut className="w-4 h-4" />
+                        <span className="text-sm">Desconectar</span>
+                      </>
+                    )}
+                  </button>
+                )}
+                {connectionStatus === 'connecting' && (
+                  <RefreshCw className="w-6 h-6 text-yellow-500 animate-spin" />
+                )}
+                {connectionStatus === 'disconnected' && (
+                  <XCircle className="w-6 h-6 text-gray-400" />
+                )}
+              </>
             )}
           </div>
         </div>
       </div>
 
-      {/* Configuração de Instância */}
-      {connectionStatus !== 'connected' && (
-        <div className="bg-white rounded-lg border border-[var(--lavender-blush)] p-6">
-          <h2 className="text-lg font-semibold mb-4">Conectar WhatsApp</h2>
+      {/* Se já está conectado, não mostrar formulários de conexão */}
+      {connectionStatus === 'connected' ? null : (
+        /* Se não está conectado, mostrar opções de conexão */
+        <div className="relative">
+          {/* Loading Overlay */}
+          {isLoadingConfig && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-lg z-10 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3">
+                <RefreshCw className="w-8 h-8 text-[var(--color-clay-500)] animate-spin" />
+                <p className="text-sm text-gray-600 font-medium">Carregando configurações...</p>
+              </div>
+            </div>
+          )}
           
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Nome da Instância
-              </label>
-              <input
-                type="text"
-                value={instanceName}
-                onChange={(e) => setInstanceName(e.target.value)}
-                className="w-full px-4 py-2 border border-[var(--lavender-blush)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--old-rose)]"
-                placeholder="Ex: sotasty-whatsapp"
-                disabled={loading}
-                autoComplete="off"
-              />
-              <p className="text-xs text-[var(--slate-gray)] mt-1">
-                Use apenas letras minúsculas, números e hífen
+          {/* Método de Autenticação */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-4">Escolha o Método de Conexão</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Selecione como deseja conectar seu WhatsApp ao sistema.
+            </p>
+        
+            <div className="space-y-3">
+          {/* Evolution API */}
+          <div
+            onClick={() => setAuthMethod('evolution')}
+            className={`flex items-center justify-between py-3 px-4 rounded-lg cursor-pointer border-2 transition-all ${
+              authMethod === 'evolution'
+                ? 'bg-pink-50 border-[var(--color-clay-500)]'
+                : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex-1">
+              <div className="text-sm font-medium text-gray-900">Evolution API</div>
+              <p className="text-xs text-gray-500 mt-1">
+                Open source, auto-hospedado, mais controle sobre seus dados
               </p>
             </div>
-
-            <button
-              onClick={handleGenerateQRCode}
-              disabled={loading || !instanceName.trim()}
-              className="w-full bg-[var(--color-clay-500)] text-white px-6 py-3 rounded-full hover:bg-[var(--color-clay-600)] transition-colors font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            <div
+              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                authMethod === 'evolution'
+                  ? 'border-[var(--color-clay-500)] bg-[var(--color-clay-500)]'
+                  : 'border-gray-300'
+              }`}
             >
-              {loading ? (
-                <>
-                  <RefreshCw className="w-5 h-5 animate-spin" />
-                  {instanceCreated ? 'Gerando QR Code...' : 'Criando instância...'}
-                </>
-              ) : (
-                <>
-                  <QrCode className="w-5 h-5" />
-                  Gerar QR Code para Conectar
-                </>
+              {authMethod === 'evolution' && (
+                <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
               )}
-            </button>
+            </div>
           </div>
+
+          {/* API Oficial */}
+          <div
+            onClick={() => setAuthMethod('official')}
+            className={`flex items-center justify-between py-3 px-4 rounded-lg cursor-pointer border-2 transition-all ${
+              authMethod === 'official'
+                ? 'bg-pink-50 border-[var(--color-clay-500)]'
+                : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex-1">
+              <div className="text-sm font-medium text-gray-900">API Oficial do WhatsApp</div>
+              <p className="text-xs text-gray-500 mt-1">
+                API oficial da Meta, maior estabilidade e suporte empresarial
+              </p>
+            </div>
+            <div
+              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                authMethod === 'official'
+                  ? 'border-[var(--color-clay-500)] bg-[var(--color-clay-500)]'
+                  : 'border-gray-300'
+              }`}
+            >
+              {authMethod === 'official' && (
+                <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+              )}
+            </div>
+          </div>
+        </div>
+
+            {/* Informação adicional baseada na seleção */}
+            {authMethod === 'official' && (
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-blue-800 font-medium mb-2">ℹ️ API Oficial do WhatsApp</p>
+                <p className="text-xs text-blue-700">
+                  Para usar a API Oficial, você precisará de uma conta Meta Business, um número de telefone dedicado e aprovação da Meta. 
+                  Este método é recomendado para empresas que precisam de alta confiabilidade e suporte oficial.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Configuração de Instância */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            {authMethod === 'evolution' ? 'Conectar via Evolution API' : 'Conectar via API Oficial'}
+          </h2>
+          
+          {authMethod === 'evolution' ? (
+            /* Evolution API - QR Code */
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Nome da Instância
+                </label>
+                <input
+                  type="text"
+                  value={instanceName}
+                  onChange={(e) => setInstanceName(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--old-rose)] focus:border-transparent"
+                  placeholder="Ex: sotasty-whatsapp"
+                  disabled={loading}
+                  autoComplete="off"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Use apenas letras minúsculas, números e hífen
+                </p>
+              </div>
+
+              <button
+                onClick={handleGenerateQRCode}
+                disabled={loading || !instanceName.trim()}
+                className="w-full bg-[var(--color-clay-500)] text-white px-6 py-3 rounded-full hover:bg-[var(--color-clay-600)] transition-colors font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    {instanceCreated ? 'Gerando QR Code...' : 'Criando instância...'}
+                  </>
+                ) : (
+                  <>
+                    <QrCode className="w-5 h-5" />
+                    Gerar QR Code para Conectar
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            /* API Oficial - Credenciais */
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Phone Number ID
+                </label>
+                <input
+                  type="text"
+                  value={phoneNumberId}
+                  onChange={(e) => setPhoneNumberId(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--old-rose)] focus:border-transparent"
+                  placeholder="Ex: 123456789012345"
+                  disabled={loading}
+                  autoComplete="off"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Encontre no Meta Business Manager, em API do WhatsApp
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Access Token
+                </label>
+                <input
+                  type="password"
+                  value={accessToken}
+                  onChange={(e) => setAccessToken(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--old-rose)] focus:border-transparent"
+                  placeholder="Digite seu token de acesso"
+                  disabled={loading}
+                  autoComplete="off"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Token permanente gerado no Meta Business Manager
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Business Account ID
+                </label>
+                <input
+                  type="text"
+                  value={businessAccountId}
+                  onChange={(e) => setBusinessAccountId(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--old-rose)] focus:border-transparent"
+                  placeholder="Ex: 123456789012345"
+                  disabled={loading}
+                  autoComplete="off"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  ID da sua conta comercial do WhatsApp
+                </p>
+              </div>
+
+              <button
+                onClick={connectOfficialAPI}
+                disabled={loading || !phoneNumberId.trim() || !accessToken.trim() || !businessAccountId.trim()}
+                className="w-full bg-[var(--color-clay-500)] text-white px-6 py-3 rounded-full hover:bg-[var(--color-clay-600)] transition-colors font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    Verificando credenciais...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-5 h-5" />
+                    Salvar e Conectar
+                  </>
+                )}
+              </button>
+
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-xs text-yellow-800 font-medium mb-2">📝 Como obter as credenciais:</p>
+                <ol className="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                  <li>Acesse <a href="https://business.facebook.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-900">Meta Business Manager</a></li>
+                  <li>Vá em &quot;API do WhatsApp&quot; no menu lateral</li>
+                  <li>Configure seu número de telefone</li>
+                  <li>Gere um token de acesso permanente</li>
+                  <li>Copie o Phone Number ID e o Access Token</li>
+                </ol>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
               {error}
             </div>
           )}
+          </div>
         </div>
       )}
 
@@ -509,38 +815,52 @@ export default function WhatsAppSettings() {
           </div>
         </div>
       )}
-
-      {/* Conectado - Opções */}
-      {connectionStatus === 'connected' && (
-        <div className="bg-white rounded-lg border border-[var(--lavender-blush)] p-6">
-          <div className="text-center space-y-4">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full">
-              <CheckCircle2 className="w-8 h-8 text-green-500" />
-            </div>
-            
-            <div>
-              <h2 className="text-lg font-semibold">WhatsApp Conectado!</h2>
-              <p className="text-sm text-[var(--slate-gray)]">
-                Instância: <strong>{instanceName}</strong>
+      
+      {/* Alert Dialog para Desconectar */}
+      {showDisconnectDialog && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowDisconnectDialog(false)}
+        >
+          <div 
+            role="alertdialog"
+            aria-labelledby="disconnect-dialog-title"
+            aria-describedby="disconnect-dialog-description"
+            data-state="open"
+            className="fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100%-4rem)] w-full -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto border bg-background p-6 shadow-lg shadow-black/5 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:max-w-[400px] sm:rounded-xl bg-white"
+            onClick={(e) => e.stopPropagation()}
+            style={{ pointerEvents: 'auto' }}
+          >
+            <div className="flex flex-col space-y-1 text-center sm:text-left">
+              <h2 id="disconnect-dialog-title" className="text-lg font-semibold">
+                Desconectar WhatsApp
+              </h2>
+              <p id="disconnect-dialog-description" className="text-sm text-muted-foreground">
+                Tem certeza que deseja desconectar o WhatsApp? Você precisará reconectar para enviar mensagens novamente.
               </p>
             </div>
-
-            <div className="pt-4">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3">
               <button
+                type="button"
+                onClick={() => setShowDisconnectDialog(false)}
+                disabled={loading}
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 mt-2 sm:mt-0 btn-secondary-outline"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
                 onClick={disconnect}
                 disabled={loading}
-                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mx-auto"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 btn-danger"
               >
                 {loading ? (
                   <>
-                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    <RefreshCw className="w-4 h-4 animate-spin mr-2" />
                     Desconectando...
                   </>
                 ) : (
-                  <>
-                    <LogOut className="w-5 h-5" />
-                    Desconectar WhatsApp
-                  </>
+                  'Desconectar'
                 )}
               </button>
             </div>

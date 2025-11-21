@@ -170,6 +170,15 @@ export default function ProductsPage() {
   const categoryFilterRef = useRef<HTMLDivElement>(null) // Ref para o dropdown de categoria
   const [categories, setCategories] = useState<string[]>([]) // Lista de categorias disponíveis
 
+  // Estados e refs para infinite scroll
+  const [displayedIngredients, setDisplayedIngredients] = useState(20)
+  const [displayedBases, setDisplayedBases] = useState(20)
+  const [displayedProducts, setDisplayedProducts] = useState(20)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const ingredientsScrollRef = useRef<HTMLDivElement>(null)
+  const basesScrollRef = useRef<HTMLDivElement>(null)
+  const productsScrollRef = useRef<HTMLDivElement>(null)
+
   // Carregar categorias
   useEffect(() => {
     const loadCategories = async () => {
@@ -246,6 +255,26 @@ export default function ProductsPage() {
   const clearCategoryFilter = () => {
     setCategoryFilter([])
   }
+
+  // Resetar displayedItems quando searchQuery, sortOrder, ou filtros mudarem
+  useEffect(() => {
+    setDisplayedIngredients(20)
+  }, [searchQuery, sortOrder, typeFilter])
+
+  useEffect(() => {
+    setDisplayedBases(20)
+  }, [searchQuery, sortOrder])
+
+  useEffect(() => {
+    setDisplayedProducts(20)
+  }, [searchQuery, sortOrder, categoryFilter])
+
+  // Resetar displayedItems quando mudar de aba
+  useEffect(() => {
+    setDisplayedIngredients(20)
+    setDisplayedBases(20)
+    setDisplayedProducts(20)
+  }, [activeTab])
 
   return (
     <div className="p-8">
@@ -488,16 +517,38 @@ export default function ProductsPage() {
       {/* Tab Content */}
       <div className="overflow-hidden">
         <div>
-          {activeTab === 'ingredients' && <IngredientsTab shouldOpenModal={openModalForTab === 'ingredients'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} typeFilter={typeFilter} />}
-          {activeTab === 'bases' && <BasesTab shouldOpenModal={openModalForTab === 'bases'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} />}
-          {activeTab === 'products' && <ProductsTab shouldOpenModal={openModalForTab === 'products'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} categoryFilter={categoryFilter} />}
+          {activeTab === 'ingredients' && <IngredientsTab shouldOpenModal={openModalForTab === 'ingredients'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} typeFilter={typeFilter} displayedItems={displayedIngredients} setDisplayedItems={setDisplayedIngredients} isLoadingMore={isLoadingMore} setIsLoadingMore={setIsLoadingMore} scrollRef={ingredientsScrollRef} />}
+          {activeTab === 'bases' && <BasesTab shouldOpenModal={openModalForTab === 'bases'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} displayedItems={displayedBases} setDisplayedItems={setDisplayedBases} isLoadingMore={isLoadingMore} setIsLoadingMore={setIsLoadingMore} scrollRef={basesScrollRef} />}
+          {activeTab === 'products' && <ProductsTab shouldOpenModal={openModalForTab === 'products'} onModalClose={() => setOpenModalForTab(null)} searchQuery={searchQuery} sortOrder={sortOrder} categoryFilter={categoryFilter} displayedItems={displayedProducts} setDisplayedItems={setDisplayedProducts} isLoadingMore={isLoadingMore} setIsLoadingMore={setIsLoadingMore} scrollRef={productsScrollRef} />}
         </div>
       </div>
     </div>
   )
 }
 
-function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, typeFilter }: { shouldOpenModal: boolean; onModalClose: () => void; searchQuery: string; sortOrder: 'asc' | 'desc' | null; typeFilter: string[] }) {
+function IngredientsTab({ 
+  shouldOpenModal, 
+  onModalClose, 
+  searchQuery, 
+  sortOrder, 
+  typeFilter,
+  displayedItems,
+  setDisplayedItems,
+  isLoadingMore,
+  setIsLoadingMore,
+  scrollRef
+}: { 
+  shouldOpenModal: boolean
+  onModalClose: () => void
+  searchQuery: string
+  sortOrder: 'asc' | 'desc' | null
+  typeFilter: string[]
+  displayedItems: number
+  setDisplayedItems: React.Dispatch<React.SetStateAction<number>>
+  isLoadingMore: boolean
+  setIsLoadingMore: React.Dispatch<React.SetStateAction<boolean>>
+  scrollRef: React.RefObject<HTMLDivElement | null>
+}) {
   const settings = useProductSettings()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -637,6 +688,32 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
       return sortOrder === 'asc' ? comparison : -comparison
     })
   }
+
+  // Infinite scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!scrollRef.current || isLoadingMore || loading) return
+
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current
+      const scrollPercentage = (scrollTop + clientHeight) / scrollHeight
+
+      // Carrega mais quando estiver a 80% do scroll
+      if (scrollPercentage > 0.8 && displayedItems < filteredIngredients.length) {
+        setIsLoadingMore(true)
+        // Delay para UX suave
+        setTimeout(() => {
+          setDisplayedItems(prev => Math.min(prev + 15, filteredIngredients.length))
+          setIsLoadingMore(false)
+        }, 300)
+      }
+    }
+
+    const container = scrollRef.current
+    if (container) {
+      container.addEventListener('scroll', handleScroll)
+      return () => container.removeEventListener('scroll', handleScroll)
+    }
+  }, [scrollRef, isLoadingMore, loading, displayedItems, filteredIngredients.length, setDisplayedItems, setIsLoadingMore])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -1043,7 +1120,10 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
       </AlertDialog>
 
       {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 overflow-x-auto">
+      <div 
+        ref={scrollRef}
+        className="bg-white border border-gray-200 rounded-lg p-6 overflow-hidden max-h-[calc(100vh-250px)] overflow-y-auto"
+      >
         {loading ? (
           <div className="flex justify-center py-8">
             <Spinner size="large" className="text-[var(--color-clay-500)]" />
@@ -1053,19 +1133,19 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
             {searchQuery ? 'Nenhum insumo encontrado' : 'Nenhum insumo cadastrado. Clique em "+ Novo Insumo" para começar.'}
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
+          <table className="w-full -mx-6 px-6" style={{ width: 'calc(100% + 48px)' }}>
+            <thead className="sticky top-0 bg-white z-10 shadow-sm">
               <tr className="border-b border-gray-200">
-                {settings.showIngredientPhoto && <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm w-20"></th>}
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Insumo</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Quantidade</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Custo Médio</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Custo Unitário</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">Fator de Perda</th>
+                {settings.showIngredientPhoto && <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm w-20 bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10"></th>}
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Insumo</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Quantidade</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Custo Médio</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Custo Unitário</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Fator de Perda</th>
               </tr>
             </thead>
             <tbody>
-              {filteredIngredients.map((ingredient) => {
+              {filteredIngredients.slice(0, displayedItems).map((ingredient) => {
                 // Converter volume do banco (g/ml) para unidade de exibição
                 const displayVolume = convertFromSmallUnit(ingredient.volume, ingredient.unit, settings.measurementUnit)
                 const displayUnit = ingredient.unit === 'gramas' && settings.measurementUnit === 'metric-large' 
@@ -1116,7 +1196,27 @@ function IngredientsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder,
   )
 }
 
-function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { shouldOpenModal: boolean; onModalClose: () => void; searchQuery: string; sortOrder: 'asc' | 'desc' | null }) {
+function BasesTab({ 
+  shouldOpenModal, 
+  onModalClose, 
+  searchQuery, 
+  sortOrder,
+  displayedItems,
+  setDisplayedItems,
+  isLoadingMore,
+  setIsLoadingMore,
+  scrollRef
+}: { 
+  shouldOpenModal: boolean
+  onModalClose: () => void
+  searchQuery: string
+  sortOrder: 'asc' | 'desc' | null
+  displayedItems: number
+  setDisplayedItems: React.Dispatch<React.SetStateAction<number>>
+  isLoadingMore: boolean
+  setIsLoadingMore: React.Dispatch<React.SetStateAction<boolean>>
+  scrollRef: React.RefObject<HTMLDivElement | null>
+}) {
   const settings = useProductSettings()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -1229,6 +1329,32 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
       return sortOrder === 'asc' ? comparison : -comparison
     })
   }
+
+  // Infinite scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!scrollRef.current || isLoadingMore) return
+
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current
+      const scrollPercentage = (scrollTop + clientHeight) / scrollHeight
+
+      // Carrega mais quando estiver a 80% do scroll
+      if (scrollPercentage > 0.8 && displayedItems < filteredBases.length) {
+        setIsLoadingMore(true)
+        // Delay para UX suave
+        setTimeout(() => {
+          setDisplayedItems(prev => Math.min(prev + 15, filteredBases.length))
+          setIsLoadingMore(false)
+        }, 300)
+      }
+    }
+
+    const container = scrollRef.current
+    if (container) {
+      container.addEventListener('scroll', handleScroll)
+      return () => container.removeEventListener('scroll', handleScroll)
+    }
+  }, [scrollRef, isLoadingMore, displayedItems, filteredBases.length, setDisplayedItems, setIsLoadingMore])
 
   const fetchIngredients = async () => {
     try {
@@ -1712,7 +1838,10 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
       </AlertDialog>
 
       {/* List of Bases */}
-      <div className="space-y-4">
+      <div 
+        ref={scrollRef}
+        className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2"
+      >
         {loading ? (
           <div className="flex justify-center py-8">
             <Spinner size="large" className="text-[var(--color-clay-500)]" />
@@ -1722,7 +1851,7 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
             {searchQuery ? 'Nenhuma base encontrada' : 'Nenhuma base cadastrada. Clique em "+ Nova Base" para começar.'}
           </div>
         ) : (
-          filteredBases.map((base) => {
+          filteredBases.slice(0, displayedItems).map((base) => {
             // Converter yield do banco (g/ml) para unidade de exibição
             const baseUnit = (base as any).unit || 'gramas'
             const yieldValue = parseFloat((base as any).yield || '0')
@@ -1841,7 +1970,29 @@ function BasesTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder }: { s
   )
 }
 
-function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, categoryFilter }: { shouldOpenModal: boolean; onModalClose: () => void; searchQuery: string; sortOrder: 'asc' | 'desc' | null; categoryFilter: string[] }) {
+function ProductsTab({ 
+  shouldOpenModal, 
+  onModalClose, 
+  searchQuery, 
+  sortOrder, 
+  categoryFilter,
+  displayedItems,
+  setDisplayedItems,
+  isLoadingMore,
+  setIsLoadingMore,
+  scrollRef
+}: { 
+  shouldOpenModal: boolean
+  onModalClose: () => void
+  searchQuery: string
+  sortOrder: 'asc' | 'desc' | null
+  categoryFilter: string[]
+  displayedItems: number
+  setDisplayedItems: React.Dispatch<React.SetStateAction<number>>
+  isLoadingMore: boolean
+  setIsLoadingMore: React.Dispatch<React.SetStateAction<boolean>>
+  scrollRef: React.RefObject<HTMLDivElement | null>
+}) {
   const settings = useProductSettings()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -1963,6 +2114,32 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, ca
       return sortOrder === 'asc' ? comparison : -comparison
     })
   }
+
+  // Infinite scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!scrollRef.current || isLoadingMore) return
+
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current
+      const scrollPercentage = (scrollTop + clientHeight) / scrollHeight
+
+      // Carrega mais quando estiver a 80% do scroll
+      if (scrollPercentage > 0.8 && displayedItems < filteredProducts.length) {
+        setIsLoadingMore(true)
+        // Delay para UX suave
+        setTimeout(() => {
+          setDisplayedItems(prev => Math.min(prev + 15, filteredProducts.length))
+          setIsLoadingMore(false)
+        }, 300)
+      }
+    }
+
+    const container = scrollRef.current
+    if (container) {
+      container.addEventListener('scroll', handleScroll)
+      return () => container.removeEventListener('scroll', handleScroll)
+    }
+  }, [scrollRef, isLoadingMore, displayedItems, filteredProducts.length, setDisplayedItems, setIsLoadingMore])
 
   const fetchIngredients = async () => {
     try {
@@ -2457,7 +2634,10 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, ca
       </AlertDialog>
 
       {/* Products List */}
-      <div className="space-y-4">
+      <div 
+        ref={scrollRef}
+        className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2"
+      >
         {loading ? (
           <div className="flex justify-center py-8">
             <Spinner size="large" className="text-[var(--color-clay-500)]" />
@@ -2467,7 +2647,7 @@ function ProductsTab({ shouldOpenModal, onModalClose, searchQuery, sortOrder, ca
             {searchQuery ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado. Clique em "+ Novo Produto" para começar.'}
           </div>
         ) : (
-          filteredProducts.map((product) => {
+          filteredProducts.slice(0, displayedItems).map((product) => {
             const profit = product.selling_price && product.total_cost 
               ? product.selling_price - product.total_cost 
               : 0
