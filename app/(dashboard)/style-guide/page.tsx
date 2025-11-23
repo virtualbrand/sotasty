@@ -296,6 +296,38 @@ export default function StyleGuidePage() {
         </div>
       </section>
 
+      {/* Botões XS (Extra Small) */}
+      <section className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-[#1A1C23] mb-2">Botões XS (Extra Small)</h2>
+          <p className="text-[#3D3F54]">Variantes compactas para ações em espaços reduzidos (padding: 4px 12px, font-size: 0.75rem)</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-8 border border-[#D9D2C9] space-y-8">
+          <div>
+            <h3 className="font-bold text-[#1A1C23] mb-4">Filled XS</h3>
+            <div className="flex flex-wrap gap-4 items-center">
+              <button className="btn-primary-xs">Primary XS</button>
+              <button className="btn-secondary-xs">Secondary XS</button>
+              <button className="btn-info-xs">Info XS</button>
+              <button className="btn-success-xs">Success XS</button>
+              <button className="btn-warning-xs">Warning XS</button>
+              <button className="btn-danger-xs">Danger XS</button>
+            </div>
+          </div>
+          <div>
+            <h3 className="font-bold text-[#1A1C23] mb-4">Outline XS</h3>
+            <div className="flex flex-wrap gap-4 items-center">
+              <button className="btn-outline-primary-xs">Primary XS</button>
+              <button className="btn-outline-secondary-xs">Secondary XS</button>
+              <button className="btn-outline-info-xs">Info XS</button>
+              <button className="btn-outline-success-xs">Success XS</button>
+              <button className="btn-outline-warning-xs">Warning XS</button>
+              <button className="btn-outline-danger-xs">Danger XS</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Theme Preview */}
       <section className="space-y-6">
         <div>

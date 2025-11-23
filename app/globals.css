@@ -679,6 +679,202 @@ button:focus-visible {
   cursor: not-allowed;
 }
 
+/* XS Button Variants - Smaller size with reduced padding and font */
+.btn-primary-xs,
+.btn-primary-outline-xs,
+.btn-secondary-xs,
+.btn-secondary-outline-xs,
+.btn-info-xs,
+.btn-success-xs,
+.btn-warning-xs,
+.btn-danger-xs,
+.btn-outline-info-xs,
+.btn-outline-success-xs,
+.btn-outline-warning-xs,
+.btn-outline-danger-xs {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+/* PRIMARY XS */
+.btn-primary-xs {
+  background-color: var(--color-clay-500);
+  color: #FFFFFF;
+  border-color: var(--color-clay-500);
+}
+
+.btn-primary-xs:hover:not(:disabled) {
+  background-color: var(--color-clay-400);
+  border-color: var(--color-clay-400);
+}
+
+.btn-primary-xs:active:not(:disabled) {
+  background-color: var(--color-clay-300);
+  border-color: var(--color-clay-300);
+}
+
+.btn-primary-xs:disabled {
+  background-color: var(--color-stone-400);
+  color: var(--color-stone-600);
+  border-color: var(--color-stone-400);
+  cursor: not-allowed;
+}
+
+/* PRIMARY OUTLINE XS */
+.btn-primary-outline-xs {
+  background-color: transparent;
+  color: var(--color-clay-600);
+  border-color: var(--color-clay-500);
+}
+
+.btn-primary-outline-xs:hover:not(:disabled) {
+  background-color: var(--color-clay-50);
+  color: var(--color-clay-700);
+  border-color: var(--color-clay-600);
+}
+
+/* SECONDARY XS */
+.btn-secondary-xs {
+  background-color: var(--color-graphite-600);
+  color: #FFFFFF;
+  border-color: var(--color-graphite-600);
+}
+
+.btn-secondary-xs:hover:not(:disabled) {
+  background-color: var(--color-graphite-700);
+  border-color: var(--color-graphite-700);
+}
+
+/* SECONDARY OUTLINE XS */
+.btn-secondary-outline-xs {
+  background-color: transparent;
+  color: var(--color-graphite-700);
+  border-color: var(--color-graphite-500);
+}
+
+.btn-secondary-outline-xs:hover:not(:disabled) {
+  background-color: var(--color-graphite-50);
+  border-color: var(--color-graphite-600);
+}
+
+/* INFO XS */
+.btn-info-xs {
+  background-color: var(--color-info-500);
+  color: #FFFFFF;
+  border-color: var(--color-info-500);
+}
+
+.btn-info-xs:hover:not(:disabled) {
+  background-color: var(--color-info-400);
+  border-color: var(--color-info-400);
+}
+
+/* OUTLINE INFO XS */
+.btn-outline-info-xs {
+  background-color: transparent;
+  color: var(--color-info-600);
+  border-color: var(--color-info-500);
+}
+
+.btn-outline-info-xs:hover:not(:disabled) {
+  background-color: var(--color-info-500);
+  color: #FFFFFF;
+  border-color: var(--color-info-500);
+}
+
+/* SUCCESS XS */
+.btn-success-xs {
+  background-color: var(--color-success-500);
+  color: #FFFFFF;
+  border-color: var(--color-success-500);
+}
+
+.btn-success-xs:hover:not(:disabled) {
+  background-color: var(--color-success-400);
+  border-color: var(--color-success-400);
+}
+
+/* OUTLINE SUCCESS XS */
+.btn-outline-success-xs {
+  background-color: transparent;
+  color: var(--color-success-600);
+  border-color: var(--color-success-500);
+}
+
+.btn-outline-success-xs:hover:not(:disabled) {
+  background-color: var(--color-success-500);
+  color: #FFFFFF;
+  border-color: var(--color-success-500);
+}
+
+.btn-outline-success-xs:disabled {
+  background-color: #fff;
+  color: var(--color-success-200);
+  border-color: var(--color-success-200);
+  cursor: not-allowed;
+}
+
+/* WARNING XS */
+.btn-warning-xs {
+  background-color: var(--color-warning-500);
+  color: #FFFFFF;
+  border-color: var(--color-warning-500);
+}
+
+.btn-warning-xs:hover:not(:disabled) {
+  background-color: var(--color-warning-400);
+  border-color: var(--color-warning-400);
+}
+
+/* OUTLINE WARNING XS */
+.btn-outline-warning-xs {
+  background-color: transparent;
+  color: var(--color-warning-600);
+  border-color: var(--color-warning-500);
+}
+
+.btn-outline-warning-xs:hover:not(:disabled) {
+  background-color: var(--color-warning-500);
+  color: #FFFFFF;
+  border-color: var(--color-warning-500);
+}
+
+/* DANGER XS */
+.btn-danger-xs {
+  background-color: var(--color-danger-500);
+  color: #FFFFFF;
+  border-color: var(--color-danger-500);
+}
+
+.btn-danger-xs:hover:not(:disabled) {
+  background-color: var(--color-danger-400);
+  border-color: var(--color-danger-400);
+}
+
+/* OUTLINE DANGER XS */
+.btn-outline-danger-xs {
+  background-color: transparent;
+  color: var(--color-danger-600);
+  border-color: var(--color-danger-500);
+}
+
+.btn-outline-danger-xs:hover:not(:disabled) {
+  background-color: var(--color-danger-500);
+  color: #FFFFFF;
+  border-color: var(--color-danger-500);
+}
+
 /* Input and Select Focus Styles */
 input[type="text"]:focus,
 input[type="email"]:focus,

@@ -142,6 +142,8 @@ type BaseRecipe = {
   loss_factor: number
   total_cost: number
   base_recipe_items?: any[]
+  yield?: number
+  unit?: string
 }
 
 type FinalProduct = {
@@ -353,7 +355,7 @@ export default function ProductsPage() {
             </Button>
             
             {showTypeFilter && (
-              <div className="filter-dropdown absolute top-full mt-2 right-0 bg-[var(--color-bg-modal)] border border-gray-200 rounded-lg shadow-lg p-2 z-10 min-w-[180px]">
+              <div className="filter-dropdown absolute top-full mt-2 right-0 bg-[var(--color-bg-modal)] border border-gray-200 rounded-lg shadow-lg p-2 z-50 min-w-[180px]">
                 <button
                   onClick={() => toggleTypeFilter('ingredientes')}
                   className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left cursor-pointer hover:bg-gray-50 rounded"
@@ -377,8 +379,8 @@ export default function ProductsPage() {
           </div>
         )}
 
-        {/* Filtro de Categoria - só aparece na aba de Produtos */}
-        {activeTab === 'products' && (
+        {/* Filtro de Categoria - só aparece na aba de Produtos e se houver categorias */}
+        {activeTab === 'products' && categories.length > 0 && (
           <div className="relative" ref={categoryFilterRef}>
             <Button
               variant="outline"
@@ -398,25 +400,19 @@ export default function ProductsPage() {
             </Button>
             
             {showCategoryFilter && (
-              <div className="filter-dropdown absolute top-full mt-2 right-0 bg-[var(--color-bg-modal)] border border-gray-200 rounded-lg shadow-lg p-2 z-10 min-w-[180px] max-h-[300px] overflow-y-auto">
-                {categories.length > 0 ? (
-                  categories.map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => toggleCategoryFilter(category)}
-                      className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left cursor-pointer hover:bg-gray-50 rounded"
-                    >
-                      <span className="text-sm">{category}</span>
-                      {categoryFilter.includes(category) && (
-                        <span className="text-xs text-green-600 font-semibold">✓</span>
-                      )}
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-3 py-2 text-sm text-gray-500">
-                    Nenhuma categoria cadastrada
-                  </div>
-                )}
+              <div className="filter-dropdown absolute top-full mt-2 right-0 bg-[var(--color-bg-modal)] border border-gray-200 rounded-lg shadow-lg p-2 z-50 min-w-[180px] max-h-[300px] overflow-y-auto">
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => toggleCategoryFilter(category)}
+                    className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left cursor-pointer hover:bg-gray-50 rounded"
+                  >
+                    <span className="text-sm">{category}</span>
+                    {categoryFilter.includes(category) && (
+                      <span className="text-xs text-green-600 font-semibold">✓</span>
+                    )}
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -965,68 +961,83 @@ function IngredientsTab({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Unidade *</label>
-              <select 
-                value={formData.unit}
-                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-500 bg-white"
-              >
-                {getUnitOptions(settings.measurementUnit).map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Quantidade *
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder={formData.unit === 'unidades' ? '12' : '1.000'}
-                value={formData.volume ? formatVolumeInput(formData.volume) : ''}
-                onChange={(e) => {
-                  // Remove tudo que não é número do valor digitado
-                  const rawValue = e.target.value.replace(/\D/g, '')
-                  setFormData(prev => ({ ...prev, volume: rawValue }))
-                }}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Custo Médio (R$) *</label>
-              <input
-                type="text"
-                inputMode="decimal"
-                placeholder="0,00"
-                value={formData.average_cost ? formatCurrencyInput(formData.average_cost) : ''}
-                onChange={(e) => {
-                  // Remove tudo que não é número
-                  const rawValue = e.target.value.replace(/\D/g, '')
-                  // Converte centavos para formato decimal (divide por 100)
-                  const decimalValue = rawValue ? (parseInt(rawValue, 10) / 100).toFixed(2) : ''
-                  setFormData(prev => ({ ...prev, average_cost: decimalValue }))
-                }}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-              />
-            </div>
-            {settings.showLossFactorIngredients && (
+            
+            {/* Grid 2x2 para Unidade, Quantidade, Custo Médio e Fator de Perda */}
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fator de Perda (%) *</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  placeholder="2"
-                  value={formData.loss_factor}
-                  onChange={(e) => setFormData({ ...formData, loss_factor: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Unidade</label>
+                <select 
+                  value={formData.unit}
+                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-500 bg-white"
+                >
+                  {getUnitOptions(settings.measurementUnit).map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
               </div>
-            )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Quantidade *
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder={formData.unit === 'unidades' ? '12' : '1.000'}
+                    value={formData.volume ? formatVolumeInput(formData.volume) : ''}
+                    onChange={(e) => {
+                      // Remove tudo que não é número do valor digitado
+                      const rawValue = e.target.value.replace(/\D/g, '')
+                      setFormData(prev => ({ ...prev, volume: rawValue }))
+                    }}
+                    required
+                    className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">
+                    {getUnitAbbreviation(formData.unit)}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Custo Médio *</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">R$</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    value={formData.average_cost ? formatCurrencyInput(formData.average_cost) : ''}
+                    onChange={(e) => {
+                      // Remove tudo que não é número
+                      const rawValue = e.target.value.replace(/\D/g, '')
+                      // Converte centavos para formato decimal (divide por 100)
+                      const decimalValue = rawValue ? (parseInt(rawValue, 10) / 100).toFixed(2) : ''
+                      setFormData(prev => ({ ...prev, average_cost: decimalValue }))
+                    }}
+                    required
+                    className="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                  />
+                </div>
+              </div>
+              {settings.showLossFactorIngredients && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fator de Perda *</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="2"
+                      value={formData.loss_factor}
+                      onChange={(e) => setFormData({ ...formData, loss_factor: e.target.value })}
+                      required
+                      className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">%</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex gap-2 mt-6 justify-end">
             {editingId && (
@@ -1057,7 +1068,11 @@ function IngredientsTab({
             )}
             <button 
               type="submit"
-              disabled={editingId ? !hasIngredientsChanges : false}
+              disabled={
+                editingId 
+                  ? !hasIngredientsChanges 
+                  : !formData.name || !formData.volume || !formData.average_cost || !formData.loss_factor
+              }
               className="btn-success"
             >
               <Check className="w-4 h-4" />
@@ -1122,7 +1137,7 @@ function IngredientsTab({
       {/* Table */}
       <div 
         ref={scrollRef}
-        className="bg-white border border-gray-200 rounded-lg p-6 overflow-hidden max-h-[calc(100vh-250px)] overflow-y-auto"
+        className="bg-white border border-gray-200 rounded-lg p-6 min-h-[400px] max-h-[calc(100vh-280px)] overflow-y-auto"
       >
         {loading ? (
           <div className="flex justify-center py-8">
@@ -1238,7 +1253,6 @@ function BasesTab({
   
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
     loss_factor: '2',
     unit: getDefaultUnit(),
     yield: '',
@@ -1296,7 +1310,7 @@ function BasesTab({
     if (shouldOpenModal) {
       setEditingId(null)
       setImagePreview(null)
-      setFormData({ name: '', description: '', loss_factor: '2', unit: getDefaultUnit(), yield: '', items: [], image_url: '' })
+      setFormData({ name: '', loss_factor: '2', unit: getDefaultUnit(), yield: '', items: [], image_url: '' })
       setNewItem({ ingredient_id: '', quantity: '' })
       setIsModalOpen(true)
       onModalClose()
@@ -1318,8 +1332,7 @@ function BasesTab({
   }
 
   let filteredBases = bases.filter(base =>
-    base.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    base.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    base.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   // Ordena somente se sortOrder foi definido
@@ -1444,7 +1457,6 @@ function BasesTab({
         setImagePreview(null)
         setFormData({
           name: '',
-          description: '',
           loss_factor: '2',
           unit: 'gramas',
           yield: '',
@@ -1493,7 +1505,6 @@ function BasesTab({
     
     const formDataObj = {
       name: base.name,
-      description: base.description || '',
       loss_factor: base.loss_factor.toString(),
       unit: displayUnit,
       yield: convertedYield.toString(),
@@ -1516,7 +1527,6 @@ function BasesTab({
     setImagePreview(null)
     setFormData({
       name: '',
-      description: '',
       loss_factor: '2',
       unit: 'gramas',
       yield: '',
@@ -1548,145 +1558,101 @@ function BasesTab({
 
   return (
     <div>
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Base de Preparo" : "Nova Base de Preparo"}>
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Base de Preparo" : "Nova Base de Preparo"} maxWidth="640px">
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4 mb-4">
-            {settings.showBasePhoto && (
-              <div>
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <label className="cursor-pointer group">
-                      <div className="w-24 h-24 rounded-full overflow-hidden bg-[#FEFEFE] flex items-center justify-center relative">
-                        {imagePreview ? (
-                          <>
-                            <Image
-                              src={imagePreview}
-                              alt="Preview"
-                              fill
-                              className="object-cover"
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <div className="bg-white bg-opacity-90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-                                <SwitchCamera className="w-5 h-5 text-gray-700" />
-                              </div>
+          {/* 1. Foto */}
+          {settings.showBasePhoto && (
+            <div className="mb-4">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <label className="cursor-pointer group">
+                    <div className="w-24 h-24 rounded-full overflow-hidden bg-[#FEFEFE] flex items-center justify-center relative">
+                      {imagePreview ? (
+                        <>
+                          <Image
+                            src={imagePreview}
+                            alt="Preview"
+                            fill
+                            className="object-cover"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="bg-white bg-opacity-90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                              <SwitchCamera className="w-5 h-5 text-gray-700" />
                             </div>
-                          </>
-                        ) : (
-                          <>
-                            <Layers className="w-12 h-12 text-gray-400 group-hover:text-gray-500 transition-colors" />
-                            <div className="absolute inset-0 bg-[#FEFEFE] group-hover:bg-[#F9F9F9] transition-colors flex items-center justify-center">
-                              <div className="flex flex-col items-center">
-                                <Camera className="w-6 h-6 text-gray-400" />
-                                <span className="text-xs text-gray-500 mt-1">Adicionar</span>
-                              </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <Layers className="w-12 h-12 text-gray-400 group-hover:text-gray-500 transition-colors" />
+                          <div className="absolute inset-0 bg-[#FEFEFE] group-hover:bg-[#F9F9F9] transition-colors flex items-center justify-center">
+                            <div className="flex flex-col items-center">
+                              <Camera className="w-6 h-6 text-gray-400" />
+                              <span className="text-xs text-gray-500 mt-1">Adicionar</span>
                             </div>
-                          </>
-                        )}
-                      </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        className="hidden"
-                      />
-                    </label>
-                    {imagePreview && (
-                      <button
-                        type="button"
-                        onClick={removeAvatar}
-                        className="absolute -top-1 -right-1 hover:scale-110 transition-transform"
-                      >
-                        <CircleX className="w-5 h-5 text-[#D67973] hover:text-[#C86561] transition-colors" />
-                      </button>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Foto da Base</p>
-                    <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP, AVIF ou GIF (máx. 1MB)</p>
-                  </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                  </label>
+                  {imagePreview && (
+                    <button
+                      type="button"
+                      onClick={removeAvatar}
+                      className="absolute -top-1 -right-1 hover:scale-110 transition-transform"
+                    >
+                      <CircleX className="w-5 h-5 text-[#D67973] hover:text-[#C86561] transition-colors" />
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Foto da Base</p>
+                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP, AVIF ou GIF (máx. 1MB)</p>
                 </div>
               </div>
-            )}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Base *</label>
-              <input
-                type="text"
-                placeholder="Ex: Massa de Chocolate"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-              />
             </div>
-            {settings.showLossFactorBases && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fator de Perda (%) *</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  placeholder="2"
-                  value={formData.loss_factor}
-                  onChange={(e) => setFormData({ ...formData, loss_factor: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-                />
-              </div>
-            )}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Unidade *</label>
-              <select 
-                value={formData.unit}
-                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-500 bg-white"
-              >
-                {getUnitOptions(settings.measurementUnit).map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Rendimento</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="1.000"
-                value={formData.yield ? formatVolumeInput(formData.yield) : ''}
-                onChange={(e) => {
-                  // Remove tudo que não é número do valor digitado
-                  const rawValue = e.target.value.replace(/\D/g, '')
-                  setFormData(prev => ({ ...prev, yield: rawValue }))
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-              />
-            </div>
-          </div>
+          )}
+
+          {/* 2. Nome */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-            <textarea
-              rows={2}
-              placeholder="Descrição da base de preparo"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Base *</label>
+            <input
+              type="text"
+              placeholder="Ex: Massa de Chocolate"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
             />
           </div>
 
-          <div className="pt-4 border-t border-gray-300">
+          {/* 3. Ingredientes da Base */}
+          <div className="mb-4 pt-4 border-t border-gray-300">
             <h4 className="font-medium text-gray-900 mb-3">Ingredientes da Base</h4>
             
             {/* Added items list */}
             {formData.items.length > 0 && (
-              <div className="mb-4 space-y-2">
+              <div className="mb-4 space-y-0">
                 {formData.items.map((item, index) => {
                   const ing = ingredients.find(i => i.id === item.ingredient_id)
+                  const unitAbbr = ing?.unit === 'gramas' ? 'g' : ing?.unit === 'kg' ? 'kg' : ing?.unit === 'ml' ? 'ml' : ing?.unit === 'L' ? 'L' : 'un'
+                  const isLast = index === formData.items.length - 1
                   return (
-                    <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                      <span className="text-sm text-gray-900">{ing?.name} - {item.quantity} {ing?.unit}</span>
+                    <div key={index} className={`flex items-center justify-between py-2.5 ${!isLast ? 'border-b border-gray-200' : ''}`}>
+                      <span className="text-sm text-gray-900 flex items-center">
+                        <span className="mr-2">-</span>
+                        {ing?.name}: {item.quantity} {unitAbbr}
+                      </span>
                       <button
                         type="button"
                         onClick={() => handleRemoveItem(index)}
-                        className="text-red-600 hover:text-red-800 text-sm"
+                        className="btn-outline-danger-xs"
                       >
                         Remover
                       </button>
@@ -1696,38 +1662,118 @@ function BasesTab({
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
-              <div className="md:col-span-2">
-                <select 
-                  value={newItem.ingredient_id}
-                  onChange={(e) => setNewItem({ ...newItem, ingredient_id: e.target.value })}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-500 bg-white"
-                >
-                  <option value="">Selecione um ingrediente</option>
-                  {ingredients.filter(ing => ing.type === 'ingredientes' || !ing.type).map((ing) => (
-                    <option key={ing.id} value={ing.id}>{ing.name}</option>
-                  ))}
-                </select>
+            <div className="space-y-3">
+              <div className="grid grid-cols-[2fr_1fr] gap-3">
+                <div>
+                  <select 
+                    value={newItem.ingredient_id}
+                    onChange={(e) => setNewItem({ ...newItem, ingredient_id: e.target.value })}
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-500 bg-white"
+                  >
+                    <option value="">Selecione um ingrediente</option>
+                    {ingredients.filter(ing => ing.type === 'ingredientes' || !ing.type).map((ing) => {
+                      const unitAbbr = ing.unit === 'gramas' ? 'g' : ing.unit === 'kg' ? 'kg' : ing.unit === 'ml' ? 'ml' : ing.unit === 'L' ? 'L' : 'un'
+                      return (
+                        <option key={ing.id} value={ing.id}>{ing.name} ({unitAbbr})</option>
+                      )
+                    })}
+                  </select>
+                </div>
+                <div className="ml-auto w-full">
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="Quantidade"
+                      value={newItem.quantity}
+                      onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
+                      className="w-full px-3 pr-8 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-gray-500 bg-white"
+                    />
+                    {newItem.ingredient_id && (() => {
+                      const selectedIng = ingredients.find(i => i.id === newItem.ingredient_id)
+                      if (selectedIng) {
+                        const unitAbbr = selectedIng.unit === 'gramas' ? 'g' : selectedIng.unit === 'kg' ? 'kg' : selectedIng.unit === 'ml' ? 'ml' : selectedIng.unit === 'L' ? 'L' : 'un'
+                        return (
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none text-sm">
+                            {unitAbbr}
+                          </span>
+                        )
+                      }
+                      return null
+                    })()}
+                  </div>
+                </div>
               </div>
-              <div>
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder="Quantidade"
-                  value={newItem.quantity}
-                  onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-gray-500 bg-white"
-                />
-              </div>
-              <div>
+              <div className="flex justify-end">
                 <button 
                   type="button"
                   onClick={handleAddItem}
-                  className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm"
+                  disabled={!newItem.ingredient_id || !newItem.quantity}
+                  className="btn-outline-success-xs"
                 >
                   + Adicionar
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* 5. Unidade / 6. Rendimento / 7. Fator de Perda */}
+          <div className="mb-4 pt-4 border-t border-gray-300">
+            <div className={`grid gap-3 ${settings.showLossFactorBases ? 'grid-cols-3' : 'grid-cols-2'}`}>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Unidade *</label>
+                <select 
+                  value={formData.unit}
+                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-500 bg-white"
+                >
+                  {getUnitOptions(settings.measurementUnit).map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Rendimento *</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="1.000"
+                    value={formData.yield ? formatVolumeInput(formData.yield) : ''}
+                    onChange={(e) => {
+                      // Remove tudo que não é número do valor digitado
+                      const rawValue = e.target.value.replace(/\D/g, '')
+                      setFormData(prev => ({ ...prev, yield: rawValue }))
+                    }}
+                    required
+                    className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">
+                    {formData.unit === 'gramas' ? 'g' : formData.unit === 'kg' ? 'kg' : formData.unit === 'ml' ? 'ml' : formData.unit === 'L' ? 'L' : 'un'}
+                  </span>
+                </div>
+              </div>
+
+              {settings.showLossFactorBases && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fator de Perda *</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="2"
+                      value={formData.loss_factor}
+                      onChange={(e) => setFormData({ ...formData, loss_factor: e.target.value })}
+                      required
+                      className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">
+                      %
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1760,7 +1806,11 @@ function BasesTab({
             )}
             <button 
               type="submit"
-              disabled={editingId ? !hasBasesChanges : false}
+              disabled={
+                editingId 
+                  ? !hasBasesChanges 
+                  : !formData.name || !formData.yield || formData.items.length === 0
+              }
               className="btn-success"
             >
               <Check className="w-4 h-4" />
@@ -1837,10 +1887,10 @@ function BasesTab({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* List of Bases */}
+      {/* Table of Bases */}
       <div 
         ref={scrollRef}
-        className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2"
+        className="bg-white border border-gray-200 rounded-lg p-6 min-h-[400px] max-h-[calc(100vh-280px)] overflow-y-auto"
       >
         {loading ? (
           <div className="flex justify-center py-8">
@@ -1851,119 +1901,108 @@ function BasesTab({
             {searchQuery ? 'Nenhuma base encontrada' : 'Nenhuma base cadastrada. Clique em "+ Nova Base" para começar.'}
           </div>
         ) : (
-          filteredBases.slice(0, displayedItems).map((base) => {
-            // Converter yield do banco (g/ml) para unidade de exibição
-            const baseUnit = (base as any).unit || 'gramas'
-            const yieldValue = parseFloat((base as any).yield || '0')
-            const displayYield = convertFromSmallUnit(yieldValue, baseUnit, settings.measurementUnit)
-            const displayUnit = baseUnit === 'gramas' && settings.measurementUnit === 'metric-large' 
-              ? 'kg' 
-              : baseUnit === 'ml' && settings.measurementUnit === 'metric-large'
-              ? 'L'
-              : baseUnit
-            
-            return (
-              <div 
-                key={base.id} 
-                className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200"
-                onClick={() => handleEdit(base)}
-              >
-                {settings.showBasePhoto && (base as any).image_url && (
-                  <div className="mb-3">
-                    <div className="relative w-full h-40 rounded-lg overflow-hidden border border-gray-200">
-                      <Image
-                        src={(base as any).image_url}
-                        alt={base.name}
-                        fill
-                        className="object-cover"
-                      />
+          <table className="w-full -mx-6 px-6" style={{ width: 'calc(100% + 48px)' }}>
+            <thead className="sticky top-0 bg-white z-10 shadow-sm">
+              <tr className="border-b border-gray-200">
+                {settings.showBasePhoto && <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm w-20 bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10"></th>}
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Nome da Base</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Rendimento</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">
+                  <div className="flex items-center gap-2">
+                    Custo Total
+                    <div className="group relative">
+                      <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                      <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[280px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '15px' }}>
+                        O custo total inclui o custo dos ingredientes mais o fator de perda aplicado.
+                      </div>
                     </div>
                   </div>
-                )}
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{base.name}</h3>
-                    <p className="text-sm text-gray-500">Fator de Perda: {formatSmartNumber(base.loss_factor, 2, true)}%</p>
-                    {yieldValue > 0 && displayUnit && (
-                      <p className="text-sm text-gray-500">
-                        Rendimento: {formatSmartNumber(displayYield)} {getUnitAbbreviation(displayUnit)}
-                      </p>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredBases.slice(0, displayedItems).map((base) => {
+                // Converter yield do banco (g/ml) para unidade de exibição
+                const baseUnit = (base as any).unit || 'gramas'
+                const yieldValue = parseFloat((base as any).yield || '0')
+                const displayYield = convertFromSmallUnit(yieldValue, baseUnit, settings.measurementUnit)
+                const displayUnit = baseUnit === 'gramas' && settings.measurementUnit === 'metric-large' 
+                  ? 'kg' 
+                  : baseUnit === 'ml' && settings.measurementUnit === 'metric-large'
+                  ? 'L'
+                  : baseUnit
+                
+                // Calcular custo dos ingredientes
+                const ingredientsCost = base.base_recipe_items?.reduce((sum: number, item: any) => 
+                  sum + (item.quantity * (item.ingredients?.unit_cost || 0)), 0
+                ) || 0
+                
+                // Calcular custo do fator de perda
+                const lossFactorCost = ingredientsCost * (base.loss_factor / 100)
+                
+                return (
+                  <tr 
+                    key={base.id} 
+                    className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={() => handleEdit(base)}
+                  >
+                    {settings.showBasePhoto && (
+                      <td className="py-3 px-4">
+                        {(base as any).image_url ? (
+                          <div className="relative w-12 h-12 rounded-full overflow-hidden border border-gray-200">
+                            <Image
+                              src={(base as any).image_url}
+                              alt={base.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center">
+                            <Layers className="w-5 h-5 text-gray-400" />
+                          </div>
+                        )}
+                      </td>
                     )}
-                    {base.description && <p className="text-sm text-gray-600 mt-1">{base.description}</p>}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-gray-900">R$ {formatBRL(base.total_cost || 0, 2)}</p>
-                    <p className="text-xs text-gray-500">Custo Total</p>
-                  </div>
-                </div>
-              {base.base_recipe_items && base.base_recipe_items.length > 0 && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Item</th>
-                        <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Quantidade</th>
-                        <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Custo Unit.</th>
-                        <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Subtotal</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {base.base_recipe_items.map((item: any) => {
-                        const subtotal = item.quantity * (item.ingredients?.unit_cost || 0)
-                        // Converter quantidade do ingrediente
-                        const ingUnit = item.ingredients?.unit || 'gramas'
-                        const displayQuantity = convertFromSmallUnit(item.quantity, ingUnit, settings.measurementUnit)
-                        const displayIngUnit = ingUnit === 'gramas' && settings.measurementUnit === 'metric-large' 
-                          ? 'kg' 
-                          : ingUnit === 'ml' && settings.measurementUnit === 'metric-large'
-                          ? 'L'
-                          : ingUnit
-                        
-                        return (
-                          <tr key={item.id} className="border-b border-gray-100">
-                            <td className="py-2 px-2 text-gray-900">{item.ingredients?.name}</td>
-                            <td className="py-2 px-2 text-gray-600">
-                              {formatSmartNumber(displayQuantity, 2)} {getUnitAbbreviation(displayIngUnit)}
-                            </td>
-                            <td className="py-2 px-2 text-gray-600">R$ {formatSmartNumber(item.ingredients?.unit_cost || 0, 5, true)}</td>
-                            <td className="py-2 px-2 text-gray-900 font-medium">R$ {formatSmartNumber(subtotal, 4, true)}</td>
-                          </tr>
-                        )
-                      })}
-                      {/* Linha de Subtotal */}
-                      <tr className="border-t-2 border-gray-300">
-                        <td colSpan={3} className="py-2 px-2 text-right font-medium text-gray-700">Subtotal dos Ingredientes:</td>
-                        <td className="py-2 px-2 text-gray-900 font-semibold">
-                          R$ {formatSmartNumber(base.base_recipe_items.reduce((sum: number, item: any) => 
-                            sum + (item.quantity * (item.ingredients?.unit_cost || 0)), 0
-                          ), 4, true)}
-                        </td>
-                      </tr>
-                      {/* Linha do Fator de Perda */}
-                      <tr className="bg-yellow-50">
-                        <td colSpan={3} className="py-2 px-2 text-right font-medium text-gray-700">
-                          Fator de Perda ({formatSmartNumber(base.loss_factor, 2, true)}%):
-                        </td>
-                        <td className="py-2 px-2 text-orange-600 font-semibold">
-                          + R$ {formatSmartNumber((base.base_recipe_items.reduce((sum: number, item: any) => 
-                            sum + (item.quantity * (item.ingredients?.unit_cost || 0)), 0
-                          ) * (base.loss_factor / 100)), 4, true)}
-                        </td>
-                      </tr>
-                      {/* Linha de Total Final */}
-                      <tr className="bg-gray-100 border-t-2 border-gray-300">
-                        <td colSpan={3} className="py-2 px-2 text-right font-bold text-gray-900">Custo Total:</td>
-                        <td className="py-2 px-2 text-pink-600 font-bold text-base">
-                          R$ {formatBRL(base.total_cost || 0, 2)}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-            )
-          })
+                    <td className="py-3 px-4 text-sm text-gray-900">{base.name}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">
+                      {yieldValue > 0 ? (
+                        <>
+                          {formatSmartNumber(displayYield)} {getUnitAbbreviation(displayUnit)}
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-900 font-medium">
+                      <div className="flex items-center gap-2">
+                        R$ {formatSmartNumber(base.total_cost || 0, 2, true)}
+                        <div className="group relative">
+                          <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                          <div className="invisible group-hover:visible absolute right-0 top-full mt-2 w-[220px] bg-white text-[var(--color-licorice)] text-xs rounded-lg shadow-lg z-50 border border-gray-200 p-3">
+                            <div className="space-y-1.5">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Ingredientes:</span>
+                                <span className="font-medium">R$ {formatSmartNumber(ingredientsCost, 2, true)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Fator de perda ({formatSmartNumber(base.loss_factor, 2, true)}%):</span>
+                                <span className="font-medium text-orange-600">R$ {formatSmartNumber(lossFactorCost, 2, true)}</span>
+                              </div>
+                              <div className="flex justify-between pt-1.5 border-t border-gray-200">
+                                <span className="font-semibold text-gray-900">Custo total:</span>
+                                <span className="font-semibold text-gray-900">R$ {formatSmartNumber(base.total_cost || 0, 2, true)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         )}
       </div>
     </div>
@@ -2010,7 +2049,6 @@ function ProductsTab({
   const [formData, setFormData] = useState({
     name: '',
     category: '',
-    description: '',
     loss_factor: '2',
     selling_price: '',
     profit_margin: '',
@@ -2066,7 +2104,6 @@ function ProductsTab({
       setFormData({
         name: '',
         category: '',
-        description: '',
         loss_factor: '2',
         selling_price: '',
         profit_margin: '',
@@ -2195,12 +2232,15 @@ function ProductsTab({
       const dataToSend = {
         name: formData.name,
         category: formData.category,
-        description: formData.description,
         loss_factor: formData.loss_factor,
         selling_price: formData.selling_price,
         profit_margin: formData.profit_margin,
         image_url: imagePreview,
-        items: formData.items
+        items: formData.items.map(item => ({
+          ...item,
+          // Mapear 'material' para 'ingredient' que a API espera
+          item_type: item.item_type === 'material' ? 'ingredient' : item.item_type
+        }))
       }
       
       const response = await fetch(url, {
@@ -2237,7 +2277,6 @@ function ProductsTab({
         setFormData({
           name: '',
           category: '',
-          description: '',
           loss_factor: '2',
           selling_price: '',
           profit_margin: '',
@@ -2273,7 +2312,6 @@ function ProductsTab({
     setFormData({
       name: '',
       category: '',
-      description: '',
       loss_factor: '2',
       selling_price: '',
       profit_margin: '',
@@ -2286,11 +2324,26 @@ function ProductsTab({
   const getItemName = (item: any) => {
     if (item.item_type === 'material') {
       const ing = ingredients.find(i => i.id === item.item_id)
-      return ing?.name || 'Item não encontrado'
-    } else {
+      if (!ing) return 'Item não encontrado'
+      
+      // Mostrar quantidade x nome do material
+      return `${item.quantity}x ${ing.name}`
+    } else if (item.item_type === 'base_recipe') {
       const base = bases.find(b => b.id === item.item_id)
-      return base?.name || 'Item não encontrado'
+      if (!base) return 'Item não encontrado'
+      
+      // Mostrar quantidade x nome da base com rendimento e unidade
+      const yieldValue = base.yield || 0
+      const displayYield = convertFromSmallUnit(yieldValue, base.unit || 'gramas', settings.measurementUnit)
+      const displayUnit = base.unit === 'gramas' && settings.measurementUnit === 'metric-large' 
+        ? 'kg' 
+        : base.unit === 'ml' && settings.measurementUnit === 'metric-large'
+        ? 'L'
+        : base.unit || 'g'
+      
+      return `${item.quantity}x ${base.name} - ${formatSmartNumber(displayYield)} ${getUnitAbbreviation(displayUnit)}`
     }
+    return 'Item não encontrado'
   }
 
   const handleEdit = (product: FinalProduct) => {
@@ -2298,16 +2351,32 @@ function ProductsTab({
     const formDataObj = {
       name: product.name,
       category: product.category,
-      description: product.description || '',
       loss_factor: product.loss_factor.toString(),
       selling_price: product.selling_price?.toString() || '',
       profit_margin: product.profit_margin?.toString() || '',
       image: null,
-      items: (product.final_product_items || []).map(item => ({
-        item_type: item.item_type,
-        item_id: item.item_type === 'material' ? item.ingredients?.id || item.ingredient_id : item.base_recipes?.id || item.base_recipe_id,
-        quantity: item.quantity.toString()
-      }))
+      items: (product.final_product_items || []).map(item => {
+        // API retorna 'ingredient', mas o frontend usa 'material' para materiais
+        let itemType = item.item_type
+        let itemId = ''
+        
+        if (item.item_type === 'ingredient') {
+          itemId = item.ingredients?.id || item.ingredient_id
+          // Verificar se é material (não tem base_recipe)
+          const ingredient = ingredients.find(i => i.id === itemId)
+          if (ingredient?.type === 'materiais') {
+            itemType = 'material'
+          }
+        } else if (item.item_type === 'base_recipe') {
+          itemId = item.base_recipes?.id || item.base_recipe_id
+        }
+        
+        return {
+          item_type: itemType,
+          item_id: itemId,
+          quantity: item.quantity.toString()
+        }
+      })
     }
     setFormData(formDataObj)
     setOriginalProductData(formDataObj)
@@ -2320,7 +2389,7 @@ function ProductsTab({
 
   return (
     <div>
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Produto Final" : "Novo Produto Final"} maxWidth="750px">
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? "Editar Produto Final" : "Novo Produto Final"} maxWidth="600px">
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 mb-4">
             {/* Foto do Produto */}
@@ -2428,72 +2497,92 @@ function ProductsTab({
           </div>
 
           {/* 3. Composição do Produto */}
-          <div className="mb-4 pt-4 border-t border-gray-300">
+          <div className="mb-4 pt-4">
             <h4 className="font-medium text-gray-900 mb-3">Composição do Produto</h4>
             
             {/* Added items list */}
             {formData.items.length > 0 && (
-              <div className="mb-4 space-y-2">
-                {formData.items.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                    <span className="text-sm text-gray-900">
-                      {item.item_type === 'base_recipe' ? '🥄 Base' : '📦 Material'}: {getItemName(item)} - {item.quantity}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveItem(index)}
-                      className="text-red-600 hover:text-red-800 text-sm"
-                    >
-                      Remover
-                    </button>
-                  </div>
-                ))}
+              <div className="mb-4 space-y-0">
+                {formData.items.map((item, index) => {
+                  const isLast = index === formData.items.length - 1
+                  return (
+                    <div key={index} className={`flex items-center justify-between py-2.5 ${!isLast ? 'border-b border-gray-200' : ''}`}>
+                      <span className="text-sm text-gray-900 flex items-center">
+                        <span className="mr-2">-</span>
+                        {getItemName(item)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveItem(index)}
+                        className="btn-outline-danger-xs"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-3">
-              <div>
-                <select 
-                  value={newItem.item_type}
-                  onChange={(e) => setNewItem({ ...newItem, item_type: e.target.value, item_id: '' })}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-500 bg-white"
-                >
-                  <option value="base_recipe">Base</option>
-                  <option value="material">Material</option>
-                </select>
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <select 
+                    value={newItem.item_type}
+                    onChange={(e) => setNewItem({ ...newItem, item_type: e.target.value, item_id: '' })}
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-500 bg-white"
+                  >
+                    <option value="base_recipe">Base</option>
+                    <option value="material">Material</option>
+                  </select>
+                </div>
+                <div>
+                  <select 
+                    value={newItem.item_id}
+                    onChange={(e) => setNewItem({ ...newItem, item_id: e.target.value })}
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-500 bg-white"
+                  >
+                    <option value="">Selecione</option>
+                    {newItem.item_type === 'material' 
+                      ? ingredients.filter(ing => ing.type === 'materiais').map((ing) => (
+                          <option key={ing.id} value={ing.id}>{ing.name}</option>
+                        ))
+                      : bases.map((base) => {
+                          // Formatar rendimento da base
+                          const yieldValue = base.yield || 0
+                          const displayYield = convertFromSmallUnit(yieldValue, base.unit || 'gramas', settings.measurementUnit)
+                          const displayUnit = base.unit === 'gramas' && settings.measurementUnit === 'metric-large' 
+                            ? 'kg' 
+                            : base.unit === 'ml' && settings.measurementUnit === 'metric-large'
+                            ? 'L'
+                            : base.unit || 'g'
+                          
+                          return (
+                            <option key={base.id} value={base.id}>
+                              {base.name} - {formatSmartNumber(displayYield)} {getUnitAbbreviation(displayUnit)}
+                            </option>
+                          )
+                        })
+                    }
+                  </select>
+                </div>
+                <div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder={newItem.item_type === 'base_recipe' ? 'Quantidade (un)' : 'Quantidade'}
+                    value={newItem.quantity}
+                    onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-gray-500 bg-white"
+                  />
+                </div>
               </div>
-              <div className="md:col-span-2">
-                <select 
-                  value={newItem.item_id}
-                  onChange={(e) => setNewItem({ ...newItem, item_id: e.target.value })}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-500 bg-white"
-                >
-                  <option value="">Selecione</option>
-                  {newItem.item_type === 'material' 
-                    ? ingredients.filter(ing => ing.type === 'materiais').map((ing) => (
-                        <option key={ing.id} value={ing.id}>{ing.name}</option>
-                      ))
-                    : bases.map((base) => (
-                        <option key={base.id} value={base.id}>{base.name}</option>
-                      ))
-                  }
-                </select>
-              </div>
-              <div>
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder="Quantidade"
-                  value={newItem.quantity}
-                  onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-gray-500 bg-white"
-                />
-              </div>
-              <div>
+              <div className="flex justify-end">
                 <button 
                   type="button"
                   onClick={handleAddItem}
-                  className="w-full btn-success"
+                  disabled={!newItem.item_type || !newItem.item_id || !newItem.quantity}
+                  className="btn-outline-success-xs"
                 >
                   <Plus className="w-4 h-4" />
                   Adicionar
@@ -2503,50 +2592,48 @@ function ProductsTab({
           </div>
 
           {/* 4. Preço de Venda */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Preço de Venda (R$)</label>
-            <input
-              type="text"
-              inputMode="decimal"
-              placeholder="0,00"
-              value={formData.selling_price ? formatCurrencyInput(formData.selling_price) : ''}
-              onChange={(e) => {
-                // Remove tudo que não é número
-                const rawValue = e.target.value.replace(/\D/g, '')
-                // Converte centavos para formato decimal (divide por 100)
-                const decimalValue = rawValue ? (parseInt(rawValue, 10) / 100).toFixed(2) : ''
-                setFormData(prev => ({ ...prev, selling_price: decimalValue }))
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-            />
-          </div>
+          <div className="mb-4 pt-4 border-t border-gray-300">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Preço de Venda</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">R$</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    value={formData.selling_price ? formatCurrencyInput(formData.selling_price) : ''}
+                    onChange={(e) => {
+                      // Remove tudo que não é número
+                      const rawValue = e.target.value.replace(/\D/g, '')
+                      // Converte centavos para formato decimal (divide por 100)
+                      const decimalValue = rawValue ? (parseInt(rawValue, 10) / 100).toFixed(2) : ''
+                      setFormData(prev => ({ ...prev, selling_price: decimalValue }))
+                    }}
+                    className="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                  />
+                </div>
+              </div>
 
-          {/* 5. Fator de Perda */}
-          {settings.showLossFactorProducts && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Fator de Perda (%) *</label>
-              <input
-                type="number"
-                step="0.1"
-                placeholder="2"
-                value={formData.loss_factor}
-                onChange={(e) => setFormData({ ...formData, loss_factor: e.target.value })}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-              />
+              {/* 5. Fator de Perda */}
+              {settings.showLossFactorProducts && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fator de Perda *</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="2"
+                      value={formData.loss_factor}
+                      onChange={(e) => setFormData({ ...formData, loss_factor: e.target.value })}
+                      required
+                      className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">%</span>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-
-          {/* 6. Descrição */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-            <textarea
-              rows={2}
-              placeholder="Descrição do produto"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-            />
           </div>
 
           <div className="flex gap-2 mt-6 justify-end">
@@ -2634,120 +2721,130 @@ function ProductsTab({
       </AlertDialog>
 
       {/* Products List */}
-      <div 
-        ref={scrollRef}
-        className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2"
-      >
-        {loading ? (
+      {loading ? (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="flex justify-center py-8">
             <Spinner size="large" className="text-[var(--color-clay-500)]" />
           </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            {searchQuery ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado. Clique em "+ Novo Produto" para começar.'}
-          </div>
-        ) : (
-          filteredProducts.slice(0, displayedItems).map((product) => {
-            const profit = product.selling_price && product.total_cost 
-              ? product.selling_price - product.total_cost 
-              : 0
-            const margin = product.selling_price && product.total_cost
-              ? ((profit / product.selling_price) * 100)
-              : 0
-
-            return (
-              <div 
-                key={product.id} 
-                className="bg-white border border-gray-200 rounded-lg p-5 mb-4 cursor-pointer hover:shadow-md transition-shadow duration-200"
-                onClick={() => handleEdit(product)}
-              >
-                <div className="flex justify-between items-start gap-6">
-                  <div className="flex items-start gap-4 flex-1">
-                    {/* Foto do Produto */}
-                    {settings.showProductPhoto && product.image_url && (
-                      <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 relative">
-                        <Image
-                          src={product.image_url}
-                          alt={product.name}
-                          fill
-                          className="object-cover"
-                        />
+        </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          {searchQuery ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado. Clique em "+ Novo Produto" para começar.'}
+        </div>
+      ) : (
+        <div>
+          <div className="bg-white border border-gray-200 rounded-lg p-6 min-h-[400px] max-h-[calc(100vh-280px)] overflow-y-auto" ref={scrollRef}>
+            <table className="w-full -mx-6 px-6" style={{ width: 'calc(100% + 48px)' }}>
+              <thead className="sticky top-0 bg-white z-10 shadow-sm">
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm w-20 bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10"></th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Nome do Produto</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Categoria</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">
+                    <div className="flex items-center gap-2">
+                      Custo Total
+                      <div className="group relative">
+                        <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                        <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[280px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '15px' }}>
+                          O custo total inclui o custo dos itens (bases e materiais) mais o fator de perda aplicado.
+                        </div>
                       </div>
-                    )}
-                    
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 text-lg mb-1">{product.name}</h3>
-                      <p className="text-sm text-gray-500">
-                        Categoria: {product.category} | Perda: {formatSmartNumber(product.loss_factor, 2, true)}%
-                      </p>
-                      {product.description && <p className="text-sm text-gray-600 mt-1">{product.description}</p>}
-                      
-                      {/* Tabela de itens integrada */}
-                      {product.final_product_items && product.final_product_items.length > 0 && (
-                        <div className="mt-4">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="border-b border-gray-200">
-                                <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Tipo</th>
-                                <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Item</th>
-                                <th className="text-left py-2 px-2 font-medium text-gray-700 text-xs">Qtde</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {product.final_product_items.map((item: any) => (
-                              <tr key={item.id} className="border-b border-gray-100">
-                                <td className="py-2 px-2 text-gray-600">
-                                  {item.item_type === 'base_recipe' ? 'Base' : 'Material'}
-                                </td>
-                                <td className="py-2 px-2 text-gray-900">
-                                  {item.item_type === 'material' 
-                                    ? item.ingredients?.name 
-                                    : item.base_recipes?.name}
-                                </td>
-                                <td className="py-2 px-2 text-gray-600">{item.quantity}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
                     </div>
-                  </div>
-                  
-                  {/* Coluna consolidada de valores */}
-                  <div className="bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-200 rounded-lg p-4 min-w-[240px] self-start">
-                    {product.selling_price ? (
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center pb-2 border-b border-pink-200">
-                          <span className="text-xs font-medium text-gray-600">Preço de Venda</span>
-                          <span className="text-lg font-bold text-pink-600">R$ {formatBRL(product.selling_price, 2)}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredProducts.slice(0, displayedItems).map((product) => {
+                  const profit = product.selling_price && product.total_cost 
+                    ? product.selling_price - product.total_cost 
+                    : 0
+                  const margin = product.selling_price && product.total_cost
+                    ? ((profit / product.selling_price) * 100)
+                    : 0
+                  const itemsCost = product.total_cost || 0
+                  const lossFactor = product.loss_factor
+                  const lossAmount = (itemsCost * lossFactor) / 100
+                  const totalWithLoss = itemsCost + lossAmount
+
+                  return (
+                    <tr 
+                      key={product.id}
+                      className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => handleEdit(product)}
+                    >
+                      <td className="py-3 px-4">
+                        {settings.showProductPhoto && product.image_url ? (
+                          <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-200 bg-gray-50 relative">
+                            <Image
+                              src={product.image_url}
+                              alt={product.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center">
+                            <Package className="w-5 h-5 text-gray-400" />
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-900">{product.name}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{product.category}</td>
+                      <td className="py-3 px-4 text-sm text-gray-900 font-medium">
+                        <div className="flex items-center gap-2">
+                          R$ {formatBRL(totalWithLoss, 2)}
+                          <div className="group relative">
+                            <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                            {product.selling_price ? (
+                              <div className="invisible group-hover:visible absolute right-0 top-full mt-2 min-w-[240px] bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-200 rounded-lg shadow-lg z-50 p-4">
+                                <div className="space-y-2">
+                                  <div className="flex justify-between items-center pb-2 border-b border-pink-200">
+                                    <span className="text-xs font-medium text-gray-600">Preço de Venda</span>
+                                    <span className="text-lg font-bold text-pink-600">R$ {formatBRL(product.selling_price, 2)}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-600">Custo Total</span>
+                                    <span className="font-semibold text-gray-900">R$ {formatBRL(totalWithLoss, 2)}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm pt-2 border-t border-pink-100">
+                                    <span className="text-gray-600">Lucro</span>
+                                    <span className="font-semibold text-green-600">R$ {formatBRL(profit, 2)}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-600">Margem</span>
+                                    <span className="font-bold text-blue-600">{formatBRL(margin, 1)}%</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="invisible group-hover:visible absolute right-0 top-full mt-2 w-[220px] bg-white text-[var(--color-licorice)] text-xs rounded-lg shadow-lg z-50 border border-gray-200 p-3">
+                                <div className="space-y-1.5">
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">Itens:</span>
+                                    <span className="font-medium">R$ {formatBRL(itemsCost, 2)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">Fator de perda ({formatSmartNumber(lossFactor, 2, true)}%):</span>
+                                    <span className="font-medium text-orange-600">R$ {formatBRL(lossAmount, 2)}</span>
+                                  </div>
+                                  <div className="flex justify-between pt-1.5 border-t border-gray-200">
+                                    <span className="font-semibold text-gray-900">Custo total:</span>
+                                    <span className="font-semibold text-gray-900">R$ {formatBRL(totalWithLoss, 2)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600">Custo Total</span>
-                          <span className="font-semibold text-gray-900">R$ {formatBRL(product.total_cost || 0, 2)}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm pt-2 border-t border-pink-100">
-                          <span className="text-gray-600">Lucro</span>
-                          <span className="font-semibold text-green-600">R$ {formatBRL(profit, 2)}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600">Margem</span>
-                          <span className="font-bold text-blue-600">{formatBRL(margin, 1)}%</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center">
-                        <p className="text-sm text-gray-500">Sem preço definido</p>
-                        <p className="text-xs text-gray-400 mt-1">Configure o preço para ver os dados</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          })
-        )}
-      </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
