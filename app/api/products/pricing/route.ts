@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, category, description, loss_factor, selling_price, profit_margin, image_url, items } = body
+    const { name, category, loss_factor, selling_price, profit_margin, image_url, items } = body
 
     if (!name || !category || loss_factor === undefined) {
       return NextResponse.json({ error: 'Dados incompletos' }, { status: 400 })
@@ -72,7 +72,6 @@ export async function POST(request: NextRequest) {
           user_id: user.id,
           name,
           category,
-          description,
           image_url,
           loss_factor: parseFloat(loss_factor),
           selling_price: selling_price ? parseFloat(selling_price) : null,
@@ -192,7 +191,7 @@ export async function PATCH(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     const body = await request.json()
-    const { name, category, description, loss_factor, selling_price, profit_margin, image_url, items } = body
+    const { name, category, loss_factor, selling_price, profit_margin, image_url, items } = body
 
     if (!id) {
       return NextResponse.json({ error: 'ID não fornecido' }, { status: 400 })
@@ -204,7 +203,6 @@ export async function PATCH(request: NextRequest) {
       .update({
         name,
         category,
-        description,
         image_url,
         loss_factor: parseFloat(loss_factor),
         selling_price: selling_price ? parseFloat(selling_price) : null,

@@ -640,7 +640,10 @@ function IngredientsTab({
           const loss_factor = Number(item.loss_factor) || 0
           
           // Calcular unit_cost: average_cost / volume * (1 + loss_factor/100)
-          const unit_cost = volume > 0 ? (average_cost / volume) * (1 + loss_factor / 100) : 0
+          // Se showLossFactorIngredients estiver desativado, não aplica o fator de perda
+          const unit_cost = volume > 0 
+            ? (average_cost / volume) * (settings.showLossFactorIngredients ? (1 + loss_factor / 100) : 1) 
+            : 0
           
           console.log('Processing item:', item.name, {
             raw_quantity: item.quantity,
@@ -942,7 +945,7 @@ function IngredientsTab({
                     unit: newType === 'materiais' ? 'unidades' : 'gramas'
                   })
                 }}
-                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 bg-white"
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 bg-white"
               >
                 <option value="ingredientes">Ingrediente</option>
                 <option value="materiais">Material</option>
@@ -958,18 +961,18 @@ function IngredientsTab({
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
               />
             </div>
             
             {/* Grid 2x2 para Unidade, Quantidade, Custo Médio e Fator de Perda */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className={`grid gap-4 ${settings.showLossFactorIngredients ? 'grid-cols-2' : 'grid-cols-2'}`}>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Unidade</label>
                 <select 
                   value={formData.unit}
                   onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-500 bg-white"
+                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-500 bg-white"
                 >
                   {getUnitOptions(settings.measurementUnit).map(option => (
                     <option key={option.value} value={option.value}>{option.label}</option>
@@ -992,14 +995,14 @@ function IngredientsTab({
                       setFormData(prev => ({ ...prev, volume: rawValue }))
                     }}
                     required
-                    className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                    className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">
                     {getUnitAbbreviation(formData.unit)}
                   </span>
                 </div>
               </div>
-              <div>
+              <div className={settings.showLossFactorIngredients ? '' : 'col-span-2'}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Custo Médio *</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">R$</span>
@@ -1016,7 +1019,7 @@ function IngredientsTab({
                       setFormData(prev => ({ ...prev, average_cost: decimalValue }))
                     }}
                     required
-                    className="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                    className="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                   />
                 </div>
               </div>
@@ -1031,7 +1034,7 @@ function IngredientsTab({
                       value={formData.loss_factor}
                       onChange={(e) => setFormData({ ...formData, loss_factor: e.target.value })}
                       required
-                      className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                      className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">%</span>
                   </div>
@@ -1137,7 +1140,7 @@ function IngredientsTab({
       {/* Table */}
       <div 
         ref={scrollRef}
-        className="bg-white border border-gray-200 rounded-lg p-6 min-h-[400px] max-h-[calc(100vh-280px)] overflow-y-auto"
+        className="bg-white border border-gray-200 rounded-lg p-6 max-h-[calc(100vh-280px)] overflow-y-auto"
       >
         {loading ? (
           <div className="flex justify-center py-8">
@@ -1156,7 +1159,7 @@ function IngredientsTab({
                 <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Quantidade</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Custo Médio</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Custo Unitário</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Fator de Perda</th>
+                {settings.showLossFactorIngredients && <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Fator de Perda</th>}
               </tr>
             </thead>
             <tbody>
@@ -1199,7 +1202,7 @@ function IngredientsTab({
                     </td>
                     <td className="py-3 px-4 text-sm text-gray-600">R$ {formatSmartNumber(ingredient.average_cost, 2, true)}</td>
                     <td className="py-3 px-4 text-sm text-gray-900 font-medium">R$ {formatSmartNumber(ingredient.unit_cost, 5, true)}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{formatSmartNumber(ingredient.loss_factor, 2, true)}%</td>
+                    {settings.showLossFactorIngredients && <td className="py-3 px-4 text-sm text-gray-600">{formatSmartNumber(ingredient.loss_factor, 2, true)}%</td>}
                   </tr>
                 )
               })}
@@ -1628,7 +1631,7 @@ function BasesTab({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
             />
           </div>
 
@@ -1668,7 +1671,7 @@ function BasesTab({
                   <select 
                     value={newItem.ingredient_id}
                     onChange={(e) => setNewItem({ ...newItem, ingredient_id: e.target.value })}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-500 bg-white"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-sm text-gray-500 bg-white"
                   >
                     <option value="">Selecione um ingrediente</option>
                     {ingredients.filter(ing => ing.type === 'ingredientes' || !ing.type).map((ing) => {
@@ -1687,7 +1690,7 @@ function BasesTab({
                       placeholder="Quantidade"
                       value={newItem.quantity}
                       onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
-                      className="w-full px-3 pr-8 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-gray-500 bg-white"
+                      className="w-full px-3 pr-8 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                     />
                     {newItem.ingredient_id && (() => {
                       const selectedIng = ingredients.find(i => i.id === newItem.ingredient_id)
@@ -1725,7 +1728,7 @@ function BasesTab({
                 <select 
                   value={formData.unit}
                   onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-500 bg-white"
+                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-500 bg-white"
                 >
                   {getUnitOptions(settings.measurementUnit).map(option => (
                     <option key={option.value} value={option.value}>{option.label}</option>
@@ -1747,7 +1750,7 @@ function BasesTab({
                       setFormData(prev => ({ ...prev, yield: rawValue }))
                     }}
                     required
-                    className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                    className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">
                     {formData.unit === 'gramas' ? 'g' : formData.unit === 'kg' ? 'kg' : formData.unit === 'ml' ? 'ml' : formData.unit === 'L' ? 'L' : 'un'}
@@ -1766,7 +1769,7 @@ function BasesTab({
                       value={formData.loss_factor}
                       onChange={(e) => setFormData({ ...formData, loss_factor: e.target.value })}
                       required
-                      className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                      className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">
                       %
@@ -1890,7 +1893,7 @@ function BasesTab({
       {/* Table of Bases */}
       <div 
         ref={scrollRef}
-        className="bg-white border border-gray-200 rounded-lg p-6 min-h-[400px] max-h-[calc(100vh-280px)] overflow-y-auto"
+        className="bg-white border border-gray-200 rounded-lg p-6 max-h-[calc(100vh-280px)] overflow-y-auto"
       >
         {loading ? (
           <div className="flex justify-center py-8">
@@ -1937,8 +1940,8 @@ function BasesTab({
                   sum + (item.quantity * (item.ingredients?.unit_cost || 0)), 0
                 ) || 0
                 
-                // Calcular custo do fator de perda
-                const lossFactorCost = ingredientsCost * (base.loss_factor / 100)
+                // Calcular custo do fator de perda (somente se showLossFactorBases estiver ativo)
+                const lossFactorCost = settings.showLossFactorBases ? ingredientsCost * (base.loss_factor / 100) : 0
                 
                 return (
                   <tr 
@@ -2473,7 +2476,7 @@ function ProductsTab({
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
               />
             </div>
             
@@ -2484,7 +2487,7 @@ function ProductsTab({
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 required
-                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-500 bg-white"
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-500 bg-white"
               >
                 <option value="">Selecione uma categoria</option>
                 {categories.map((category) => (
@@ -2530,7 +2533,7 @@ function ProductsTab({
                   <select 
                     value={newItem.item_type}
                     onChange={(e) => setNewItem({ ...newItem, item_type: e.target.value, item_id: '' })}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-500 bg-white"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-sm text-gray-500 bg-white"
                   >
                     <option value="base_recipe">Base</option>
                     <option value="material">Material</option>
@@ -2540,7 +2543,7 @@ function ProductsTab({
                   <select 
                     value={newItem.item_id}
                     onChange={(e) => setNewItem({ ...newItem, item_id: e.target.value })}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-500 bg-white"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-sm text-gray-500 bg-white"
                   >
                     <option value="">Selecione</option>
                     {newItem.item_type === 'material' 
@@ -2570,10 +2573,10 @@ function ProductsTab({
                   <input
                     type="number"
                     step="0.01"
-                    placeholder={newItem.item_type === 'base_recipe' ? 'Quantidade (un)' : 'Quantidade'}
+                    placeholder="Quantidade (un)"
                     value={newItem.quantity}
                     onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-gray-500 bg-white"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                   />
                 </div>
               </div>
@@ -2593,7 +2596,7 @@ function ProductsTab({
 
           {/* 4. Preço de Venda */}
           <div className="mb-4 pt-4 border-t border-gray-300">
-            <div className="grid grid-cols-2 gap-4">
+            <div className={`grid gap-4 ${settings.showLossFactorProducts ? 'grid-cols-2' : 'grid-cols-1'}`}>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Preço de Venda</label>
                 <div className="relative">
@@ -2610,7 +2613,7 @@ function ProductsTab({
                       const decimalValue = rawValue ? (parseInt(rawValue, 10) / 100).toFixed(2) : ''
                       setFormData(prev => ({ ...prev, selling_price: decimalValue }))
                     }}
-                    className="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                    className="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                   />
                 </div>
               </div>
@@ -2627,7 +2630,7 @@ function ProductsTab({
                       value={formData.loss_factor}
                       onChange={(e) => setFormData({ ...formData, loss_factor: e.target.value })}
                       required
-                      className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                      className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">%</span>
                   </div>
@@ -2733,7 +2736,7 @@ function ProductsTab({
         </div>
       ) : (
         <div>
-          <div className="bg-white border border-gray-200 rounded-lg p-6 min-h-[400px] max-h-[calc(100vh-280px)] overflow-y-auto" ref={scrollRef}>
+          <div className="bg-white border border-gray-200 rounded-lg p-6 max-h-[calc(100vh-280px)] overflow-y-auto" ref={scrollRef}>
             <table className="w-full -mx-6 px-6" style={{ width: 'calc(100% + 48px)' }}>
               <thead className="sticky top-0 bg-white z-10 shadow-sm">
                 <tr className="border-b border-gray-200">
@@ -2745,7 +2748,7 @@ function ProductsTab({
                       Custo Total
                       <div className="group relative">
                         <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                        <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[280px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '15px' }}>
+                        <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[330px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '25px 15px 30px 20px' }}>
                           O custo total inclui o custo dos itens (bases e materiais) mais o fator de perda aplicado.
                         </div>
                       </div>
@@ -2763,7 +2766,8 @@ function ProductsTab({
                     : 0
                   const itemsCost = product.total_cost || 0
                   const lossFactor = product.loss_factor
-                  const lossAmount = (itemsCost * lossFactor) / 100
+                  // Aplicar loss factor somente se showLossFactorProducts estiver ativo
+                  const lossAmount = settings.showLossFactorProducts ? (itemsCost * lossFactor) / 100 : 0
                   const totalWithLoss = itemsCost + lossAmount
 
                   return (
@@ -2784,7 +2788,7 @@ function ProductsTab({
                           </div>
                         ) : (
                           <div className="w-12 h-12 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center">
-                            <Package className="w-5 h-5 text-gray-400" />
+                            <Tags className="w-5 h-5 text-gray-400" />
                           </div>
                         )}
                       </td>
@@ -2796,9 +2800,9 @@ function ProductsTab({
                           <div className="group relative">
                             <Info className="w-4 h-4 text-gray-400 cursor-help" />
                             {product.selling_price ? (
-                              <div className="invisible group-hover:visible absolute right-0 top-full mt-2 min-w-[240px] bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-200 rounded-lg shadow-lg z-50 p-4">
+                              <div className="invisible group-hover:visible fixed min-w-[240px] bg-white border border-gray-200 rounded-lg shadow-lg p-4" style={{ zIndex: 9999, transform: 'translate(-100%, 0)', marginLeft: '-8px', marginTop: '8px' }}>
                                 <div className="space-y-2">
-                                  <div className="flex justify-between items-center pb-2 border-b border-pink-200">
+                                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
                                     <span className="text-xs font-medium text-gray-600">Preço de Venda</span>
                                     <span className="text-lg font-bold text-pink-600">R$ {formatBRL(product.selling_price, 2)}</span>
                                   </div>
@@ -2806,7 +2810,7 @@ function ProductsTab({
                                     <span className="text-gray-600">Custo Total</span>
                                     <span className="font-semibold text-gray-900">R$ {formatBRL(totalWithLoss, 2)}</span>
                                   </div>
-                                  <div className="flex justify-between items-center text-sm pt-2 border-t border-pink-100">
+                                  <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-200">
                                     <span className="text-gray-600">Lucro</span>
                                     <span className="font-semibold text-green-600">R$ {formatBRL(profit, 2)}</span>
                                   </div>
@@ -2817,7 +2821,7 @@ function ProductsTab({
                                 </div>
                               </div>
                             ) : (
-                              <div className="invisible group-hover:visible absolute right-0 top-full mt-2 w-[220px] bg-white text-[var(--color-licorice)] text-xs rounded-lg shadow-lg z-50 border border-gray-200 p-3">
+                              <div className="invisible group-hover:visible fixed w-[220px] bg-white text-[var(--color-licorice)] text-xs rounded-lg shadow-lg border border-gray-200 p-3" style={{ zIndex: 9999, transform: 'translate(-100%, 0)', marginLeft: '-8px', marginTop: '8px' }}>
                                 <div className="space-y-1.5">
                                   <div className="flex justify-between">
                                     <span className="text-gray-600">Itens:</span>

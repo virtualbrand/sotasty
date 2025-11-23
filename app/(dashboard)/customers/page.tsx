@@ -774,7 +774,7 @@ export default function CustomersPage() {
                   onBlur={() => handleBlur('name')}
                   className={`w-full px-3 py-2 border ${
                     touched.name && errors.name ? 'border-[#D67973]' : 'border-gray-300'
-                  } rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
+                  } rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
                   placeholder="Digite o nome"
                 />
                 {touched.name && errors.name && (
@@ -796,7 +796,7 @@ export default function CustomersPage() {
                     maxLength={18}
                     className={`w-full px-3 py-2 border ${
                       touched.cpf_cnpj && errors.cpf_cnpj ? 'border-[#D67973]' : 'border-gray-300'
-                    } rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
+                    } rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
                     placeholder="000.000.000-00 ou 00.000.000/0000-00"
                   />
                   {touched.cpf_cnpj && errors.cpf_cnpj && (
@@ -818,7 +818,7 @@ export default function CustomersPage() {
                   maxLength={15}
                   className={`w-full px-3 py-2 border ${
                     touched.phone && errors.phone ? 'border-[#D67973]' : 'border-gray-300'
-                  } rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
+                  } rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
                   placeholder="(00) 00000-0000"
                 />
                 {touched.phone && errors.phone && (
@@ -838,7 +838,7 @@ export default function CustomersPage() {
                   onBlur={() => handleBlur('email')}
                   className={`w-full px-3 py-2 border ${
                     touched.email && errors.email ? 'border-[#D67973]' : 'border-gray-300'
-                  } rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
+                  } rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm text-gray-900 placeholder:text-gray-500 transition-colors bg-white`}
                   placeholder="cliente@email.com"
                 />
                 {touched.email && errors.email && (
@@ -856,7 +856,7 @@ export default function CustomersPage() {
                   onChange={handleInputChange}
                   onBlur={() => handleBlur('notes')}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 transition-colors resize-none bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm text-gray-900 placeholder:text-gray-500 transition-colors resize-none bg-white"
                   placeholder="Adicione observações sobre o cliente..."
                 />
               </div>

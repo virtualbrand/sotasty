@@ -290,7 +290,7 @@ export default function TransactionModal({ isOpen, onClose, type, transaction, o
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Ex: Aluguel, Salário, Compras..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
               />
             </div>
 
@@ -308,7 +308,7 @@ export default function TransactionModal({ isOpen, onClose, type, transaction, o
                     value={amount}
                     onChange={handleAmountChange}
                     placeholder="0,00"
-                    className="w-full pl-12 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                    className="w-full pl-12 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                   />
                 </div>
               </div>
@@ -321,7 +321,7 @@ export default function TransactionModal({ isOpen, onClose, type, transaction, o
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 bg-white"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 bg-white"
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                     <div className="h-4 w-px bg-gray-300"></div>
@@ -353,7 +353,7 @@ export default function TransactionModal({ isOpen, onClose, type, transaction, o
                   Conta/Cartão
                 </label>
                 <Select value={account} onValueChange={setAccount}>
-                  <SelectTrigger className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 bg-white">
+                  <SelectTrigger className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 bg-white">
                     <SelectValue placeholder="Selecione ou busque um conta/cartão" />
                   </SelectTrigger>
                   <SelectContent>
@@ -383,7 +383,7 @@ export default function TransactionModal({ isOpen, onClose, type, transaction, o
                   Categoria
                 </label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 bg-white">
+                  <SelectTrigger className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 bg-white">
                     <SelectValue placeholder="Selecione ou busque uma categoria" />
                   </SelectTrigger>
                   <SelectContent>
@@ -438,7 +438,7 @@ export default function TransactionModal({ isOpen, onClose, type, transaction, o
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleTagKeyDown}
                 placeholder="Digite uma tag e pressione Enter"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
               />
               {tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -519,10 +519,10 @@ export default function TransactionModal({ isOpen, onClose, type, transaction, o
                             min="2"
                             value={installments}
                             onChange={(e) => setInstallments(e.target.value)}
-                            className="w-20 text-center px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 bg-white"
+                            className="w-20 text-center px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 bg-white"
                           />
                           <Select value={installmentPeriod} onValueChange={(value: 'Meses' | 'Semanas') => setInstallmentPeriod(value)}>
-                            <SelectTrigger className="w-28 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 bg-white">
+                            <SelectTrigger className="w-28 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 bg-white">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -554,7 +554,7 @@ export default function TransactionModal({ isOpen, onClose, type, transaction, o
                     value={observation}
                     onChange={(e) => setObservation(e.target.value)}
                     placeholder="Adicione uma observação..."
-                    className="w-full min-h-[100px] resize-none px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                    className="w-full min-h-[100px] resize-none px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                   />
                   </div>
                 )}

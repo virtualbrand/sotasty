@@ -323,7 +323,7 @@ export default function CategoryModal({ isOpen, onClose, type, onSuccess, catego
                   value={categoryName}
                   onChange={(e) => setCategoryName(e.target.value)}
                   placeholder="Ex: Energia, Marketing..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                 />
               </div>
             </div>
