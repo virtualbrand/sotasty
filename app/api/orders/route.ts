@@ -12,11 +12,22 @@ export async function GET() {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    // Busca pedidos do usuário
+    // Buscar workspace_id do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
+    }
+
+    // Busca pedidos do workspace
     const { data: orders, error } = await supabase
       .from('orders')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .order('delivery_date', { ascending: true })
 
     if (error) {
@@ -40,6 +51,17 @@ export async function POST(request: NextRequest) {
     
     if (userError || !user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    // Buscar workspace_id do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
     }
 
     const body = await request.json()
@@ -69,6 +91,7 @@ export async function POST(request: NextRequest) {
       .from('orders')
       .insert({
         user_id: user.id,
+        workspace_id: profile.workspace_id,
         type: type || 'order', // Default para 'order' se não especificado
         customer,
         customer_id,
@@ -160,7 +183,7 @@ export async function PATCH(request: NextRequest) {
       .from('orders')
       .update(updateData)
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', (await supabase.from('profiles').select('workspace_id').eq('id', user.id).single()).data?.workspace_id)
       .select()
       .single()
 
@@ -203,7 +226,7 @@ export async function DELETE(request: NextRequest) {
       .from('orders')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', (await supabase.from('profiles').select('workspace_id').eq('id', user.id).single()).data?.workspace_id)
 
     if (error) {
       console.error('Erro ao deletar pedido:', error)

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import PageLoading from '@/components/PageLoading'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 
 type Contact = {
   id: string
@@ -31,6 +32,10 @@ type Message = {
 }
 
 export default function MensagensPage() {
+  const supabase = createClient()
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [userPermissions, setUserPermissions] = useState<any>(null)
+  const [hasFullAccess, setHasFullAccess] = useState(false)
   const [contacts, setContacts] = useState<Contact[]>([])
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -43,6 +48,35 @@ export default function MensagensPage() {
   const imageCacheRef = useRef<Record<string, string>>({})
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+
+  // Buscar permissões do usuário
+  useEffect(() => {
+    const fetchUserPermissions = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, permissions')
+        .eq('id', user.id)
+        .single()
+
+      if (profile) {
+        setUserRole(profile.role)
+        setUserPermissions(profile.permissions || {})
+        
+        // Verificar se é admin ou superadmin
+        const isAdmin = profile.role === 'admin' || profile.role === 'superadmin'
+        
+        // Verificar se é membro com todas as permissões (admin como membro)
+        const allPermissions = ['dashboard', 'products', 'menus', 'orders', 'financial', 'messages', 'support', 'customers', 'agenda', 'activities']
+        const hasAllPermissions = profile.permissions && allPermissions.every(perm => profile.permissions[perm] === true)
+        
+        setHasFullAccess(isAdmin || hasAllPermissions)
+      }
+    }
+    fetchUserPermissions()
+  }, [supabase])
 
   // Auto scroll para última mensagem (instantâneo no carregamento inicial)
   const scrollToBottom = (instant = false) => {
@@ -76,8 +110,6 @@ export default function MensagensPage() {
       const response = await fetch(`/api/whatsapp/status?instance=${instanceName}`)
       if (response.ok) {
         const data = await response.json()
-        console.log('Verificando status da instância:', instanceName);
-        console.log('Status:', data);
         setConnected(data.connected && data.state === 'open')
       }
     } catch (error) {
@@ -125,13 +157,6 @@ export default function MensagensPage() {
 
     try {
       const phoneNumber = selectedContact.rawPhone || selectedContact.phone.replace(/\D/g, '')
-      
-      console.log('Enviando mensagem para:', {
-        to: phoneNumber,
-        message: newMessage,
-        instance: instanceName,
-        selectedContact
-      })
       
       const response = await fetch('/api/whatsapp/send', {
         method: 'POST',
@@ -506,8 +531,8 @@ export default function MensagensPage() {
         </div>
       ) : (
         <>
-          {/* Banner de aviso se não conectado */}
-          {!connected && (
+          {/* Banner de aviso se não conectado - apenas para admin ou acesso total */}
+          {!connected && hasFullAccess && (
         <div className="mb-6 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-6 flex items-start gap-4 flex-shrink-0">
           <div className="flex-shrink-0 w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
             <AlertCircle className="w-6 h-6 text-yellow-600" />
@@ -552,9 +577,9 @@ export default function MensagensPage() {
               <div className="flex flex-col items-center justify-center h-full text-center p-6">
                 <MessageCircle className="w-12 h-12 text-gray-300 mb-3" />
                 <p className="text-gray-500 text-sm font-medium mb-1">
-                  {searchQuery ? 'Nenhum contato encontrado' : connected ? 'Nenhuma conversa ainda' : 'Conecte o WhatsApp para ver contatos'}
+                  {searchQuery ? 'Nenhum contato encontrado' : connected ? 'Nenhuma conversa ainda' : 'Aguardando conversas'}
                 </p>
-                {!connected && (
+                {!connected && hasFullAccess && (
                   <Link 
                     href="/settings/whatsapp"
                     className="text-[var(--old-rose)] text-xs hover:underline mt-2"

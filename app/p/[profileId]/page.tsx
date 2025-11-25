@@ -11,8 +11,6 @@ interface PublicProfilePageProps {
 export default async function PublicProfilePage({ params }: PublicProfilePageProps) {
   const { profileId } = await params
   
-  console.log('[PublicProfilePage] ProfileId:', profileId)
-  
   const supabase = await createClient()
   
   // Buscar profile_settings pelo ID
@@ -22,10 +20,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     .eq('id', profileId)
     .single()
   
-  console.log('[PublicProfilePage] Settings:', { settings, error })
-  
   if (error || !settings) {
-    console.log('[PublicProfilePage] Not found, error:', error)
     notFound()
   }
   
@@ -35,8 +30,6 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     .select('business_name, business_type')
     .eq('id', settings.user_id)
     .single()
-  
-  console.log('[PublicProfilePage] Profile:', profile)
   
   // Buscar todos os menus ativos
   const { data: menus, error: menusError } = await supabase
@@ -52,16 +45,10 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     .eq('user_id', settings.user_id)
     .order('display_order', { ascending: true })
   
-  console.log('[PublicProfilePage] All Menus (without active filter):', { menus, menusError })
-  
   // Filtrar apenas menus ativos
   const activeMenus = menus?.filter(m => m.active) || []
   
-  console.log('[PublicProfilePage] Active Menus:', activeMenus)
-  
   const businessName = profile?.business_name || 'Nosso Negócio'
-  
-  console.log('[PublicProfilePage] BusinessName:', businessName)
   
   return (
     <div className="min-h-screen bg-[var(--color-milk-500)]">

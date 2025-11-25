@@ -29,6 +29,13 @@ export async function POST(request: Request) {
       )
     }
 
+    // Buscar permissões e role do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('permissions, role')
+      .eq('id', data.user.id)
+      .single()
+
     return NextResponse.json({
       success: true,
       user: {
@@ -36,6 +43,8 @@ export async function POST(request: Request) {
         email: data.user.email,
         name: data.user.user_metadata?.name,
       },
+      permissions: profile?.permissions || null,
+      role: profile?.role || 'member',
     })
   } catch (error: any) {
     console.error('Login error:', error)

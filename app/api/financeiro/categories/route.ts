@@ -10,13 +10,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get user's workspace_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+    }
+
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
 
     let query = supabase
       .from('financial_categories')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .order('name', { ascending: true })
 
     if (type) {
@@ -46,6 +57,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get user's workspace_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+    }
+
     const body = await request.json()
     const { name, type, color, icon } = body
 
@@ -60,6 +82,7 @@ export async function POST(request: NextRequest) {
       .from('financial_categories')
       .insert({
         user_id: user.id,
+        workspace_id: profile.workspace_id,
         name,
         type,
         color,
@@ -90,6 +113,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get user's workspace_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     const body = await request.json()
@@ -103,7 +137,7 @@ export async function PUT(request: NextRequest) {
       .from('financial_categories')
       .update(body)
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .select()
       .single()
 
@@ -128,6 +162,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get user's workspace_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
@@ -139,7 +184,7 @@ export async function DELETE(request: NextRequest) {
       .from('financial_categories')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .eq('is_system', false)
 
     if (error) {

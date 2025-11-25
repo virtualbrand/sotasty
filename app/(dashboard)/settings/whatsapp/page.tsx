@@ -23,7 +23,6 @@ export default function WhatsAppSettings() {
   const [accessToken, setAccessToken] = useState('');
   const [businessAccountId, setBusinessAccountId] = useState('');
 
-  console.log('Instance name:', instanceName, 'Loading:', loading);
 
   // Verificar status da conexão ao carregar
   useEffect(() => {
@@ -48,11 +47,9 @@ export default function WhatsAppSettings() {
 
   const loadSavedCredentials = async () => {
     try {
-      console.log('Carregando credenciais salvas...');
       const response = await fetch('/api/whatsapp/official/config');
       if (response.ok) {
         const data = await response.json();
-        console.log('Config carregada:', data);
         
         if (data.config) {
           const config = data.config;
@@ -64,7 +61,6 @@ export default function WhatsAppSettings() {
             setBusinessAccountId(config.business_account_id || '');
             
             if (config.connected) {
-              console.log('API Oficial já conectada');
               setConnectionStatus('connected');
               setInstanceCreated(true);
             }
@@ -82,14 +78,12 @@ export default function WhatsAppSettings() {
 
   const checkConnectionStatus = async () => {
     try {
-      console.log('Checking connection status for:', instanceName);
       
       // Primeiro, verificar se tem config da API Oficial
       const configResponse = await fetch('/api/whatsapp/official/config');
       if (configResponse.ok) {
         const configData = await configResponse.json();
         if (configData.config && configData.config.auth_method === 'official' && configData.config.connected) {
-          console.log('Conexão API Oficial encontrada');
           setConnectionStatus('connected');
           setInstanceCreated(true);
           setAuthMethod('official');
@@ -99,9 +93,7 @@ export default function WhatsAppSettings() {
       
       // Se não tem API Oficial, verifica Evolution API
       const response = await fetch(`/api/whatsapp/status?instance=${instanceName}`);
-      console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);
       
       if (data.connected) {
         setConnectionStatus('connected');
@@ -198,18 +190,15 @@ export default function WhatsAppSettings() {
         
         // Verificar conexão periodicamente
         const interval = setInterval(async () => {
-          console.log('Verificando conexão para instância:', instanceName);
           try {
             const statusResponse = await fetch(`/api/whatsapp/status?instance=${instanceName}`);
             
             // Se der erro 404, a instância ainda não existe ou foi removida
             if (statusResponse.status === 404) {
-              console.log('Instância não encontrada (404)');
               return;
             }
             
             const statusData = await statusResponse.json();
-            console.log('Evolution API response:', statusData);
             
             // Verificar se está conectado (state === 'open')
             // A resposta vem como { connected: boolean, state: string, instance: {...} }
@@ -218,7 +207,6 @@ export default function WhatsAppSettings() {
                           (statusData.instance && statusData.instance.state === 'open');
             
             if (isOpen) {
-              console.log('✅ WhatsApp conectado com sucesso!');
               
               // Limpar interval primeiro
               clearInterval(interval);

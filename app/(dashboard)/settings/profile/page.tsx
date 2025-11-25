@@ -1,11 +1,13 @@
 'use client'
 
+'use client'
+
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
-import { User, Mail, Phone, MapPin, Camera, Check, SwitchCamera, CircleX, CreditCard, Building2, Clock, Plus, X, Settings, Layout, BrushCleaning, Trash2, Link2, ExternalLink, Globe, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { User, Mail, Phone, MapPin, Camera, Check, SwitchCamera, CircleX, CreditCard, Building2, Clock, Plus, X, Settings, Layout, BrushCleaning, Trash2, Link2, Globe, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { showToast } from '@/app/(dashboard)/layout'
 import {
@@ -30,6 +32,7 @@ type ProfileData = {
   full_name: string
   phone: string
   cpf_cnpj: string
+  business_name: string
   address: string
   neighborhood: string
   city: string
@@ -136,6 +139,13 @@ const formatCpfCnpj = (value: string): string => {
 }
 
 export default function ProfilePage() {
+  const supabase = createClient()
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [userRole, setUserRole] = useState<string | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [userPermissions, setUserPermissions] = useState<Record<string, boolean> | null>(null)
+  const [hasFullAccess, setHasFullAccess] = useState(false)
+  const [isAdminOnly, setIsAdminOnly] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<TabType>('personal')
@@ -145,6 +155,7 @@ export default function ProfilePage() {
     full_name: '',
     phone: '',
     cpf_cnpj: '',
+    business_name: '',
     address: '',
     neighborhood: '',
     city: '',
@@ -169,6 +180,7 @@ export default function ProfilePage() {
     full_name: '',
     phone: '',
     cpf_cnpj: '',
+    business_name: '',
     address: '',
     neighborhood: '',
     city: '',
@@ -211,6 +223,36 @@ export default function ProfilePage() {
   const [isVerifyingDomain, setIsVerifyingDomain] = useState(false)
   
   const [hasChanges, setHasChanges] = useState(false)
+
+  // Buscar permissões do usuário
+  useEffect(() => {
+    const fetchUserPermissions = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, permissions')
+        .eq('id', user.id)
+        .single()
+
+      if (profile) {
+        setUserRole(profile.role)
+        setUserPermissions(profile.permissions || {})
+        
+        // Verificar se é admin ou superadmin
+        const isAdmin = profile.role === 'admin' || profile.role === 'superadmin'
+        
+        // Verificar se é membro com todas as permissões (acesso total às abas)
+        const allPermissions = ['dashboard', 'products', 'menus', 'orders', 'financial', 'messages', 'support', 'customers', 'agenda', 'activities']
+        const hasAllPermissions = profile.permissions && allPermissions.every(perm => profile.permissions[perm] === true)
+        
+        setHasFullAccess(isAdmin || hasAllPermissions)
+        setIsAdminOnly(isAdmin) // Apenas admin/superadmin
+      }
+    }
+    fetchUserPermissions()
+  }, [supabase])
 
   useEffect(() => {
     loadProfile()
@@ -266,15 +308,11 @@ export default function ProfilePage() {
         return
       }
 
-      console.log('User loaded:', { id: user.id, email: user.email })
-
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single()
-
-      console.log('Profile query result:', { data, error, errorCode: error?.code, errorMessage: error?.message })
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading profile:', error)
@@ -286,6 +324,7 @@ export default function ProfilePage() {
             full_name: '',
             phone: '',
             cpf_cnpj: '',
+            business_name: '',
             address: '',
             neighborhood: '',
             city: '',
@@ -304,8 +343,6 @@ export default function ProfilePage() {
         throw error
       }
 
-      console.log('Profile data loaded:', data)
-
       if (data) {
         const loadedData = {
           id: user.id,
@@ -313,6 +350,7 @@ export default function ProfilePage() {
           full_name: data.full_name || '',
           phone: data.phone || '',
           cpf_cnpj: data.cpf_cnpj || '',
+          business_name: data.business_name || '',
           address: data.address || '',
           neighborhood: data.neighborhood || '',
           city: data.city || '',
@@ -327,8 +365,6 @@ export default function ProfilePage() {
               : profileData.business_hours)
             : profileData.business_hours
         }
-        console.log('Setting profile data:', loadedData)
-        console.log('Full name from data:', data.full_name)
         setProfileData(loadedData)
         setOriginalProfileData(loadedData)
         
@@ -367,6 +403,7 @@ export default function ProfilePage() {
           full_name: '',
           phone: '',
           cpf_cnpj: '',
+          business_name: '',
           address: '',
           neighborhood: '',
           city: '',
@@ -515,7 +552,7 @@ export default function ProfilePage() {
     // Validar formato do domínio
     const domainRegex = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/
     if (!domainRegex.test(customDomain)) {
-      setDomainError('Formato de domínio inválido. Ex: cardapios.minhaconfeitaria.com.br')
+      setDomainError('Formato de domínio inválido. Ex: meuestabelecimento.com.br')
       return
     }
 
@@ -661,9 +698,12 @@ export default function ProfilePage() {
         logoUrl = fileName
       }
 
-      // Atualiza o nome no user_metadata do auth para sincronizar com o sidebar
+      // Atualiza o nome no user_metadata do auth para sincronizar com o sidebar e Authentication
       const { error: authError } = await supabase.auth.updateUser({
-        data: { name: profileData.full_name }
+        data: { 
+          name: profileData.full_name,
+          full_name: profileData.full_name
+        }
       })
 
       if (authError) {
@@ -686,6 +726,7 @@ export default function ProfilePage() {
           full_name: profileData.full_name,
           phone: profileData.phone,
           cpf_cnpj: profileData.cpf_cnpj,
+          business_name: profileData.business_name,
           address: profileData.address,
           neighborhood: profileData.neighborhood,
           city: profileData.city,
@@ -791,17 +832,15 @@ export default function ProfilePage() {
       // Recarrega o perfil para pegar a URL pública atualizada
       await loadProfile()
       
-      // Dispara evento para atualizar o avatar na sidebar
-      if (avatarUrl) {
-        const { data: { publicUrl } } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(avatarUrl)
-        
-        const event = new CustomEvent('avatar-updated', { 
-          detail: { avatarUrl: publicUrl } 
-        })
-        window.dispatchEvent(event)
-      }
+      // Dispara evento para atualizar o avatar na sidebar (mesmo se for null/removido)
+      const { data: { publicUrl } } = avatarUrl 
+        ? supabase.storage.from('avatars').getPublicUrl(avatarUrl)
+        : { data: { publicUrl: null } }
+      
+      const event = new CustomEvent('avatar-updated', { 
+        detail: { avatarUrl: publicUrl } 
+      })
+      window.dispatchEvent(event)
       
       // Dispara evento para atualizar o nome na sidebar
       const nameEvent = new CustomEvent('profile-name-updated', { 
@@ -917,6 +956,7 @@ export default function ProfilePage() {
               <User className="w-4 h-4 inline-block mr-2" />
               Informações Pessoais
             </button>
+            {hasFullAccess && (
             <button
               type="button"
               onClick={() => setActiveTab('establishment')}
@@ -929,6 +969,8 @@ export default function ProfilePage() {
               <Building2 className="w-4 h-4 inline-block mr-2" />
               Estabelecimento
             </button>
+            )}
+            {hasFullAccess && (
             <button
               type="button"
               onClick={() => setActiveTab('hours')}
@@ -941,6 +983,7 @@ export default function ProfilePage() {
               <Clock className="w-4 h-4 inline-block mr-2" />
               Horários de Funcionamento
             </button>
+            )}
             <button
               type="button"
               onClick={() => setActiveTab('preferences')}
@@ -1029,7 +1072,7 @@ export default function ProfilePage() {
                     value={profileData.full_name}
                     onChange={handleInputChange}
                     required
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
+                    className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm"
                     placeholder="Seu nome completo"
                   />
                 </div>
@@ -1045,7 +1088,7 @@ export default function ProfilePage() {
                     type="email"
                     value={profileData.email}
                     disabled
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                    className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed text-sm"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">O e-mail não pode ser alterado</p>
@@ -1062,7 +1105,7 @@ export default function ProfilePage() {
                     name="phone"
                     value={profileData.phone}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
+                    className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm"
                     placeholder="(00) 00000-0000"
                   />
                 </div>
@@ -1079,7 +1122,7 @@ export default function ProfilePage() {
                     name="cpf_cnpj"
                     value={profileData.cpf_cnpj}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
+                    className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm"
                     placeholder="000.000.000-00 ou 00.000.000/0000-00"
                   />
                 </div>
@@ -1149,52 +1192,67 @@ export default function ProfilePage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                CEP
+                Nome do estabelecimento
               </label>
               <input
                 type="text"
-                name="zip_code"
-                value={profileData.zip_code}
+                name="business_name"
+                value={profileData.business_name}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
-                placeholder="00000-000"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm"
+                placeholder="Nome do seu estabelecimento"
               />
-              <p className="text-xs text-gray-500 mt-1">Digite o CEP para preencher automaticamente</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Endereço
-              </label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <div className="grid grid-cols-1 md:grid-cols-10 gap-4">
+              <div className="md:col-span-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  CEP
+                </label>
                 <input
                   type="text"
-                  name="address"
-                  value={profileData.address}
+                  name="zip_code"
+                  value={profileData.zip_code}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
-                  placeholder="Rua, número, complemento"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm"
+                  placeholder="00000-000"
                 />
+              </div>
+
+              <div className="md:col-span-7">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Endereço
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    name="address"
+                    value={profileData.address}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm"
+                    placeholder="Rua, número, complemento"
+                  />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Bairro
-              </label>
-              <input
-                type="text"
-                name="neighborhood"
-                value={profileData.neighborhood}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
-                placeholder="Bairro"
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-10 gap-4">
+              <div className="md:col-span-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Bairro
+                </label>
+                <input
+                  type="text"
+                  name="neighborhood"
+                  value={profileData.neighborhood}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm"
+                  placeholder="Bairro"
+                />
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="md:col-span-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Cidade
                 </label>
@@ -1203,12 +1261,12 @@ export default function ProfilePage() {
                   name="city"
                   value={profileData.city}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm"
                   placeholder="Cidade"
                 />
               </div>
 
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Estado
                 </label>
@@ -1217,7 +1275,7 @@ export default function ProfilePage() {
                   name="state"
                   value={profileData.state}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm"
                   placeholder="UF"
                   maxLength={2}
                 />
@@ -1319,16 +1377,17 @@ export default function ProfilePage() {
 
         {activeTab === 'preferences' && (
           <div className="space-y-6">
-            {/* URL Personalizada */}
+            {/* URL Personalizada - Apenas para Admin */}
+            {isAdminOnly && (
             <div className="pb-6 border-b border-gray-200">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <Link2 className="w-5 h-5 text-gray-700" />
-                    <h3 className="text-base font-semibold text-gray-900">Link Personalizado dos Cardápios</h3>
+                    <h3 className="text-base font-semibold text-gray-900">Link personalizado</h3>
                   </div>
                   <p className="text-sm text-gray-600 mb-4">
-                    Configure o Link base para seus cardápios públicos.
+                    Configure um link personalizado para seu estabelecimento.
                   </p>
                   
                   <div className="max-w-md space-y-2">
@@ -1355,7 +1414,7 @@ export default function ProfilePage() {
                             }
                           }
                         }}
-                        placeholder="sua-confeitaria"
+                        placeholder="seuestabelecimento"
                         className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent ${urlError ? 'border-red-500' : 'border-gray-300'}`}
                       />
                     </div>
@@ -1373,8 +1432,10 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+            )}
 
-            {/* Domínio Personalizado */}
+            {/* Domínio Personalizado - Apenas para Admin */}
+            {isAdminOnly && (
             <div className="pb-6 border-b border-gray-200">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -1384,7 +1445,7 @@ export default function ProfilePage() {
                   </div>
                   <p className="text-sm text-gray-600 mb-4">
                     Use seu próprio domínio para seus cardápios públicos. 
-                    Ex: <strong>cardapios.minhaconfeitaria.com.br</strong>
+                    Ex: <strong>meuestabelecimento.com.br</strong>
                   </p>
                   
                   <div className="max-w-2xl space-y-4">
@@ -1401,7 +1462,7 @@ export default function ProfilePage() {
                               setIsDomainVerified(false)
                             }
                           }}
-                          placeholder="cardapios.minhaconfeitaria.com.br"
+                          placeholder="meuestabelecimento.com.br"
                           className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent ${domainError ? 'border-red-500' : isDomainVerified ? 'border-green-500' : 'border-gray-300'}`}
                         />
                         <button
@@ -1464,9 +1525,10 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+            )}
 
             {/* Posição do Menu */}
-            <div className="pb-6 border-b border-gray-200">
+            <div className={`pb-6 ${isAdminOnly ? 'border-b border-gray-200' : ''}`}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -1484,7 +1546,7 @@ export default function ProfilePage() {
                       name="menuPosition"
                       value="sidebar"
                       checked={menuPosition === 'sidebar'}
-                      onChange={(e) => setMenuPosition(e.target.value as any)}
+                      onChange={(e) => setMenuPosition(e.target.value as 'sidebar' | 'header' | 'footer' | 'right')}
                       className="w-4 h-4 text-[#BE9089] focus:ring-[#BE9089]"
                     />
                     <span className="text-sm text-gray-700">Esquerda</span>
@@ -1495,7 +1557,7 @@ export default function ProfilePage() {
                       name="menuPosition"
                       value="right"
                       checked={menuPosition === 'right'}
-                      onChange={(e) => setMenuPosition(e.target.value as any)}
+                      onChange={(e) => setMenuPosition(e.target.value as 'sidebar' | 'header' | 'footer' | 'right')}
                       className="w-4 h-4 text-[#BE9089] focus:ring-[#BE9089]"
                     />
                     <span className="text-sm text-gray-700">Direita</span>
@@ -1506,7 +1568,7 @@ export default function ProfilePage() {
                       name="menuPosition"
                       value="header"
                       checked={menuPosition === 'header'}
-                      onChange={(e) => setMenuPosition(e.target.value as any)}
+                      onChange={(e) => setMenuPosition(e.target.value as 'sidebar' | 'header' | 'footer' | 'right')}
                       className="w-4 h-4 text-[#BE9089] focus:ring-[#BE9089]"
                     />
                     <span className="text-sm text-gray-700">Cabeçalho</span>
@@ -1517,7 +1579,7 @@ export default function ProfilePage() {
                       name="menuPosition"
                       value="footer"
                       checked={menuPosition === 'footer'}
-                      onChange={(e) => setMenuPosition(e.target.value as any)}
+                      onChange={(e) => setMenuPosition(e.target.value as 'sidebar' | 'header' | 'footer' | 'right')}
                       className="w-4 h-4 text-[#BE9089] focus:ring-[#BE9089]"
                     />
                     <span className="text-sm text-gray-700">Rodapé</span>
@@ -1526,7 +1588,8 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Começar do Zero */}
+            {/* Começar do Zero - Apenas para Admin */}
+            {isAdminOnly && (
             <div className="pb-6 border-b border-gray-200">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -1540,7 +1603,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => setIsResetDialogOpen(true)}
-                    className="btn-ghost-danger"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-danger-500)] rounded-full border border-transparent transition-all cursor-pointer hover:bg-[var(--color-danger-50)] hover:border-[var(--color-danger-300)]"
                   >
                     <BrushCleaning className="w-4 h-4" />
                     Excluir minhas transações
@@ -1548,8 +1611,10 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+            )}
 
-            {/* Excluir Conta */}
+            {/* Excluir Conta - Apenas para Admin */}
+            {isAdminOnly && (
             <div className="pb-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -1561,7 +1626,7 @@ export default function ProfilePage() {
                 <div className="ml-6">
                   <button
                     type="button"
-                    className="btn-ghost-danger"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-danger-500)] rounded-full border border-transparent transition-all cursor-pointer hover:bg-[var(--color-danger-50)] hover:border-[var(--color-danger-300)]"
                   >
                     <Trash2 className="w-4 h-4" />
                     Excluir conta por completo
@@ -1569,6 +1634,7 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+            )}
           </div>
         )}
 
@@ -1611,8 +1677,24 @@ export default function ProfilePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Exclusão de Transações</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação irá deletar TODAS as suas transações financeiras de forma permanente.
-              Suas contas, clientes e produtos cadastrados permanecerão intactos.
+              Esta ação irá deletar TODOS os dados da sua conta de forma permanente e irreversível.
+              
+              <div className="mt-4 mb-4">
+                <p className="font-semibold text-gray-900 mb-2">Os seguintes itens serão excluídos:</p>
+                <ul className="text-sm space-y-1 list-disc list-inside text-gray-700">
+                  <li>Produtos (Insumos, bases de preparo e produtos finais)</li>
+                  <li>Cardápios</li>
+                  <li>Pedidos</li>
+                  <li>Transações financeiras</li>
+                  <li>Histórico de mensagens no WhatsApp e conexões</li>
+                  <li>Clientes</li>
+                  <li>Tarefas da agenda</li>
+                  <li>Registro de atividades</li>
+                  <li>Preferências</li>
+                  <li>Categorias de produtos e financeiras personalizadas</li>
+                  <li>Usuários vinculados à sua conta</li>
+                </ul>
+              </div>
               
               <div className="mt-4 space-y-2">
                 <p className="font-semibold text-gray-900">Para confirmar, digite exatamente:</p>
@@ -1622,7 +1704,7 @@ export default function ProfilePage() {
                   value={resetConfirmText}
                   onChange={(e) => setResetConfirmText(e.target.value)}
                   placeholder="Digite aqui..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent text-sm"
                 />
               </div>
             </AlertDialogDescription>

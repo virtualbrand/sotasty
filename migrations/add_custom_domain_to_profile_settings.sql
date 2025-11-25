@@ -33,7 +33,7 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_profile_settings_custom_domain ON profile_settings(custom_domain);
 
 -- Comentários
-COMMENT ON COLUMN profile_settings.custom_domain IS 'Domínio personalizado do cliente (ex: cardapios.minhaconfeitaria.com.br)';
+COMMENT ON COLUMN profile_settings.custom_domain IS 'Domínio personalizado do cliente (ex: meuestabelecimento.com.br)';
 COMMENT ON COLUMN profile_settings.custom_domain_verified IS 'Indica se o domínio foi verificado via DNS';
 COMMENT ON COLUMN profile_settings.custom_domain_verified_at IS 'Data e hora da verificação do domínio';
 

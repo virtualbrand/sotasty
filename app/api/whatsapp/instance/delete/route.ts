@@ -14,7 +14,6 @@ export async function DELETE(request: Request) {
       );
     }
 
-    console.log('Deletando instância:', instanceName);
 
     // Deletar instância completamente
     const response = await fetch(
@@ -27,24 +26,20 @@ export async function DELETE(request: Request) {
       }
     );
 
-    console.log('Evolution API delete response status:', response.status);
 
     if (!response.ok) {
       let errorMessage = 'Erro ao deletar instância';
       try {
         const data = await response.json();
-        console.log('Evolution API delete error:', data);
         errorMessage = data.message || data.error || errorMessage;
       } catch {
         const text = await response.text();
-        console.log('Evolution API delete error (text):', text);
         errorMessage = text || errorMessage;
       }
       throw new Error(errorMessage);
     }
 
     const responseData = await response.json();
-    console.log('Instância deletada com sucesso:', responseData);
 
     return NextResponse.json({
       success: true,

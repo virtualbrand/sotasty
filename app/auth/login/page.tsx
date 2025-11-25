@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { getFirstAllowedRoute } from '@/lib/permissions'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -29,7 +30,11 @@ export default function LoginPage() {
         throw new Error(data.error || 'Erro ao fazer login')
       }
 
-      router.push('/')
+      // Determinar a primeira rota permitida baseada nas permissões
+      const firstRoute = getFirstAllowedRoute(data.permissions, data.role)
+      
+      
+      router.push(firstRoute)
       router.refresh()
     } catch (err: any) {
       setError(err.message)

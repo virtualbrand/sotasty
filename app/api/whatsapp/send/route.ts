@@ -28,15 +28,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json(
+        { error: 'Workspace não encontrado' },
+        { status: 404 }
+      )
+    }
+
     const { data: config } = await supabase
       .from('whatsapp_config')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .single()
 
     // Se tiver configuração da API Oficial
     if (config && config.auth_method === 'official' && config.connected) {
-      return await sendViaOfficialAPI(to, message, config)
+      return await sendViaOfficialAPI(to, message, config, profile.workspace_id, supabase)
     }
 
     // Fallback para Evolution API
@@ -51,7 +65,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Enviar via API Oficial do WhatsApp
-async function sendViaOfficialAPI(to: string, message: string, config: any) {
+async function sendViaOfficialAPI(to: string, message: string, config: any, workspaceId: string, supabase: any) {
   try {
     // Formatar número (remover caracteres especiais, manter apenas números)
     const phoneNumber = to.replace(/\D/g, '')
@@ -87,12 +101,12 @@ async function sendViaOfficialAPI(to: string, message: string, config: any) {
     const data = await response.json()
     
     // Salvar mensagem no banco de dados
-    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     
     if (user) {
       await supabase.from('whatsapp_messages').insert({
         user_id: user.id,
+        workspace_id: workspaceId,
         message_id: data.messages?.[0]?.id || `msg_${Date.now()}`,
         contact_id: phoneNumber,
         contact_phone: phoneNumber,

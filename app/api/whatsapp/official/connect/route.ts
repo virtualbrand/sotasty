@@ -36,7 +36,6 @@ export async function POST(request: NextRequest) {
     }
 
     const phoneData = await testResponse.json();
-    console.log('Credenciais validadas com sucesso:', phoneData);
 
     // Salvar credenciais no Supabase
     const supabase = await createClient();

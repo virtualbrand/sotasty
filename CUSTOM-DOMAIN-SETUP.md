@@ -9,7 +9,7 @@ O sistema permite que clientes da SoTasty configurem seus próprios domínios pe
 ### 1. **Banco de Dados**
 
 Três novos campos na tabela `profile_settings`:
-- `custom_domain` (TEXT, UNIQUE): O domínio configurado (ex: cardapios.minhaconfeitaria.com.br)
+- `custom_domain` (TEXT, UNIQUE): O domínio configurado (ex: meuestabelecimento.com.br)
 - `custom_domain_verified` (BOOLEAN): Status da verificação DNS
 - `custom_domain_verified_at` (TIMESTAMP): Data/hora da verificação
 
@@ -27,7 +27,7 @@ Verifica se o domínio está configurado corretamente via DNS.
 **Request:**
 ```json
 {
-  "domain": "cardapios.minhaconfeitaria.com.br"
+  "domain": "meuestabelecimento.com.br"
 }
 ```
 
@@ -36,7 +36,7 @@ Verifica se o domínio está configurado corretamente via DNS.
 {
   "verified": true,
   "method": "CNAME",
-  "domain": "cardapios.minhaconfeitaria.com.br",
+  "domain": "meuestabelecimento.com.br",
   "message": "Domínio verificado com sucesso!"
 }
 ```
@@ -92,7 +92,7 @@ Tempo de propagação: 5 minutos a 48 horas (geralmente < 1 hora)
 ### Passo 3: Verificar no SoTasty
 
 1. Acessar Settings > Perfil > Preferências
-2. Digitar o domínio completo: `cardapios.minhaconfeitaria.com.br`
+2. Digitar o domínio completo: `meuestabelecimento.com.br`
 3. Clicar em "Verificar DNS"
 4. Aguardar confirmação
 
@@ -248,10 +248,10 @@ Isso permite que qualquer subdomínio aponte automaticamente para seu servidor.
 
 ```bash
 # Verificar CNAME
-dig cardapios.minhaconfeitaria.com.br CNAME
+dig meuestabelecimento.com.br CNAME
 
 # Verificar A record
-dig cardapios.minhaconfeitaria.com.br A
+dig meuestabelecimento.com.br A
 
 # Verificar propagação global
 https://www.whatsmydns.net/

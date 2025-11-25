@@ -35,6 +35,15 @@ const formatBRL = (value: number, decimals: number = 2): string => {
   })
 }
 
+// Função para formatar valores monetários (mostra decimais apenas se necessário)
+const formatCurrency = (value: number): string => {
+  const isInteger = value % 1 === 0
+  return value.toLocaleString('pt-BR', {
+    minimumFractionDigits: isInteger ? 0 : 2,
+    maximumFractionDigits: 2
+  })
+}
+
 // Função para formatar números inteiros (sem decimais)
 const formatInteger = (value: number): string => {
   return value.toLocaleString('pt-BR', {
@@ -630,7 +639,6 @@ function IngredientsTab({
       const response = await fetch('/api/products/ingredients')
       if (response.ok) {
         const data = await response.json()
-        console.log('Raw data from API:', data[0]) // Debug
         
         // Garantir que valores numéricos sejam convertidos corretamente
         const normalizedData = data.map((item: any) => {
@@ -645,13 +653,6 @@ function IngredientsTab({
             ? (average_cost / volume) * (settings.showLossFactorIngredients ? (1 + loss_factor / 100) : 1) 
             : 0
           
-          console.log('Processing item:', item.name, {
-            raw_quantity: item.quantity,
-            parsed_volume: volume,
-            average_cost,
-            unit_cost
-          })
-          
           return {
             ...item,
             volume, // Mapeia quantity para volume
@@ -660,7 +661,6 @@ function IngredientsTab({
             loss_factor
           }
         })
-        console.log('Normalized data:', normalizedData[0]) // Debug
         setIngredients(normalizedData)
       }
     } catch (error) {
@@ -1916,7 +1916,7 @@ function BasesTab({
                     <div className="group relative">
                       <Info className="w-4 h-4 text-gray-400 cursor-help" />
                       <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[280px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '15px' }}>
-                        O custo total inclui o custo dos ingredientes mais o fator de perda aplicado.
+                        O custo total inclui o custo dos ingredientes{settings.showLossFactorBases ? ' mais o fator de perda aplicado' : ''}.
                       </div>
                     </div>
                   </div>
@@ -1942,6 +1942,7 @@ function BasesTab({
                 
                 // Calcular custo do fator de perda (somente se showLossFactorBases estiver ativo)
                 const lossFactorCost = settings.showLossFactorBases ? ingredientsCost * (base.loss_factor / 100) : 0
+                const totalCost = ingredientsCost + lossFactorCost
                 
                 return (
                   <tr 
@@ -1979,22 +1980,24 @@ function BasesTab({
                     </td>
                     <td className="py-3 px-4 text-sm text-gray-900 font-medium">
                       <div className="flex items-center gap-2">
-                        R$ {formatSmartNumber(base.total_cost || 0, 2, true)}
+                        R$ {formatSmartNumber(totalCost, 2, true)}
                         <div className="group relative">
                           <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                          <div className="invisible group-hover:visible absolute right-0 top-full mt-2 w-[220px] bg-white text-[var(--color-licorice)] text-xs rounded-lg shadow-lg z-50 border border-gray-200 p-3">
+                          <div className="invisible group-hover:visible absolute right-0 top-full mt-2 w-[220px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200 p-3">
                             <div className="space-y-1.5">
                               <div className="flex justify-between">
-                                <span className="text-gray-600">Ingredientes:</span>
-                                <span className="font-medium">R$ {formatSmartNumber(ingredientsCost, 2, true)}</span>
+                                <span className="text-[var(--color-graphite-400)]">Ingredientes:</span>
+                                <span className="font-medium text-[var(--color-graphite-600)]">R$ {formatSmartNumber(ingredientsCost, 2, true)}</span>
                               </div>
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Fator de perda ({formatSmartNumber(base.loss_factor, 2, true)}%):</span>
-                                <span className="font-medium text-orange-600">R$ {formatSmartNumber(lossFactorCost, 2, true)}</span>
-                              </div>
+                              {settings.showLossFactorBases && (
+                                <div className="flex justify-between">
+                                  <span className="text-[var(--color-graphite-400)]">Fator de perda ({formatSmartNumber(base.loss_factor, 2, true)}%):</span>
+                                  <span className="font-medium text-[var(--color-warning-500)]">R$ {formatSmartNumber(lossFactorCost, 2, true)}</span>
+                                </div>
+                              )}
                               <div className="flex justify-between pt-1.5 border-t border-gray-200">
-                                <span className="font-semibold text-gray-900">Custo total:</span>
-                                <span className="font-semibold text-gray-900">R$ {formatSmartNumber(base.total_cost || 0, 2, true)}</span>
+                                <span className="font-semibold text-[var(--color-graphite-600)]">Custo total:</span>
+                                <span className="font-semibold text-[var(--color-graphite-700)]">R$ {formatSmartNumber(totalCost, 2, true)}</span>
                               </div>
                             </div>
                           </div>
@@ -2803,37 +2806,37 @@ function ProductsTab({
                               <div className="invisible group-hover:visible fixed min-w-[240px] bg-white border border-gray-200 rounded-lg shadow-lg p-4" style={{ zIndex: 9999, transform: 'translate(-100%, 0)', marginLeft: '-8px', marginTop: '8px' }}>
                                 <div className="space-y-2">
                                   <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                                    <span className="text-xs font-medium text-gray-600">Preço de Venda</span>
-                                    <span className="text-lg font-bold text-pink-600">R$ {formatBRL(product.selling_price, 2)}</span>
+                                    <span className="text-sm font-medium text-[var(--color-graphite-400)]">Preço de Venda</span>
+                                    <span className="text-lg font-bold text-[var(--color-clay-500)]">R$ {formatCurrency(product.selling_price)}</span>
                                   </div>
                                   <div className="flex justify-between items-center text-sm">
-                                    <span className="text-gray-600">Custo Total</span>
-                                    <span className="font-semibold text-gray-900">R$ {formatBRL(totalWithLoss, 2)}</span>
+                                    <span className="text-[var(--color-graphite-400)]">Custo Total</span>
+                                    <span className="font-semibold text-[var(--color-graphite-600)]">R$ {formatCurrency(totalWithLoss)}</span>
                                   </div>
                                   <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-200">
-                                    <span className="text-gray-600">Lucro</span>
-                                    <span className="font-semibold text-green-600">R$ {formatBRL(profit, 2)}</span>
+                                    <span className="text-[var(--color-graphite-400)]">Lucro</span>
+                                    <span className="font-semibold text-[var(--color-success-500)]">R$ {formatCurrency(profit)}</span>
                                   </div>
                                   <div className="flex justify-between items-center text-sm">
-                                    <span className="text-gray-600">Margem</span>
-                                    <span className="font-bold text-blue-600">{formatBRL(margin, 1)}%</span>
+                                    <span className="text-[var(--color-graphite-400)]">Margem</span>
+                                    <span className="font-bold text-[var(--color-info-500)]">{formatBRL(margin, 1)}%</span>
                                   </div>
                                 </div>
                               </div>
                             ) : (
-                              <div className="invisible group-hover:visible fixed w-[220px] bg-white text-[var(--color-licorice)] text-xs rounded-lg shadow-lg border border-gray-200 p-3" style={{ zIndex: 9999, transform: 'translate(-100%, 0)', marginLeft: '-8px', marginTop: '8px' }}>
+                              <div className="invisible group-hover:visible fixed w-[220px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg border border-gray-200 p-3" style={{ zIndex: 9999, transform: 'translate(-100%, 0)', marginLeft: '-8px', marginTop: '8px' }}>
                                 <div className="space-y-1.5">
                                   <div className="flex justify-between">
-                                    <span className="text-gray-600">Itens:</span>
-                                    <span className="font-medium">R$ {formatBRL(itemsCost, 2)}</span>
+                                    <span className="text-[var(--color-graphite-400)]">Itens:</span>
+                                    <span className="font-medium text-[var(--color-graphite-600)]">R$ {formatBRL(itemsCost, 2)}</span>
                                   </div>
                                   <div className="flex justify-between">
-                                    <span className="text-gray-600">Fator de perda ({formatSmartNumber(lossFactor, 2, true)}%):</span>
-                                    <span className="font-medium text-orange-600">R$ {formatBRL(lossAmount, 2)}</span>
+                                    <span className="text-[var(--color-graphite-400)]">Fator de perda ({formatSmartNumber(lossFactor, 2, true)}%):</span>
+                                    <span className="font-medium text-[var(--color-warning-500)]">R$ {formatBRL(lossAmount, 2)}</span>
                                   </div>
                                   <div className="flex justify-between pt-1.5 border-t border-gray-200">
-                                    <span className="font-semibold text-gray-900">Custo total:</span>
-                                    <span className="font-semibold text-gray-900">R$ {formatBRL(totalWithLoss, 2)}</span>
+                                    <span className="font-semibold text-[var(--color-graphite-600)]">Custo total:</span>
+                                    <span className="font-semibold text-[var(--color-graphite-700)]">R$ {formatBRL(totalWithLoss, 2)}</span>
                                   </div>
                                 </div>
                               </div>

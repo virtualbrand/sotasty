@@ -400,28 +400,34 @@ button:focus-visible {
 .btn-secondary-outline {
   background-color: transparent;
   color: var(--color-graphite-700);
-  border-color: var(--color-graphite-500);
+  border-color: var(--color-graphite-400);
+  border-radius: 9999px;
+  transition: all 0.2s ease-in-out;
 }
 
 .btn-secondary-outline:hover:not(:disabled) {
   background-color: var(--color-graphite-50);
-  border-color: var(--color-graphite-600);
+  border-color: var(--color-graphite-500);
+  color: var(--color-graphite-800);
 }
 
 .btn-secondary-outline:active:not(:disabled) {
   background-color: var(--color-graphite-100);
   border-color: var(--color-graphite-600);
+  transform: scale(0.98);
 }
 
 .btn-secondary-outline:disabled {
   background-color: transparent;
-  color: var(--color-stone-600);
-  border-color: var(--color-stone-500);
+  color: var(--color-stone-400);
+  border-color: var(--color-stone-300);
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .btn-secondary-outline:focus-visible {
-  outline-color: var(--color-graphite-500);
+  outline: 2px solid var(--color-graphite-500);
+  outline-offset: 2px;
 }
 
 /* INFO BUTTONS - Light Theme */
@@ -597,16 +603,20 @@ button:focus-visible {
   background-color: var(--color-danger-500);
   color: #FFFFFF;
   border-color: var(--color-danger-500);
+  border-radius: 9999px;
+  transition: all 0.2s ease-in-out;
 }
 
 .btn-danger:hover:not(:disabled) {
-  background-color: var(--color-danger-400);
-  border-color: var(--color-danger-400);
+  background-color: var(--color-danger-600);
+  border-color: var(--color-danger-600);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
 }
 
 .btn-danger:active:not(:disabled) {
   background-color: var(--color-danger-700);
   border-color: var(--color-danger-700);
+  transform: scale(0.98);
 }
 
 .btn-danger:disabled {
@@ -614,10 +624,12 @@ button:focus-visible {
   color: #FFFFFF;
   border-color: var(--color-danger-200);
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .btn-danger:focus-visible {
-  outline-color: var(--color-danger-500);
+  outline: 2px solid var(--color-danger-500);
+  outline-offset: 2px;
 }
 
 .btn-outline-danger {

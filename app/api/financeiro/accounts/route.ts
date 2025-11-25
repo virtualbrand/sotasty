@@ -10,10 +10,21 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get user's workspace_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+    }
+
     const { data: accounts, error } = await supabase
       .from('financial_accounts')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .eq('is_active', true)
       .order('created_at', { ascending: true })
 
@@ -38,6 +49,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get user's workspace_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+    }
+
     const body = await request.json()
     const { name, type, initialBalance } = body
 
@@ -54,6 +76,7 @@ export async function POST(request: NextRequest) {
       .from('financial_accounts')
       .insert({
         user_id: user.id,
+        workspace_id: profile.workspace_id,
         name,
         type,
         initial_balance: balance,
@@ -83,6 +106,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get user's workspace_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+    }
+
     const body = await request.json()
     const { id, ...updates } = body
 
@@ -94,7 +128,7 @@ export async function PUT(request: NextRequest) {
       .from('financial_accounts')
       .update(updates)
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .select()
       .single()
 
@@ -119,6 +153,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get user's workspace_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
@@ -131,7 +176,7 @@ export async function DELETE(request: NextRequest) {
       .from('financial_accounts')
       .update({ is_active: false })
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
 
     if (error) {
       console.error('Error deleting account:', error)

@@ -8,9 +8,7 @@ export async function GET() {
     
     // Verificar autenticação
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    console.log('[profile-settings GET] User:', user?.id, 'Auth Error:', authError)
-    
+
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Não autenticado' },
@@ -32,7 +30,6 @@ export async function GET() {
       .eq('id', user.id)
       .single()
 
-    console.log('[profile-settings GET] Settings:', settings, 'Profile:', profile, 'Error:', error)
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = not found
       console.error('Erro ao buscar configurações:', error)
@@ -44,7 +41,6 @@ export async function GET() {
 
     // Se não existir, criar configuração padrão
     if (!settings) {
-      console.log('[profile-settings GET] Criando nova configuração para user:', user.id)
       
       const { data: newSettings, error: createError } = await supabase
         .from('profile_settings')
@@ -53,8 +49,6 @@ export async function GET() {
         })
         .select()
         .single()
-
-      console.log('[profile-settings GET] New Settings:', newSettings, 'Create Error:', createError)
 
       if (createError) {
         console.error('Erro ao criar configurações:', createError)
@@ -92,9 +86,7 @@ export async function PATCH(request: NextRequest) {
     
     // Verificar autenticação
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    console.log('[profile-settings PATCH] User:', user?.id, 'Auth Error:', authError)
-    
+
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Não autenticado' },
@@ -103,7 +95,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    console.log('[profile-settings PATCH] Body:', body)
     
     const {
       business_name,
@@ -165,7 +156,6 @@ export async function PATCH(request: NextRequest) {
     if (instagram_handle !== undefined) updateData.instagram_handle = instagram_handle?.trim() || null
     if (address !== undefined) updateData.address = address?.trim() || null
 
-    console.log('[profile-settings PATCH] Update Data:', updateData)
 
     // Atualizar ou criar configurações
     const { data: settings, error } = await supabase
@@ -179,7 +169,6 @@ export async function PATCH(request: NextRequest) {
       .select()
       .single()
 
-    console.log('[profile-settings PATCH] Result:', settings, 'Error:', error)
 
     if (error) {
       console.error('Erro ao atualizar configurações:', error)

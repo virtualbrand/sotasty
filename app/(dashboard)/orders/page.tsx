@@ -1989,9 +1989,9 @@ export default function OrdersPage() {
             </AlertDialogHeader>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel className="btn-outline-grey">Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="btn-secondary-outline cursor-pointer">Cancelar</AlertDialogCancel>
             <AlertDialogAction 
-              className="btn-danger flex items-center gap-2"
+              className="btn-danger flex items-center gap-2 cursor-pointer rounded-full"
               onClick={handleDelete}
             >
               <Trash2 className="h-4 w-4" />

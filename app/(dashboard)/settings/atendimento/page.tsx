@@ -276,7 +276,7 @@ export default function AtendimentoSettingsPage() {
               onChange={(e) => setTextContent(e.target.value)}
               placeholder="Cole ou digite as informações aqui...&#10;&#10;Exemplo:&#10;Quem é a Duda Berger?&#10;Duda Berger é confeiteira há anos, especializada em bolos artesanais.&#10;Já produziu centenas de encomendas e trabalha com visão estratégica."
               rows={10}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent resize-y"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-clay-500)] focus:border-transparent resize-y text-sm"
               disabled={isSavingText}
             />
             <p className="text-xs text-gray-500 mt-2">

@@ -1,24 +1,34 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Activity, User, Package, ShoppingCart, Settings, Filter, Search, Calendar, Download, LucideIcon, X, Info } from 'lucide-react'
+import { Activity, User, Package, ShoppingCart, Settings, Filter, Search, Calendar, Download, LucideIcon, X, Info, DollarSign, CalendarIcon, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { CalendarWithRangePresets } from '@/components/ui/calendar-with-range-presets'
 import { DateRange } from 'react-day-picker'
-import { format } from 'date-fns'
+import { format, formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 type ActivityType = {
   id: string
-  icon: LucideIcon
   action: string
+  category: string
   description: string
+  entity_type: string | null
+  entity_id: string | null
+  metadata: any
+  created_at: string
+  profiles: {
+    full_name: string
+  } | null
+}
+
+type ActivityWithIcon = ActivityType & {
+  icon: LucideIcon
   user: string
   time: string
   date: string
-  category: 'pedido' | 'produto' | 'cliente' | 'configuracao'
 }
 
 export default function ActivitiesPage() {
@@ -27,108 +37,100 @@ export default function ActivitiesPage() {
   const [showCategoryFilter, setShowCategoryFilter] = useState(false)
   const [showDateFilter, setShowDateFilter] = useState(false)
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
+  const [activities, setActivities] = useState<ActivityType[]>([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [offset, setOffset] = useState(0)
+  const limit = 20
 
-  const activities: ActivityType[] = [
-    {
-      id: '1',
-      icon: ShoppingCart,
-      action: 'Pedido criado',
-      description: 'Bolo de Chocolate 2kg para Maria Silva',
-      user: 'Jaisson',
-      time: 'Há 2 horas',
-      date: '10 Nov 2025',
-      category: 'pedido',
-    },
-    {
-      id: '2',
-      icon: Package,
-      action: 'Produto atualizado',
-      description: 'Preço do Bolo de Morango alterado de R$ 80,00 para R$ 85,00',
-      user: 'Jaisson',
-      time: 'Há 5 horas',
-      date: '10 Nov 2025',
-      category: 'produto',
-    },
-    {
-      id: '3',
-      icon: User,
-      action: 'Cliente cadastrado',
-      description: 'João Santos adicionado aos clientes',
-      user: 'Jaisson',
-      time: 'Ontem',
-      date: '9 Nov 2025',
-      category: 'cliente',
-    },
-    {
-      id: '4',
-      icon: Settings,
-      action: 'Configurações alteradas',
-      description: 'Preferências de ordenação atualizadas',
-      user: 'Jaisson',
-      time: 'Há 2 dias',
-      date: '8 Nov 2025',
-      category: 'configuracao',
-    },
-    {
-      id: '5',
-      icon: ShoppingCart,
-      action: 'Pedido concluído',
-      description: 'Torta de Limão entregue para Ana Costa',
-      user: 'Jaisson',
-      time: 'Há 3 dias',
-      date: '7 Nov 2025',
-      category: 'pedido',
-    },
-    {
-      id: '6',
-      icon: Package,
-      action: 'Produto criado',
-      description: 'Novo produto: Bolo Red Velvet',
-      user: 'Jaisson',
-      time: 'Há 4 dias',
-      date: '6 Nov 2025',
-      category: 'produto',
-    },
-    {
-      id: '7',
-      icon: ShoppingCart,
-      action: 'Pedido cancelado',
-      description: 'Pedido #1234 cancelado pelo cliente',
-      user: 'Jaisson',
-      time: 'Há 5 dias',
-      date: '5 Nov 2025',
-      category: 'pedido',
-    },
-    {
-      id: '8',
-      icon: User,
-      action: 'Cliente atualizado',
-      description: 'Telefone de Maria Silva alterado',
-      user: 'Jaisson',
-      time: 'Há 6 dias',
-      date: '4 Nov 2025',
-      category: 'cliente',
-    },
-  ]
+  // Buscar atividades da API
+  useEffect(() => {
+    fetchActivities()
+  }, [searchTerm, activeFilters, dateRange, offset])
 
-  const getCategoryColor = (category: ActivityType['category']) => {
-    const colors = {
+  const fetchActivities = async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString()
+      })
+
+      if (searchTerm) params.append('search', searchTerm)
+      if (activeFilters.length > 0) params.append('category', activeFilters.join(','))
+      if (dateRange?.from) params.append('startDate', dateRange.from.toISOString())
+      if (dateRange?.to) params.append('endDate', dateRange.to.toISOString())
+
+      const response = await fetch(`/api/activities?${params}`)
+      
+      if (!response.ok) {
+        throw new Error('Erro ao buscar atividades')
+      }
+
+      const data = await response.json()
+      setActivities(data.activities || [])
+      setTotal(data.total || 0)
+      console.log('🔍 Activities Page - fetched:', data.activities?.length, 'total:', data.total)
+    } catch (error) {
+      console.error('Erro ao buscar atividades:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Mapear categoria para ícone
+  const getIconForCategory = (category: string): LucideIcon => {
+    const iconMap: Record<string, LucideIcon> = {
+      pedido: ShoppingCart,
+      produto: Package,
+      cliente: User,
+      configuracao: Settings,
+      cardapio: Menu,
+      financeiro: DollarSign,
+      agenda: CalendarIcon,
+      system: Activity
+    }
+    return iconMap[category] || Activity
+  }
+
+  // Processar atividades para adicionar informações de UI
+  const processedActivities: ActivityWithIcon[] = activities.map(activity => ({
+    ...activity,
+    icon: getIconForCategory(activity.category),
+    user: activity.profiles?.full_name || 'Usuário',
+    time: formatDistanceToNow(new Date(activity.created_at), { 
+      addSuffix: true, 
+      locale: ptBR 
+    }),
+    date: format(new Date(activity.created_at), "d 'de' MMM yyyy", { locale: ptBR })
+  }))
+
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
       pedido: 'bg-blue-100 text-blue-700',
       produto: 'bg-purple-100 text-purple-700',
       cliente: 'bg-green-100 text-green-700',
       configuracao: 'bg-orange-100 text-orange-700',
+      cardapio: 'bg-pink-100 text-pink-700',
+      financeiro: 'bg-yellow-100 text-yellow-700',
+      agenda: 'bg-indigo-100 text-indigo-700',
+      system: 'bg-gray-100 text-gray-700'
     }
-    return colors[category]
+    return colors[category] || 'bg-gray-100 text-gray-700'
   }
 
-  const getCategoryLabel = (category: ActivityType['category']) => {
-    const labels = {
+  const getCategoryLabel = (category: string) => {
+    const labels: Record<string, string> = {
       pedido: 'Pedido',
       produto: 'Produto',
       cliente: 'Cliente',
       configuracao: 'Configuração',
+      cardapio: 'Cardápio',
+      financeiro: 'Financeiro',
+      agenda: 'Agenda',
+      system: 'Sistema'
     }
-    return labels[category]
+    return labels[category] || category
   }
 
   // Categorias disponíveis para filtro
@@ -136,6 +138,9 @@ export default function ActivitiesPage() {
     { id: 'pedido', name: 'Pedido', color: 'blue' },
     { id: 'produto', name: 'Produto', color: 'purple' },
     { id: 'cliente', name: 'Cliente', color: 'green' },
+    { id: 'cardapio', name: 'Cardápio', color: 'pink' },
+    { id: 'financeiro', name: 'Financeiro', color: 'yellow' },
+    { id: 'agenda', name: 'Agenda', color: 'indigo' },
     { id: 'configuracao', name: 'Configuração', color: 'orange' },
   ]
 
@@ -145,6 +150,9 @@ export default function ActivitiesPage() {
       purple: 'bg-purple-100 text-purple-800 border-purple-200',
       green: 'bg-green-100 text-green-800 border-green-200',
       orange: 'bg-orange-100 text-orange-800 border-orange-200',
+      pink: 'bg-pink-100 text-pink-800 border-pink-200',
+      yellow: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      indigo: 'bg-indigo-100 text-indigo-800 border-indigo-200',
     }
     return colorMap[color] || 'bg-gray-100 text-gray-800 border-gray-200'
   }
@@ -155,10 +163,12 @@ export default function ActivitiesPage() {
         ? prev.filter(f => f !== filter)
         : [...prev, filter]
     )
+    setOffset(0) // Reset para primeira página
   }
 
   const clearFilters = () => {
     setActiveFilters([])
+    setOffset(0) // Reset para primeira página
   }
 
   // Fechar filtros ao clicar fora ou pressionar ESC
@@ -189,16 +199,24 @@ export default function ActivitiesPage() {
     }
   }, [showCategoryFilter, showDateFilter])
 
-  // Filtrar atividades
-  const filteredActivities = activities.filter(activity => {
-    const matchesSearch = activity.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         activity.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         activity.user.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesCategory = activeFilters.length === 0 || activeFilters.includes(activity.category)
-    
-    return matchesSearch && matchesCategory
-  })
+  // Não precisamos mais filtrar no client-side, a API já faz isso
+  const filteredActivities = processedActivities
+
+  // Funções de paginação
+  const handleNextPage = () => {
+    if (offset + limit < total) {
+      setOffset(offset + limit)
+    }
+  }
+
+  const handlePrevPage = () => {
+    if (offset > 0) {
+      setOffset(Math.max(0, offset - limit))
+    }
+  }
+
+  const currentPage = Math.floor(offset / limit) + 1
+  const totalPages = Math.ceil(total / limit)
 
   return (
     <div className="p-8">
@@ -310,6 +328,7 @@ export default function ActivitiesPage() {
               onClick={() => {
                 clearFilters()
                 setDateRange(undefined)
+                setOffset(0)
               }}
             >
               Limpar
@@ -361,7 +380,13 @@ export default function ActivitiesPage() {
 
       {/* Lista de Atividades */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="divide-y divide-gray-200">
+        {loading ? (
+          <div className="p-12 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-clay-500)] mx-auto mb-3"></div>
+            <p className="text-gray-500">Carregando atividades...</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
           {filteredActivities.length === 0 ? (
             <div className="p-12 text-center text-gray-500">
               <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -419,19 +444,31 @@ export default function ActivitiesPage() {
             })
           )}
         </div>
+        )}
 
         {/* Paginação */}
-        {filteredActivities.length > 0 && (
+        {!loading && filteredActivities.length > 0 && (
           <div className="p-6 border-t border-gray-200">
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-600">
-                Mostrando <span className="font-semibold">1-{filteredActivities.length}</span> de <span className="font-semibold">{filteredActivities.length}</span> atividades
+                Mostrando <span className="font-semibold">{offset + 1}-{Math.min(offset + limit, total)}</span> de <span className="font-semibold">{total}</span> atividades
               </p>
               <div className="flex items-center gap-2">
-                <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <button 
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+                  onClick={handlePrevPage}
+                  disabled={offset === 0}
+                >
                   Anterior
                 </button>
-                <button className="px-4 py-2 bg-[var(--color-clay-500)] text-white rounded-lg hover:bg-[var(--color-clay-600)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <span className="text-sm text-gray-600 px-3">
+                  Página {currentPage} de {totalPages}
+                </span>
+                <button 
+                  className="px-4 py-2 bg-[var(--color-clay-500)] text-white rounded-lg hover:bg-[var(--color-clay-600)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+                  onClick={handleNextPage}
+                  disabled={offset + limit >= total}
+                >
                   Próxima
                 </button>
               </div>

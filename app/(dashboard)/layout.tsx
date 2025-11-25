@@ -4,6 +4,8 @@ import Sidebar from "@/components/Sidebar";
 import Toaster from "@/components/ui/toast";
 import { useState, useEffect, useRef } from "react";
 import type { ToasterRef } from "@/components/ui/toast";
+import { usePermissionsWatcher } from "@/hooks/usePermissionsWatcher";
+import { createClient } from "@/lib/supabase/client";
 
 // Criar uma instância global do toaster
 let globalToasterRef: ToasterRef | null = null;
@@ -18,15 +20,32 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<'sidebar' | 'header' | 'footer' | 'right'>(() => {
-    // Inicialização lazy - só roda uma vez no cliente
+  const [userId, setUserId] = useState<string | undefined>(undefined);
+  const [mounted, setMounted] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<'sidebar' | 'header' | 'footer' | 'right'>('sidebar');
+  const toasterRef = useRef<ToasterRef>(null);
+
+  // Carregar posição do menu apenas no cliente após montagem
+  useEffect(() => {
+    setMounted(true);
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('menuPosition');
-      return (saved as 'sidebar' | 'header' | 'footer' | 'right') || 'sidebar';
+      if (saved) {
+        setMenuPosition(saved as 'sidebar' | 'header' | 'footer' | 'right');
+      }
     }
-    return 'sidebar';
-  });
-  const toasterRef = useRef<ToasterRef>(null);
+  }, []);
+
+  // Buscar ID do usuário
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserId(user?.id)
+    })
+  }, [])
+
+  // Ativar watcher de permissões
+  usePermissionsWatcher(userId)
 
   useEffect(() => {
     globalToasterRef = toasterRef.current;
@@ -50,6 +69,19 @@ export default function DashboardLayout({
     window.addEventListener('sidebar-collapse', handleCollapse);
     return () => window.removeEventListener('sidebar-collapse', handleCollapse);
   }, []);
+
+  // Aguardar montagem para evitar erro de hidratação
+  if (!mounted) {
+    return (
+      <>
+        <Toaster ref={toasterRef} defaultPosition="top-right" />
+        <Sidebar position="sidebar" />
+        <main className="min-h-screen bg-[var(--color-bg-app)] p-8 transition-all duration-300 ml-64">
+          {children}
+        </main>
+      </>
+    );
+  }
 
   // Renderizar baseado na posição do menu
   if (menuPosition === 'header') {

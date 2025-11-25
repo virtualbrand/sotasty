@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Switch } from '@/components/ui/switch'
 import { X, Plus, Info } from 'lucide-react'
 import { showToast } from '@/app/(dashboard)/layout'
+import { createClient } from '@/lib/supabase/client'
 
 interface Category {
   id: string
@@ -12,6 +13,11 @@ interface Category {
 }
 
 export default function ProductsSettingsPage() {
+  const supabase = createClient()
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [userPermissions, setUserPermissions] = useState<Record<string, boolean> | null>(null)
+  const [isFullAccess, setIsFullAccess] = useState(false)
+  
   // Categorias do banco de dados
   const [categories, setCategories] = useState<Category[]>([])
   const [loadingCategories, setLoadingCategories] = useState(true)
@@ -19,8 +25,38 @@ export default function ProductsSettingsPage() {
   const [newCategory, setNewCategory] = useState('')
 
   useEffect(() => {
+    fetchUserRole()
     fetchCategories()
   }, [])
+
+  const fetchUserRole = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, permissions')
+        .eq('id', user.id)
+        .single()
+
+      if (profile) {
+        setUserRole(profile.role)
+        setUserPermissions(profile.permissions || {})
+        
+        // Verificar se é admin ou superadmin
+        const isAdmin = profile.role === 'admin' || profile.role === 'superadmin'
+        
+        // Verificar se é membro com todas as permissões (admin como membro)
+        const allPermissions = ['dashboard', 'products', 'menus', 'orders', 'financial', 'messages', 'support', 'customers', 'agenda', 'activities']
+        const hasAllPermissions = profile.permissions && allPermissions.every(perm => profile.permissions[perm] === true)
+        
+        setIsFullAccess(isAdmin || hasAllPermissions)
+      }
+    } catch (error) {
+      console.error('Erro ao buscar role do usuário:', error)
+    }
+  }
 
   const fetchCategories = async () => {
     try {
@@ -374,7 +410,7 @@ export default function ProductsSettingsPage() {
             onChange={(e) => setNewCategory(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Nova categoria"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-gray-900 text-sm bg-white"
+            className="flex-1 px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-gray-900 text-sm bg-white text-sm"
           />
           <button
             onClick={addCategory}
@@ -388,186 +424,192 @@ export default function ProductsSettingsPage() {
       </div>
 
       {/* Seção de Foto do Produto */}
-      <div className="border-t border-gray-200 pt-6 mb-8">
-        <h3 className="text-base font-semibold text-gray-900 mb-4">Fotos</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Configure a visibilidade do campo de foto nos diferentes níveis de cadastro.
-        </p>
+      {isFullAccess && (
+        <div className="border-t border-gray-200 pt-6 mb-8">
+          <h3 className="text-base font-semibold text-gray-900 mb-4">Fotos</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Configure a visibilidade do campo de foto nos diferentes níveis de cadastro.
+          </p>
 
-        <div className="space-y-3">
-          {/* Foto de Insumos */}
-          <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
-            <div className="flex-1">
-              <label htmlFor="show-ingredient-photo" className="text-sm font-medium text-gray-900 cursor-pointer">
-                Foto de Insumos
-              </label>
-              <p className="text-xs text-gray-500 mt-1">
-                Permite adicionar foto ao cadastrar ou editar insumos
-              </p>
+          <div className="space-y-3">
+            {/* Foto de Insumos */}
+            <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
+              <div className="flex-1">
+                <label htmlFor="show-ingredient-photo" className="text-sm font-medium text-gray-900 cursor-pointer">
+                  Foto de Insumos
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Permite adicionar foto ao cadastrar ou editar insumos
+                </p>
+              </div>
+              <Switch
+                id="show-ingredient-photo"
+                checked={showIngredientPhoto}
+                onCheckedChange={handleIngredientPhotoToggle}
+              />
             </div>
-            <Switch
-              id="show-ingredient-photo"
-              checked={showIngredientPhoto}
-              onCheckedChange={handleIngredientPhotoToggle}
-            />
-          </div>
 
-          {/* Foto de Bases */}
-          <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
-            <div className="flex-1">
-              <label htmlFor="show-base-photo" className="text-sm font-medium text-gray-900 cursor-pointer">
-                Foto de Bases de Preparo
-              </label>
-              <p className="text-xs text-gray-500 mt-1">
-                Permite adicionar foto ao cadastrar ou editar bases de preparo
-              </p>
+            {/* Foto de Bases */}
+            <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
+              <div className="flex-1">
+                <label htmlFor="show-base-photo" className="text-sm font-medium text-gray-900 cursor-pointer">
+                  Foto de Bases de Preparo
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Permite adicionar foto ao cadastrar ou editar bases de preparo
+                </p>
+              </div>
+              <Switch
+                id="show-base-photo"
+                checked={showBasePhoto}
+                onCheckedChange={handleBasePhotoToggle}
+              />
             </div>
-            <Switch
-              id="show-base-photo"
-              checked={showBasePhoto}
-              onCheckedChange={handleBasePhotoToggle}
-            />
-          </div>
 
-          {/* Foto de Produtos */}
-          <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
-            <div className="flex-1">
-              <label htmlFor="show-product-photo" className="text-sm font-medium text-gray-900 cursor-pointer">
-                Foto de Produtos Finais
-              </label>
-              <p className="text-xs text-gray-500 mt-1">
-                Permite adicionar foto ao cadastrar ou editar produtos finais
-              </p>
+            {/* Foto de Produtos */}
+            <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
+              <div className="flex-1">
+                <label htmlFor="show-product-photo" className="text-sm font-medium text-gray-900 cursor-pointer">
+                  Foto de Produtos Finais
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Permite adicionar foto ao cadastrar ou editar produtos finais
+                </p>
+              </div>
+              <Switch
+                id="show-product-photo"
+                checked={showProductPhoto}
+                onCheckedChange={handleProductPhotoToggle}
+              />
             </div>
-            <Switch
-              id="show-product-photo"
-              checked={showProductPhoto}
-              onCheckedChange={handleProductPhotoToggle}
-            />
           </div>
         </div>
-      </div>
+      )}
 
       {/* Seção de Unidades de Medida */}
-      <div className="border-t border-gray-200 pt-6 mb-8">
-        <h3 className="text-base font-semibold text-gray-900 mb-4">Unidades de Medida</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Escolha o sistema de unidades que será usado nos formulários e exibições.
-        </p>
+      {isFullAccess && (
+        <div className="border-t border-gray-200 pt-6 mb-8">
+          <h3 className="text-base font-semibold text-gray-900 mb-4">Unidades de Medida</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Escolha o sistema de unidades que será usado nos formulários e exibições.
+          </p>
 
-        <div className="space-y-3">
-          <div 
-            onClick={() => handleMeasurementUnitChange('metric-small')}
-            className={`flex items-center justify-between py-3 px-4 rounded-lg cursor-pointer border-2 transition-all ${
-              measurementUnit === 'metric-small' 
-                ? 'bg-pink-50 border-[var(--color-clay-500)]' 
-                : 'bg-gray-50 border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            <div className="flex-1">
-              <div className="text-sm font-medium text-gray-900">Gramas / Mililitros</div>
-              <p className="text-xs text-gray-500 mt-1">
-                Usar g (gramas) e ml (mililitros) como unidades padrão
-              </p>
+          <div className="space-y-3">
+            <div 
+              onClick={() => handleMeasurementUnitChange('metric-small')}
+              className={`flex items-center justify-between py-3 px-4 rounded-lg cursor-pointer border-2 transition-all ${
+                measurementUnit === 'metric-small' 
+                  ? 'bg-pink-50 border-[var(--color-clay-500)]' 
+                  : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex-1">
+                <div className="text-sm font-medium text-gray-900">Gramas / Mililitros</div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Usar g (gramas) e ml (mililitros) como unidades padrão
+                </p>
+              </div>
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                measurementUnit === 'metric-small' 
+                  ? 'border-[var(--color-clay-500)] bg-[var(--color-clay-500)]' 
+                  : 'border-gray-300'
+              }`}>
+                {measurementUnit === 'metric-small' && (
+                  <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                )}
+              </div>
             </div>
-            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-              measurementUnit === 'metric-small' 
-                ? 'border-[var(--color-clay-500)] bg-[var(--color-clay-500)]' 
-                : 'border-gray-300'
-            }`}>
-              {measurementUnit === 'metric-small' && (
-                <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
-              )}
-            </div>
-          </div>
 
-          <div 
-            onClick={() => handleMeasurementUnitChange('metric-large')}
-            className={`flex items-center justify-between py-3 px-4 rounded-lg cursor-pointer border-2 transition-all ${
-              measurementUnit === 'metric-large' 
-                ? 'bg-pink-50 border-[var(--color-clay-500)]' 
-                : 'bg-gray-50 border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            <div className="flex-1">
-              <div className="text-sm font-medium text-gray-900">Quilogramas / Litros</div>
-              <p className="text-xs text-gray-500 mt-1">
-                Usar kg (quilogramas) e L (litros) como unidades padrão
-              </p>
-            </div>
-            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-              measurementUnit === 'metric-large' 
-                ? 'border-[var(--color-clay-500)] bg-[var(--color-clay-500)]' 
-                : 'border-gray-300'
-            }`}>
-              {measurementUnit === 'metric-large' && (
-                <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
-              )}
+            <div 
+              onClick={() => handleMeasurementUnitChange('metric-large')}
+              className={`flex items-center justify-between py-3 px-4 rounded-lg cursor-pointer border-2 transition-all ${
+                measurementUnit === 'metric-large' 
+                  ? 'bg-pink-50 border-[var(--color-clay-500)]' 
+                  : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex-1">
+                <div className="text-sm font-medium text-gray-900">Quilogramas / Litros</div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Usar kg (quilogramas) e L (litros) como unidades padrão
+                </p>
+              </div>
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                measurementUnit === 'metric-large' 
+                  ? 'border-[var(--color-clay-500)] bg-[var(--color-clay-500)]' 
+                  : 'border-gray-300'
+              }`}>
+                {measurementUnit === 'metric-large' && (
+                  <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Seção de Fator de Perda */}
-      <div className="border-t border-gray-200 pt-6">
-        <h3 className="text-base font-semibold text-gray-900 mb-4">Fator de Perda</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Configure a visibilidade do campo &quot;Fator de Perda&quot; nos diferentes níveis de cadastro de produtos.
-        </p>
+      {isFullAccess && (
+        <div className="border-t border-gray-200 pt-6">
+          <h3 className="text-base font-semibold text-gray-900 mb-4">Fator de Perda</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Configure a visibilidade do campo &quot;Fator de Perda&quot; nos diferentes níveis de cadastro de produtos.
+          </p>
 
-        <div className="space-y-4">
-          {/* Insumos */}
-          <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
-            <div className="flex-1">
-              <label htmlFor="loss-factor-ingredients" className="text-sm font-medium text-gray-900 cursor-pointer">
-                Insumos
-              </label>
-              <p className="text-xs text-gray-500 mt-1">
-                Exibir campo de fator de perda ao cadastrar insumos
-              </p>
+          <div className="space-y-4">
+            {/* Insumos */}
+            <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
+              <div className="flex-1">
+                <label htmlFor="loss-factor-ingredients" className="text-sm font-medium text-gray-900 cursor-pointer">
+                  Insumos
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Exibir campo de fator de perda ao cadastrar insumos
+                </p>
+              </div>
+              <Switch
+                id="loss-factor-ingredients"
+                checked={showLossFactorIngredients}
+                onCheckedChange={handleIngredientsToggle}
+              />
             </div>
-            <Switch
-              id="loss-factor-ingredients"
-              checked={showLossFactorIngredients}
-              onCheckedChange={handleIngredientsToggle}
-            />
-          </div>
 
-          {/* Base de preparo */}
-          <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
-            <div className="flex-1">
-              <label htmlFor="loss-factor-bases" className="text-sm font-medium text-gray-900 cursor-pointer">
-                Base de preparo
-              </label>
-              <p className="text-xs text-gray-500 mt-1">
-                Exibir campo de fator de perda ao cadastrar bases de preparo
-              </p>
+            {/* Base de preparo */}
+            <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
+              <div className="flex-1">
+                <label htmlFor="loss-factor-bases" className="text-sm font-medium text-gray-900 cursor-pointer">
+                  Base de preparo
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Exibir campo de fator de perda ao cadastrar bases de preparo
+                </p>
+              </div>
+              <Switch
+                id="loss-factor-bases"
+                checked={showLossFactorBases}
+                onCheckedChange={handleBasesToggle}
+              />
             </div>
-            <Switch
-              id="loss-factor-bases"
-              checked={showLossFactorBases}
-              onCheckedChange={handleBasesToggle}
-            />
-          </div>
 
-          {/* Produto final */}
-          <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
-            <div className="flex-1">
-              <label htmlFor="loss-factor-products" className="text-sm font-medium text-gray-900 cursor-pointer">
-                Produto final
-              </label>
-              <p className="text-xs text-gray-500 mt-1">
-                Exibir campo de fator de perda ao cadastrar produtos finais
-              </p>
+            {/* Produto final */}
+            <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
+              <div className="flex-1">
+                <label htmlFor="loss-factor-products" className="text-sm font-medium text-gray-900 cursor-pointer">
+                  Produto final
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Exibir campo de fator de perda ao cadastrar produtos finais
+                </p>
+              </div>
+              <Switch
+                id="loss-factor-products"
+                checked={showLossFactorProducts}
+                onCheckedChange={handleProductsToggle}
+              />
             </div>
-            <Switch
-              id="loss-factor-products"
-              checked={showLossFactorProducts}
-              onCheckedChange={handleProductsToggle}
-            />
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
   try {
     const supabase = await createClient()
+    const supabaseAdmin = createAdminClient()
     
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -17,21 +19,26 @@ export async function GET() {
       .eq('id', user.id)
       .single()
 
+
     if (!profile) {
       return NextResponse.json({ error: 'Perfil não encontrado' }, { status: 404 })
     }
 
+    // Se não tem workspace_id, usa o próprio ID do usuário
+    const workspaceId = profile.workspace_id || user.id
+
     // Buscar membros do workspace
     const { data: members, error } = await supabase
       .from('profiles')
-      .select('id, full_name, avatar_url, role, created_at')
-      .eq('workspace_id', profile.workspace_id)
+      .select('id, full_name, avatar_url, role, created_at, permissions')
+      .eq('workspace_id', workspaceId)
       .order('created_at', { ascending: true })
+
 
     if (error) throw error
 
-    // Buscar emails dos membros
-    const { data: { users } } = await supabase.auth.admin.listUsers()
+    // Buscar emails dos membros usando admin client
+    const { data: { users } } = await supabaseAdmin.auth.admin.listUsers()
     
     const membersWithEmail = members?.map(member => {
       const authUser = users?.find(u => u.id === member.id)

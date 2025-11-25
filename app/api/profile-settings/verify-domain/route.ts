@@ -54,18 +54,15 @@ export async function POST(request: Request) {
     // Primeiro tentar verificar via CNAME (quando proxy está OFF)
     try {
       const cnameRecords = await resolveCname(domain)
-      console.log('[verify-domain] CNAME records found:', cnameRecords)
       if (cnameRecords.some(record => record.toLowerCase() === EXPECTED_CNAME.toLowerCase())) {
         verified = true
         verificationMethod = 'CNAME'
       }
     } catch (error) {
-      console.log('[verify-domain] CNAME lookup error, trying A record:', error)
       
       // Se CNAME falhar, tentar A record (quando Cloudflare proxy está ON)
       try {
         const aRecords = await resolve4(domain)
-        console.log('[verify-domain] A records found:', aRecords)
         
         // Verificar se algum IP é do Cloudflare
         const isCloudflare = aRecords.some(ip => 
@@ -75,20 +72,16 @@ export async function POST(request: Request) {
         if (isCloudflare) {
           verified = true
           verificationMethod = 'A (Cloudflare Proxy)'
-          console.log('[verify-domain] Domain verified via Cloudflare IP')
         }
       } catch (aError) {
-        console.log('[verify-domain] A record lookup error:', aError)
       }
     }
 
     if (!verified) {
-      console.log('[verify-domain] Domain not verified:', domain)
       
       // Tentar mostrar o que foi encontrado para debug
       try {
         const debugRecords = await resolve4(domain)
-        console.log('[verify-domain] Debug - A records:', debugRecords)
         return NextResponse.json(
           { 
             verified: false,
@@ -109,7 +102,6 @@ export async function POST(request: Request) {
       }
     }
 
-    console.log('[verify-domain] Domain verified successfully:', domain)
 
     // Buscar configurações do perfil
     const { data: settings, error: settingsError } = await supabase

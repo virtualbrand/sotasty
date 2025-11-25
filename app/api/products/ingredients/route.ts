@@ -11,10 +11,21 @@ export async function GET() {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
+    }
+
     const { data, error } = await supabase
       .from('ingredients')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -37,6 +48,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
+    }
+
     const body = await request.json()
     const { name, volume, unit, average_cost, loss_factor, type, image_url } = body
 
@@ -49,6 +71,7 @@ export async function POST(request: NextRequest) {
       .insert([
         {
           user_id: user.id,
+          workspace_id: profile.workspace_id,
           name,
           quantity: parseFloat(volume), // Banco usa 'quantity'
           unit,
@@ -81,6 +104,17 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     const body = await request.json()
@@ -102,7 +136,7 @@ export async function PATCH(request: NextRequest) {
         image_url: image_url || null
       })
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .select()
       .single()
 
@@ -126,6 +160,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
@@ -137,7 +182,7 @@ export async function DELETE(request: NextRequest) {
       .from('ingredients')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })

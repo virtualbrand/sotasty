@@ -22,11 +22,21 @@ export default function TopBar() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' })
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      // Redirecionar mesmo se houver erro
       router.push('/auth/login')
       router.refresh()
     } catch (error) {
       console.error('Erro ao fazer logout:', error)
+      // Redirecionar mesmo com erro
+      router.push('/auth/login')
+      router.refresh()
     }
   }
 

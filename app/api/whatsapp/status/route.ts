@@ -39,7 +39,6 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    console.log('Verificando status da instância Evolution:', instanceName);
 
     const response = await fetch(
       `${EVOLUTION_API_URL}/instance/connectionState/${instanceName}`,
@@ -59,7 +58,6 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json()
     
-    console.log('Evolution API response:', data);
     
     // A Evolution API pode retornar { state: 'open' } ou { instance: { state: 'open' } }
     const state = data.state || (data.instance && data.instance.state) || 'unknown';

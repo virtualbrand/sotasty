@@ -10,6 +10,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get user's workspace_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+    }
+
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
@@ -24,7 +35,7 @@ export async function GET(request: NextRequest) {
         account:financial_accounts(id, name, type),
         category:financial_categories(id, name, color, icon)
       `)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .order('date', { ascending: false })
 
     if (startDate) {
@@ -66,6 +77,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get user's workspace_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+    }
+
     const body = await request.json()
     const {
       type,
@@ -96,6 +118,7 @@ export async function POST(request: NextRequest) {
         .from('financial_transactions')
         .insert({
           user_id: user.id,
+          workspace_id: profile.workspace_id,
           type,
           description,
           amount: parseFloat(amount),
@@ -124,6 +147,7 @@ export async function POST(request: NextRequest) {
         .from('financial_transactions')
         .insert({
           user_id: user.id,
+          workspace_id: profile.workspace_id,
           type,
           description,
           amount: parseFloat(amount),
@@ -157,6 +181,7 @@ export async function POST(request: NextRequest) {
         .from('financial_transactions')
         .insert({
           user_id: user.id,
+          workspace_id: profile.workspace_id,
           type,
           description: `${description} (Parcelado)`,
           amount: parseFloat(amount),
@@ -194,6 +219,7 @@ export async function POST(request: NextRequest) {
 
         installmentTransactions.push({
           user_id: user.id,
+          workspace_id: profile.workspace_id,
           type,
           description: `${description} (${i + 1}/${numInstallments})`,
           amount: installmentAmount,
@@ -244,6 +270,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get user's workspace_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+    }
+
     const body = await request.json()
     const { id, ...updates } = body
 
@@ -255,7 +292,7 @@ export async function PUT(request: NextRequest) {
       .from('financial_transactions')
       .update(updates)
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .select()
       .single()
 
@@ -280,6 +317,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get user's workspace_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
@@ -291,7 +339,7 @@ export async function DELETE(request: NextRequest) {
       .from('financial_transactions')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
 
     if (error) {
       console.error('Error deleting transaction:', error)

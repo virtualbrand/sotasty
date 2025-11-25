@@ -13,16 +13,27 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get user's workspace_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+    }
+
     const { id } = await params
     const body = await request.json()
     const { is_paid } = body
 
-    // Verify transaction belongs to user
+    // Verify transaction belongs to workspace
     const { data: transaction, error: fetchError } = await supabase
       .from('financial_transactions')
       .select('*')
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .single()
 
     if (fetchError || !transaction) {
@@ -34,7 +45,7 @@ export async function PATCH(
       .from('financial_transactions')
       .update({ is_paid })
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .select()
       .single()
 

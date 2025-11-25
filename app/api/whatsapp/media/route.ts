@@ -14,7 +14,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'messageId e instance são obrigatórios' }, { status: 400 })
     }
 
-    console.log('Buscando mídia via Evolution API:', { messageId, instance })
 
     // Usar o endpoint correto da Evolution API para buscar mídias
     const response = await fetch(
@@ -43,7 +42,6 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json()
-    console.log('Mídia recebida, tamanho:', data.base64?.length || 0)
 
     if (!data.base64) {
       return NextResponse.json({ error: 'Mídia não disponível' }, { status: 404 })

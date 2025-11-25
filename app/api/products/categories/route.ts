@@ -12,10 +12,21 @@ export async function GET() {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
+    }
+
     const { data: categories, error } = await supabase
       .from('product_categories')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .order('name', { ascending: true })
 
     if (error) {
@@ -41,6 +52,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
     
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
+    }
+    
     const body = await request.json()
     
     // Gera uma cor aleatória para a categoria (mesmas cores do modal financeiro + #f97316)
@@ -52,6 +74,7 @@ export async function POST(request: Request) {
       .insert([
         {
           user_id: user.id,
+          workspace_id: profile.workspace_id,
           name: body.name,
           color: randomColor,
         }
@@ -86,6 +109,17 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
     
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
+    }
+    
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
@@ -97,7 +131,7 @@ export async function DELETE(request: Request) {
       .from('product_categories')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
 
     if (error) {
       console.error('Erro ao deletar categoria:', error)

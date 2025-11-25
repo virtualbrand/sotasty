@@ -18,7 +18,6 @@ export async function GET(request: NextRequest) {
   const challenge = searchParams.get('hub.challenge');
 
   if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-    console.log('Webhook verificado com sucesso');
     return new NextResponse(challenge, { status: 200 });
   }
 
@@ -33,7 +32,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    console.log('Webhook recebido:', JSON.stringify(body, null, 2));
 
     // Verificar se é uma notificação de mensagem
     if (body.object === 'whatsapp_business_account') {
@@ -113,7 +111,6 @@ async function processIncomingMessage(message: Record<string, unknown>, value: R
       .eq('connected', true);
 
     if (!configs || configs.length === 0) {
-      console.log('Nenhuma configuração encontrada');
       return;
     }
 
@@ -123,7 +120,6 @@ async function processIncomingMessage(message: Record<string, unknown>, value: R
     const userConfig = configs.find((c) => c.phone_number_id === phoneNumberId);
     
     if (!userConfig) {
-      console.log('Configuração não encontrada para phone_number_id:', phoneNumberId);
       return;
     }
 
@@ -146,7 +142,6 @@ async function processIncomingMessage(message: Record<string, unknown>, value: R
     if (error) {
       console.error('Erro ao salvar mensagem:', error);
     } else {
-      console.log('Mensagem salva com sucesso:', messageId);
     }
   } catch (error) {
     console.error('Erro ao processar mensagem:', error);
@@ -167,7 +162,6 @@ async function processMessageStatus(status: Record<string, unknown>) {
     if (error) {
       console.error('Erro ao atualizar status:', error);
     } else {
-      console.log('Status atualizado:', messageId, statusValue);
     }
   } catch (error) {
     console.error('Erro ao processar status:', error);

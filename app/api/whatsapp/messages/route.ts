@@ -22,15 +22,24 @@ export async function GET(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
-      const { data: config } = await supabase
-        .from('whatsapp_config')
-        .select('*')
-        .eq('user_id', user.id)
+      // Buscar workspace_id do perfil do usuário
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('workspace_id')
+        .eq('id', user.id)
         .single()
 
-      // Se tiver configuração da API Oficial
-      if (config && config.auth_method === 'official' && config.connected) {
-        return await fetchMessagesOfficialAPI(user.id, contactId, supabase)
+      if (profile?.workspace_id) {
+        const { data: config } = await supabase
+          .from('whatsapp_config')
+          .select('*')
+          .eq('workspace_id', profile.workspace_id)
+          .single()
+
+        // Se tiver configuração da API Oficial
+        if (config && config.auth_method === 'official' && config.connected) {
+          return await fetchMessagesOfficialAPI(profile.workspace_id, contactId, supabase)
+        }
       }
     }
 
@@ -41,7 +50,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Instância não configurada' }, { status: 400 })
     }
 
-    console.log('Buscando mensagens para:', { contactId, instanceName })
 
     const response = await fetch(
       `${EVOLUTION_API_URL}/chat/findMessages/${instanceName}`,
@@ -72,12 +80,10 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json()
-    console.log('Resposta Evolution API:', Object.keys(data))
     
     // A Evolution API retorna as mensagens paginadas em data.messages.records
     const messagesArray = data.messages?.records || data.records || data.messages || data || []
     
-    console.log('Mensagens encontradas:', messagesArray.length)
     
     if (!Array.isArray(messagesArray)) {
       console.error('Formato inesperado de resposta:', typeof messagesArray)
@@ -144,7 +150,6 @@ export async function GET(request: NextRequest) {
       a.messageTimestamp - b.messageTimestamp
     ); // Ordenar por timestamp (mais antigas primeiro)
 
-    console.log('Mensagens formatadas:', messages.length);
 
     return NextResponse.json(messages)
   } catch (error) {
@@ -157,13 +162,13 @@ export async function GET(request: NextRequest) {
 }
 
 // Buscar mensagens via API Oficial (do banco de dados local)
-async function fetchMessagesOfficialAPI(userId: string, contactId: string, supabase: any) {
+async function fetchMessagesOfficialAPI(workspaceId: string, contactId: string, supabase: any) {
   try {
     // Buscar mensagens do Supabase
     const { data: messages, error } = await supabase
       .from('whatsapp_messages')
       .select('*')
-      .eq('user_id', userId)
+      .eq('workspace_id', workspaceId)
       .eq('contact_id', contactId)
       .order('timestamp', { ascending: true })
       .limit(100);

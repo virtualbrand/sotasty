@@ -12,14 +12,25 @@ export async function GET() {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    // Buscar clientes do usuário com contagem de pedidos
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
+    }
+
+    // Buscar clientes do workspace com contagem de pedidos
     const { data: customers, error } = await supabase
       .from('customers')
       .select(`
         *,
         orders:orders(count)
       `)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -52,6 +63,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
     
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
+    }
+    
     const body = await request.json()
 
     const { data, error } = await supabase
@@ -59,6 +81,7 @@ export async function POST(request: Request) {
       .insert([
         {
           user_id: user.id,
+          workspace_id: profile.workspace_id,
           name: body.name,
           email: body.email,
           phone: body.phone,
@@ -93,6 +116,17 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
     
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
+    }
+    
     const body = await request.json()
     const { id, ...updateData } = body
 
@@ -100,7 +134,7 @@ export async function PUT(request: Request) {
       .from('customers')
       .update(updateData)
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .select()
       .single()
 
@@ -127,6 +161,17 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
     
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
+    }
+    
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
@@ -138,7 +183,7 @@ export async function DELETE(request: Request) {
       .from('customers')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
 
     if (error) {
       console.error('Erro ao deletar cliente:', error)

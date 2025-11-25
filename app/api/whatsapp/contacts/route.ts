@@ -12,15 +12,24 @@ export async function GET(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
-      const { data: config } = await supabase
-        .from('whatsapp_config')
-        .select('*')
-        .eq('user_id', user.id)
+      // Buscar workspace_id do perfil do usuário
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('workspace_id')
+        .eq('id', user.id)
         .single()
 
-      // Se tiver configuração da API Oficial, usar endpoint específico
-      if (config && config.auth_method === 'official' && config.connected) {
-        return await fetchContactsOfficialAPI(user.id, supabase)
+      if (profile?.workspace_id) {
+        const { data: config } = await supabase
+          .from('whatsapp_config')
+          .select('*')
+          .eq('workspace_id', profile.workspace_id)
+          .single()
+
+        // Se tiver configuração da API Oficial, usar endpoint específico
+        if (config && config.auth_method === 'official' && config.connected) {
+          return await fetchContactsOfficialAPI(profile.workspace_id, supabase)
+        }
       }
     }
 
@@ -32,7 +41,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Instância não configurada' }, { status: 400 })
     }
 
-    console.log('Buscando contatos da instância:', instanceName);
 
     // Buscar contatos para obter informações completas
     const contactsResponse = await fetch(
@@ -50,7 +58,6 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    console.log('Evolution API contacts response status:', contactsResponse.status);
 
     // Buscar chats para obter conversas com metadados completos
     const chatsResponse = await fetch(
@@ -68,11 +75,9 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    console.log('Evolution API chats response status:', chatsResponse.status);
 
     if (!chatsResponse.ok) {
       const errorText = await chatsResponse.text();
-      console.log('Evolution API chats error:', errorText);
       return NextResponse.json([])
     }
 
@@ -81,7 +86,6 @@ export async function GET(request: NextRequest) {
     
     // Verificar se a resposta é um erro da Evolution API
     if (chatsData.error || chatsData.status === 500) {
-      console.log('Evolution API retornou erro:', chatsData);
       return NextResponse.json([])
     }
     
@@ -96,12 +100,10 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    console.log('Contatos encontrados:', contactsMap.size);
     
     // Extrair chats do formato paginado
     const chats = chatsData.chats?.records || chatsData || [];
     
-    console.log('Chats retornados:', chats.length);
     
     if (!Array.isArray(chats) || chats.length === 0) {
       return NextResponse.json([])
@@ -277,7 +279,6 @@ export async function GET(request: NextRequest) {
         return b.lastMessageTimestamp - a.lastMessageTimestamp;
       });
 
-    console.log('Contatos formatados:', formattedContacts.length);
 
     return NextResponse.json(formattedContacts)
   } catch (error) {
@@ -290,13 +291,13 @@ export async function GET(request: NextRequest) {
 }
 
 // Buscar contatos via API Oficial
-async function fetchContactsOfficialAPI(userId: string, supabase: any) {
+async function fetchContactsOfficialAPI(workspaceId: string, supabase: any) {
   try {
     // Buscar contatos únicos do histórico de mensagens
     const { data: messages, error } = await supabase
       .from('whatsapp_messages')
       .select('contact_id, contact_name, contact_phone, timestamp, content, media_type, from_me')
-      .eq('user_id', userId)
+      .eq('workspace_id', workspaceId)
       .order('timestamp', { ascending: false });
 
     if (error) {
@@ -351,7 +352,7 @@ async function fetchContactsOfficialAPI(userId: string, supabase: any) {
         const { data: lastMsg } = await supabase
           .from('whatsapp_messages')
           .select('content, media_type')
-          .eq('user_id', userId)
+          .eq('workspace_id', workspaceId)
           .eq('contact_id', contact.id)
           .order('timestamp', { ascending: false })
           .limit(1)
@@ -361,7 +362,7 @@ async function fetchContactsOfficialAPI(userId: string, supabase: any) {
         const { count: unreadCount } = await supabase
           .from('whatsapp_messages')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', userId)
+          .eq('workspace_id', workspaceId)
           .eq('contact_id', contact.id)
           .eq('from_me', false)
           .eq('read', false);

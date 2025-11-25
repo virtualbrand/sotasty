@@ -11,6 +11,17 @@ export async function GET() {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
+    }
+
     const { data, error } = await supabase
       .from('base_recipes')
       .select(`
@@ -26,7 +37,7 @@ export async function GET() {
           )
         )
       `)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -49,6 +60,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
+    }
+
     const body = await request.json()
     const { name, description, loss_factor, unit, yield: yieldValue, items, image_url } = body
 
@@ -62,6 +84,7 @@ export async function POST(request: NextRequest) {
       .insert([
         {
           user_id: user.id,
+          workspace_id: profile.workspace_id,
           name,
           description,
           loss_factor: parseFloat(loss_factor),
@@ -131,6 +154,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
@@ -148,7 +182,7 @@ export async function DELETE(request: NextRequest) {
       .from('base_recipes')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
@@ -168,6 +202,17 @@ export async function PATCH(request: NextRequest) {
     
     if (userError || !user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    // Buscar workspace_id do perfil do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json({ error: 'Workspace não encontrado' }, { status: 404 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -191,7 +236,7 @@ export async function PATCH(request: NextRequest) {
         image_url: image_url || null
       })
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
 
     if (baseError) {
       return NextResponse.json({ error: baseError.message }, { status: 500 })

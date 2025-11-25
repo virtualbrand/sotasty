@@ -8,13 +8,6 @@ export async function proxy(request: NextRequest) {
   // Remover porta para comparação
   const hostname = hostnameWithPort.split(':')[0]
 
-  console.log('[Proxy] Request:', {
-    hostnameWithPort,
-    hostname,
-    pathname,
-    method: request.method
-  })
-
   // Lista de domínios da própria aplicação
   const appDomains = [
     'localhost',
@@ -27,8 +20,6 @@ export async function proxy(request: NextRequest) {
   const isAppDomain = appDomains.some(domain => hostname === domain || hostname.includes(domain))
   
   if (!isAppDomain) {
-    console.log('[Proxy] Custom domain detected:', hostname)
-    
     // É um domínio customizado - buscar qual cliente é dono
     try {
       const supabase = createClient(
@@ -49,7 +40,6 @@ export async function proxy(request: NextRequest) {
         .eq('custom_domain_verified', true)
         .single()
 
-      console.log('[Proxy] Query result:', { hostname, settings, error })
 
       if (error || !settings) {
         return new NextResponse(
@@ -76,8 +66,6 @@ export async function proxy(request: NextRequest) {
       const url = request.nextUrl.clone()
       url.pathname = `/p/${settings.id}${pathname}`
       
-      console.log('[Proxy] Rewriting to:', url.pathname)
-      
       return NextResponse.rewrite(url)
       
     } catch (error) {
@@ -87,7 +75,6 @@ export async function proxy(request: NextRequest) {
   }
 
   // Lógica original para domínios da aplicação
-  console.log('[Proxy] App domain, applying auth logic')
 
   // Rotas públicas que não precisam de autenticação
   const publicRoutes = [
@@ -98,11 +85,8 @@ export async function proxy(request: NextRequest) {
   
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
   
-  console.log('[Proxy] Is public route?', isPublicRoute, 'for pathname:', pathname)
-  
   // Rotas de API e rotas públicas sempre permitem acesso
   if (pathname.startsWith('/api/') || isPublicRoute) {
-    console.log('[Proxy] Allowing public route without auth check')
     return await updateSession(request)
   }
 
@@ -113,11 +97,7 @@ export async function proxy(request: NextRequest) {
                               !pathSegments[0].startsWith('_') &&
                               !['api', 'auth', 'dashboard', 'p'].includes(pathSegments[0])
   
-  console.log('[Proxy] Path segments:', pathSegments, 'Is custom URL pattern?', isCustomUrlPattern)
-  
   if (isCustomUrlPattern) {
-    console.log('[Proxy] Custom URL pattern detected:', pathname)
-    
     try {
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -138,14 +118,11 @@ export async function proxy(request: NextRequest) {
         .eq('custom_url_slug', customUrlSlug)
         .single()
 
-      console.log('[Proxy] Custom URL lookup:', { customUrlSlug, settings, error })
 
       if (!error && settings) {
         // Rewrite para /p/[profileId]/[menuSlug]
         const url = request.nextUrl.clone()
         url.pathname = `/p/${settings.id}/${menuSlug}`
-        
-        console.log('[Proxy] Rewriting custom URL to:', url.pathname)
         
         return NextResponse.rewrite(url)
       }

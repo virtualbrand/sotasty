@@ -198,7 +198,6 @@ export default function EditarCardapioPage() {
       .replace(/[^a-z0-9-]/g, '') // Remove tudo exceto letras, números e hífens
       .replace(/-+/g, '-') // Remove hífens duplicados
       .replace(/^-|-$/g, '') // Remove hífens do início e fim
-    console.log('Input:', text, '| Output:', sanitized)
     return sanitized
   }
 

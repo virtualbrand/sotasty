@@ -16,7 +16,21 @@ export async function GET() {
       )
     }
 
-    // Buscar cardápios do usuário
+    // Buscar workspace_id do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json(
+        { error: 'Workspace não encontrado' },
+        { status: 404 }
+      )
+    }
+
+    // Buscar cardápios do workspace
     const { data: menus, error } = await supabase
       .from('menus')
       .select(`
@@ -28,7 +42,7 @@ export async function GET() {
           available
         )
       `)
-      .eq('user_id', user.id)
+      .eq('workspace_id', profile.workspace_id)
       .order('display_order', { ascending: true })
 
     if (error) {
@@ -71,6 +85,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Buscar workspace_id do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('workspace_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      return NextResponse.json(
+        { error: 'Workspace não encontrado' },
+        { status: 404 }
+      )
+    }
+
     const body = await request.json()
     const { name, description } = body
 
@@ -101,6 +129,7 @@ export async function POST(request: NextRequest) {
       .from('menus')
       .insert({
         user_id: user.id,
+        workspace_id: profile.workspace_id,
         name: name.trim(),
         description: description?.trim() || null,
         url_slug: slugData,

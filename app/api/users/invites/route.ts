@@ -1,10 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { randomBytes } from 'crypto'
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
+    const supabaseAdmin = createAdminClient()
     
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -12,17 +14,25 @@ export async function POST(request: Request) {
     }
 
     // Buscar perfil do usuário
-    const { data: profile } = await supabase
+    const { data: profile, error: profileFetchError } = await supabase
       .from('profiles')
       .select('workspace_id, role')
       .eq('id', user.id)
       .single()
 
-    if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
+
+    if (profileFetchError || !profile) {
+      return NextResponse.json({ error: 'Perfil não encontrado' }, { status: 404 })
+    }
+
+    if (!['admin', 'superadmin'].includes(profile.role)) {
       return NextResponse.json({ error: 'Permissão negada' }, { status: 403 })
     }
 
-    const { email, role = 'member', full_name } = await request.json()
+    // Se não tem workspace_id, usa o próprio ID do usuário como workspace
+    const workspaceId = profile.workspace_id || user.id
+
+    const { email, role = 'member', full_name, permissions } = await request.json()
 
     if (!email) {
       return NextResponse.json({ error: 'E-mail é obrigatório' }, { status: 400 })
@@ -31,12 +41,13 @@ export async function POST(request: Request) {
     // Criar usuário diretamente no auth (senha temporária será gerada)
     const temporaryPassword = randomBytes(16).toString('hex')
     
-    const { data: newUser, error: authError } = await supabase.auth.admin.createUser({
+    const { data: newUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password: temporaryPassword,
       email_confirm: true, // Auto-confirma o email
       user_metadata: {
-        full_name: full_name || email.split('@')[0]
+        full_name: full_name || email.split('@')[0],
+        name: full_name || email.split('@')[0]
       }
     })
 
@@ -49,21 +60,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Erro ao criar usuário' }, { status: 500 })
     }
 
-    // Criar perfil do usuário
+    // Criar perfil do usuário com permissões
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
         id: newUser.user.id,
         full_name: full_name || email.split('@')[0],
         role: role,
-        workspace_id: profile.workspace_id,
-        invited_by: user.id
+        workspace_id: workspaceId,
+        invited_by: user.id,
+        permissions: permissions || null
       })
 
     if (profileError) {
       console.error('Erro ao criar perfil:', profileError)
       // Tentar deletar o usuário criado se falhar ao criar o perfil
-      await supabase.auth.admin.deleteUser(newUser.user.id)
+      await supabaseAdmin.auth.admin.deleteUser(newUser.user.id)
       return NextResponse.json({ error: 'Erro ao criar perfil do usuário' }, { status: 500 })
     }
 

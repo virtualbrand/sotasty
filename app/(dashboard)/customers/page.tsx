@@ -328,7 +328,6 @@ export default function CustomersPage() {
     e.preventDefault()
     
     if (!validateForm()) {
-      console.log('Validação falhou')
       return
     }
 
@@ -345,7 +344,6 @@ export default function CustomersPage() {
         avatar_url: avatarPreview // Usar o preview que já está em base64
       }
 
-      console.log('Enviando dados:', dataToSend)
 
       const response = await fetch('/api/customers', {
         method: 'POST',
@@ -355,7 +353,6 @@ export default function CustomersPage() {
         body: JSON.stringify(dataToSend),
       })
 
-      console.log('Response status:', response.status)
       
       if (!response.ok) {
         const errorData = await response.json()
@@ -364,7 +361,6 @@ export default function CustomersPage() {
       }
 
       const newCustomer = await response.json()
-      console.log('Cliente criado:', newCustomer)
       
       // Adicionar orders_count ao novo cliente
       const customerWithCount = {
