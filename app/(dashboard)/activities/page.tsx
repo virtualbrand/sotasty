@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { CalendarWithRangePresets } from '@/components/ui/calendar-with-range-presets'
+import { Spinner } from '@/components/ui/spinner'
 import { DateRange } from 'react-day-picker'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -94,16 +95,32 @@ export default function ActivitiesPage() {
   }
 
   // Processar atividades para adicionar informações de UI
-  const processedActivities: ActivityWithIcon[] = activities.map(activity => ({
-    ...activity,
-    icon: getIconForCategory(activity.category),
-    user: activity.profiles?.full_name || 'Usuário',
-    time: formatDistanceToNow(new Date(activity.created_at), { 
-      addSuffix: true, 
-      locale: ptBR 
-    }),
-    date: format(new Date(activity.created_at), "d 'de' MMM yyyy", { locale: ptBR })
-  }))
+  const processedActivities: ActivityWithIcon[] = activities.map(activity => {
+    const now = new Date()
+    const createdAt = new Date(activity.created_at)
+    const diffInMinutes = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60))
+    
+    let timeAgo = ''
+    if (diffInMinutes < 1) {
+      timeAgo = 'Agora'
+    } else if (diffInMinutes < 60) {
+      timeAgo = `Há ${diffInMinutes} min`
+    } else if (diffInMinutes < 1440) { // menos de 24 horas
+      const hours = Math.floor(diffInMinutes / 60)
+      timeAgo = `Há ${hours} h`
+    } else {
+      const days = Math.floor(diffInMinutes / 1440)
+      timeAgo = `Há ${days} d`
+    }
+    
+    return {
+      ...activity,
+      icon: getIconForCategory(activity.category),
+      user: activity.profiles?.full_name || 'Usuário',
+      time: timeAgo,
+      date: format(createdAt, 'dd/MM/yyyy', { locale: ptBR })
+    }
+  })
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
@@ -143,19 +160,6 @@ export default function ActivitiesPage() {
     { id: 'agenda', name: 'Agenda', color: 'indigo' },
     { id: 'configuracao', name: 'Configuração', color: 'orange' },
   ]
-
-  const getColorClass = (color: string) => {
-    const colorMap: Record<string, string> = {
-      blue: 'bg-blue-100 text-blue-800 border-blue-200',
-      purple: 'bg-purple-100 text-purple-800 border-purple-200',
-      green: 'bg-green-100 text-green-800 border-green-200',
-      orange: 'bg-orange-100 text-orange-800 border-orange-200',
-      pink: 'bg-pink-100 text-pink-800 border-pink-200',
-      yellow: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      indigo: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-    }
-    return colorMap[color] || 'bg-gray-100 text-gray-800 border-gray-200'
-  }
 
   const toggleFilter = (filter: string) => {
     setActiveFilters(prev => 
@@ -270,16 +274,14 @@ export default function ActivitiesPage() {
             </Button>
             
             {showCategoryFilter && (
-              <div className="filter-dropdown absolute top-full mt-2 bg-[var(--color-bg-modal)] border border-gray-200 rounded-lg shadow-lg p-2 z-10 min-w-[200px]">
+              <div className="filter-dropdown absolute top-full mt-2 bg-[var(--color-bg-modal)] border border-gray-200 rounded-lg shadow-lg p-2 z-50 min-w-[180px]">
                 {allCategories.map(category => (
                   <button
                     key={category.id}
                     onClick={() => toggleFilter(category.id)}
                     className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left cursor-pointer hover:bg-gray-50 rounded"
                   >
-                    <Badge className={`${getColorClass(category.color)} border text-xs px-2 py-1`}>
-                      {category.name}
-                    </Badge>
+                    <span className="text-sm">{category.name}</span>
                     {activeFilters.includes(category.id) && (
                       <span className="text-xs text-green-600 font-semibold">✓</span>
                     )}
@@ -340,38 +342,38 @@ export default function ActivitiesPage() {
           <div className="flex items-center gap-2 mt-3">
             <span className="text-sm text-gray-600">Filtros ativos:</span>
             {dateRange?.from && (
-              <Badge
-                variant="secondary"
-                className="bg-gray-100 text-gray-800 cursor-pointer hover:opacity-80 transition-opacity"
-              >
-                {dateRange.from && dateRange.to 
-                  ? `${format(dateRange.from, 'dd/MM/yy', { locale: ptBR })} - ${format(dateRange.to, 'dd/MM/yy', { locale: ptBR })}`
-                  : format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })}
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border bg-[var(--color-lavender-blush)] text-[var(--color-clay-500)] border-[var(--color-clay-500)]">
+                <span className="text-xs font-medium">
+                  {dateRange.from && dateRange.to 
+                    ? `${format(dateRange.from, 'dd/MM/yy', { locale: ptBR })} - ${format(dateRange.to, 'dd/MM/yy', { locale: ptBR })}`
+                    : format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })}
+                </span>
                 <button
                   onClick={() => setDateRange(undefined)}
-                  className="ml-2 cursor-pointer"
+                  className="hover:opacity-70"
+                  title="Remover filtro"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="w-3 h-3" />
                 </button>
-              </Badge>
+              </div>
             )}
             {activeFilters.map(filter => {
               const category = allCategories.find(c => c.id === filter)
               
               return (
-                <Badge
+                <div
                   key={filter}
-                  variant="secondary"
-                  className={`${category ? getColorClass(category.color) : 'bg-gray-100 text-gray-800'} cursor-pointer hover:opacity-80 transition-opacity`}
+                  className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border bg-[var(--color-lavender-blush)] text-[var(--color-clay-500)] border-[var(--color-clay-500)]"
                 >
-                  {category?.name || filter}
+                  <span className="text-xs font-medium">{category?.name || filter}</span>
                   <button
                     onClick={() => toggleFilter(filter)}
-                    className="ml-2 cursor-pointer"
+                    className="hover:opacity-70"
+                    title="Remover filtro"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="w-3 h-3" />
                   </button>
-                </Badge>
+                </div>
               )
             })}
           </div>
@@ -379,71 +381,72 @@ export default function ActivitiesPage() {
       </div>
 
       {/* Lista de Atividades */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-white border border-gray-200 rounded-lg p-6 max-h-[calc(100vh-280px)] overflow-y-auto">
         {loading ? (
-          <div className="p-12 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-clay-500)] mx-auto mb-3"></div>
-            <p className="text-gray-500">Carregando atividades...</p>
+          <div className="flex justify-center py-12">
+            <Spinner size="large" className="text-[var(--color-clay-500)] !w-[40px] !h-[40px]" />
+          </div>
+        ) : filteredActivities.length === 0 ? (
+          <div className="p-12 text-center text-gray-500">
+            <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p>{searchTerm || activeFilters.length > 0 ? 'Nenhuma atividade encontrada' : 'Nenhuma atividade registrada'}</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
-          {filteredActivities.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">
-              <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>{searchTerm || activeFilters.length > 0 ? 'Nenhuma atividade encontrada' : 'Nenhuma atividade registrada'}</p>
-            </div>
-          ) : (
-            filteredActivities.map((activity) => {
-              const Icon = activity.icon
-              return (
-                <div key={activity.id} className="p-6 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start gap-4">
-                    {/* Ícone */}
-                    <div className="w-12 h-12 rounded-full bg-[var(--color-lavender-blush)] flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-6 h-6 text-[var(--color-clay-500)]" />
-                    </div>
-
-                    {/* Conteúdo */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-base font-semibold text-gray-900">
-                              {activity.action}
-                            </h3>
-                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getCategoryColor(activity.category)}`}>
-                              {getCategoryLabel(activity.category)}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600 mb-2">
-                            {activity.description}
-                          </p>
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <User className="w-3 h-3" />
-                              {activity.user}
-                            </span>
-                            <span>•</span>
-                            <span>{activity.time}</span>
-                            <span>•</span>
-                            <span>{activity.date}</span>
-                          </div>
-                        </div>
-
-                        {/* Ações */}
-                        <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                          </svg>
-                        </button>
+          <table className="w-full -mx-6 px-6" style={{ width: 'calc(100% + 48px)' }}>
+            <thead className="sticky top-0 bg-white z-10 shadow-sm">
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Categoria</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Ação</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Atividade</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Usuário</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm bg-white relative before:content-[''] before:absolute before:inset-0 before:-top-6 before:bg-white before:-z-10">Data e Hora</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredActivities.map((activity) => {
+                const Icon = activity.icon
+                // Extrair badge do HTML da descrição
+                const descriptionMatch = activity.description.match(/<span class="badge-(danger|secondary|success)">(.+?)<\/span>\s*(.*)/)
+                const badgeType = descriptionMatch ? descriptionMatch[1] : null
+                const badgeText = descriptionMatch ? descriptionMatch[2] : null
+                const descriptionText = descriptionMatch ? descriptionMatch[3] : activity.description
+                
+                return (
+                  <tr key={activity.id} className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors">
+                    {/* Ícone + Categoria */}
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-5 h-5 flex-shrink-0 text-gray-500" />
+                        <span className="font-medium text-sm text-gray-600">{getCategoryLabel(activity.category)}</span>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })
-          )}
-        </div>
+                    </td>
+
+                    {/* Badge Ação */}
+                    <td className="py-3 px-4">
+                      {badgeType && badgeText && (
+                        <span className={`badge-${badgeType}`}>{badgeText}</span>
+                      )}
+                    </td>
+
+                    {/* Descrição (sem badge) */}
+                    <td className="py-3 px-4 text-sm text-gray-600">
+                      {descriptionText}
+                    </td>
+
+                    {/* Usuário */}
+                    <td className="py-3 px-4 text-sm text-gray-600">
+                      {activity.user}
+                    </td>
+
+                    {/* Data e Hora */}
+                    <td className="py-3 px-4 text-sm text-gray-600 whitespace-nowrap">
+                      {activity.time} - {activity.date}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         )}
 
         {/* Paginação */}

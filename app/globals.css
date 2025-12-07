@@ -697,9 +697,14 @@ button:focus-visible {
 .btn-secondary-xs,
 .btn-secondary-outline-xs,
 .btn-info-xs,
+.btn-primary-xs,
+.btn-secondary-xs,
+.btn-info-xs,
 .btn-success-xs,
 .btn-warning-xs,
 .btn-danger-xs,
+.btn-outline-primary-xs,
+.btn-outline-secondary-xs,
 .btn-outline-info-xs,
 .btn-outline-success-xs,
 .btn-outline-warning-xs,
@@ -769,13 +774,13 @@ button:focus-visible {
 }
 
 /* SECONDARY OUTLINE XS */
-.btn-secondary-outline-xs {
+.btn-outline-secondary-xs {
   background-color: transparent;
   color: var(--color-graphite-700);
   border-color: var(--color-graphite-500);
 }
 
-.btn-secondary-outline-xs:hover:not(:disabled) {
+.btn-outline-secondary-xs:hover:not(:disabled) {
   background-color: var(--color-graphite-50);
   border-color: var(--color-graphite-600);
 }
@@ -885,6 +890,47 @@ button:focus-visible {
   background-color: var(--color-danger-500);
   color: #FFFFFF;
   border-color: var(--color-danger-500);
+}
+
+/* ===================================
+   BADGES (Activity Status)
+   =================================== */
+
+/* Base Badge Styles */
+.badge-danger,
+.badge-secondary,
+.badge-success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-weight: 400;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  border: 1px solid;
+}
+
+/* Badge Danger (Exclusão) */
+.badge-danger {
+  background-color: transparent;
+  color: var(--color-danger-600);
+  border-color: var(--color-danger-500);
+}
+
+/* Badge Secondary (Atualização/Edição) */
+.badge-secondary {
+  background-color: transparent;
+  color: var(--color-graphite-600);
+  border-color: var(--color-graphite-400);
+}
+
+/* Badge Success (Adição/Criação) */
+.badge-success {
+  background-color: transparent;
+  color: var(--color-success-600);
+  border-color: var(--color-success-500);
 }
 
 /* Input and Select Focus Styles */

@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch'
 import { X, Plus, Info } from 'lucide-react'
 import { showToast } from '@/app/(dashboard)/layout'
 import { createClient } from '@/lib/supabase/client'
+import { ActivitySettings } from '@/lib/activityLogger'
 
 interface Category {
   id: string
@@ -165,9 +166,12 @@ export default function ProductsSettingsPage() {
     localStorage.setItem('productSettings', JSON.stringify(settings))
   }
 
-  const handleIngredientsToggle = (checked: boolean) => {
+  const handleIngredientsToggle = async (checked: boolean) => {
     setShowLossFactorIngredients(checked)
     updateSetting('showLossFactorIngredients', checked)
+    
+    // Registrar atividade
+    await ActivitySettings.lossFactorToggled('ingrediente', checked)
     
     showToast({
       title: checked ? 'Fator de perda ativado' : 'Fator de perda desativado',
@@ -179,9 +183,12 @@ export default function ProductsSettingsPage() {
     })
   }
 
-  const handleBasesToggle = (checked: boolean) => {
+  const handleBasesToggle = async (checked: boolean) => {
     setShowLossFactorBases(checked)
     updateSetting('showLossFactorBases', checked)
+    
+    // Registrar atividade
+    await ActivitySettings.lossFactorToggled('base', checked)
     
     showToast({
       title: checked ? 'Fator de perda ativado' : 'Fator de perda desativado',
@@ -193,9 +200,12 @@ export default function ProductsSettingsPage() {
     })
   }
 
-  const handleProductsToggle = (checked: boolean) => {
+  const handleProductsToggle = async (checked: boolean) => {
     setShowLossFactorProducts(checked)
     updateSetting('showLossFactorProducts', checked)
+    
+    // Registrar atividade
+    await ActivitySettings.lossFactorToggled('produto', checked)
     
     showToast({
       title: checked ? 'Fator de perda ativado' : 'Fator de perda desativado',
@@ -207,9 +217,12 @@ export default function ProductsSettingsPage() {
     })
   }
 
-  const handleProductPhotoToggle = (checked: boolean) => {
+  const handleProductPhotoToggle = async (checked: boolean) => {
     setShowProductPhoto(checked)
     updateSetting('showProductPhoto', checked)
+    
+    // Registrar atividade
+    await ActivitySettings.productPhotoToggled('produto', checked)
     
     showToast({
       title: checked ? 'Campo de foto ativado' : 'Campo de foto desativado',
@@ -221,9 +234,12 @@ export default function ProductsSettingsPage() {
     })
   }
 
-  const handleIngredientPhotoToggle = (checked: boolean) => {
+  const handleIngredientPhotoToggle = async (checked: boolean) => {
     setShowIngredientPhoto(checked)
     updateSetting('showIngredientPhoto', checked)
+    
+    // Registrar atividade
+    await ActivitySettings.productPhotoToggled('ingrediente', checked)
     
     showToast({
       title: checked ? 'Campo de foto ativado' : 'Campo de foto desativado',
@@ -235,9 +251,12 @@ export default function ProductsSettingsPage() {
     })
   }
 
-  const handleBasePhotoToggle = (checked: boolean) => {
+  const handleBasePhotoToggle = async (checked: boolean) => {
     setShowBasePhoto(checked)
     updateSetting('showBasePhoto', checked)
+    
+    // Registrar atividade
+    await ActivitySettings.productPhotoToggled('base', checked)
     
     showToast({
       title: checked ? 'Campo de foto ativado' : 'Campo de foto desativado',
@@ -249,7 +268,18 @@ export default function ProductsSettingsPage() {
     })
   }
 
-  const handleMeasurementUnitChange = (unit: 'metric-large' | 'metric-small') => {
+  const handleMeasurementUnitChange = async (unit: 'metric-large' | 'metric-small') => {
+    const unitNames = {
+      'metric-large': 'Kg/L',
+      'metric-small': 'g/ml'
+    }
+    
+    // Registrar atividade
+    await ActivitySettings.measurementUnitChanged(
+      unitNames[measurementUnit],
+      unitNames[unit]
+    )
+    
     setMeasurementUnit(unit)
     updateSetting('measurementUnit', unit)
     
@@ -290,6 +320,9 @@ export default function ProductsSettingsPage() {
         setCategories([...categories, newCat])
         setNewCategory('')
         
+        // Registrar atividade
+        await ActivitySettings.productCategoryAdded(newCat.name)
+        
         showToast({
           title: 'Categoria adicionada!',
           message: `A categoria "${newCat.name}" foi adicionada com sucesso`,
@@ -318,6 +351,9 @@ export default function ProductsSettingsPage() {
       
       if (response.ok) {
         setCategories(categories.filter(cat => cat.id !== categoryId))
+        
+        // Registrar atividade
+        await ActivitySettings.productCategoryRemoved(categoryName)
         
         showToast({
           title: 'Categoria removida!',

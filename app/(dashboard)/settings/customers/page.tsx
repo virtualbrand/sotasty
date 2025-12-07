@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Switch } from '@/components/ui/switch'
 import { Info } from 'lucide-react'
 import { showToast } from '@/app/(dashboard)/layout'
+import { ActivitySettings } from '@/lib/activityLogger'
 
 export default function CustomersSettingsPage() {
   // Inicializar com valores do localStorage
@@ -37,9 +38,12 @@ export default function CustomersSettingsPage() {
     localStorage.setItem('customerSettings', JSON.stringify(settings))
   }
 
-  const handleCpfCnpjToggle = (checked: boolean) => {
+  const handleCpfCnpjToggle = async (checked: boolean) => {
     setShowCpfCnpj(checked)
     updateSetting('showCpfCnpj', checked)
+    
+    // Registrar atividade
+    await ActivitySettings.customerCpfCnpjToggled(checked)
     
     showToast({
       title: checked ? 'Campo CPF/CNPJ ativado' : 'Campo CPF/CNPJ desativado',
@@ -51,9 +55,12 @@ export default function CustomersSettingsPage() {
     })
   }
 
-  const handlePhotoToggle = (checked: boolean) => {
+  const handlePhotoToggle = async (checked: boolean) => {
     setShowPhoto(checked)
     updateSetting('showPhoto', checked)
+    
+    // Registrar atividade
+    await ActivitySettings.customerPhotoToggled(checked)
     
     showToast({
       title: checked ? 'Campo de foto ativado' : 'Campo de foto desativado',

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { ActivityIngredients } from '@/lib/activityLogger'
 
 export async function GET() {
   try {
@@ -88,6 +89,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Registrar atividade
+    const ingredientType: 'material' | 'ingredient' = data.type === 'materiais' ? 'material' : 'ingredient'
+    console.log('🔍 Tentando registrar atividade - insumo criado:', data.name, data.type, '->', ingredientType, data.id)
+    ActivityIngredients.created(data.name, ingredientType, data.id)
+      .then(result => console.log('✅ Atividade registrada:', result))
+      .catch(err => console.error('❌ Erro ao registrar atividade:', err))
+
     return NextResponse.json(data, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Erro ao criar insumo' }, { status: 500 })
@@ -124,6 +132,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'ID não fornecido' }, { status: 400 })
     }
 
+    // Buscar dados antigos para comparar preços
+    const { data: oldIngredient } = await supabase
+      .from('ingredients')
+      .select('average_cost, name')
+      .eq('id', id)
+      .eq('workspace_id', profile.workspace_id)
+      .single()
+
     const { data, error } = await supabase
       .from('ingredients')
       .update({
@@ -143,6 +159,20 @@ export async function PATCH(request: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    // Registrar atividade
+    const priceChanged = oldIngredient && average_cost && 
+                        oldIngredient.average_cost !== parseFloat(average_cost)
+    
+    const ingredientType: 'material' | 'ingredient' = data.type === 'materiais' ? 'material' : 'ingredient'
+    console.log('🔍 Tentando registrar atividade - insumo atualizado:', data.name, ingredientType)
+    ActivityIngredients.updated(
+      data.name, 
+      ingredientType,
+      { changes: { name, volume, unit, average_cost, loss_factor } }, 
+      data.id
+    ).then(result => console.log('✅ Atividade registrada:', result))
+      .catch(err => console.error('❌ Erro ao registrar atividade:', err))
 
     return NextResponse.json(data)
   } catch {
@@ -178,6 +208,14 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID não fornecido' }, { status: 400 })
     }
 
+    // Buscar nome e tipo antes de deletar
+    const { data: ingredient } = await supabase
+      .from('ingredients')
+      .select('name, type')
+      .eq('id', id)
+      .eq('workspace_id', profile.workspace_id)
+      .single()
+
     const { error } = await supabase
       .from('ingredients')
       .delete()
@@ -186,6 +224,15 @@ export async function DELETE(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Registrar atividade
+    if (ingredient) {
+      const ingredientType: 'material' | 'ingredient' = ingredient.type === 'materiais' ? 'material' : 'ingredient'
+      console.log('🔍 Tentando registrar atividade - insumo deletado:', ingredient.name, ingredientType, id)
+      ActivityIngredients.deleted(ingredient.name, ingredientType, id)
+        .then(result => console.log('✅ Atividade registrada:', result))
+        .catch(err => console.error('❌ Erro ao registrar atividade:', err))
     }
 
     return NextResponse.json({ success: true })

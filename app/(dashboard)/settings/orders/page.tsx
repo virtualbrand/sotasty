@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Plus, X, Tag, FolderOpen, CircleDot, Eye, Check, FileText } from 'lucide-react'
 import { showToast } from '@/app/(dashboard)/layout'
+import { ActivitySettings } from '@/lib/activityLogger'
 
 interface Status {
   id: string
@@ -176,10 +177,15 @@ export default function OrdersSettingsPage() {
 
         if (response.ok) {
           const updatedStatus = await response.json()
-          setStatuses(statuses.map(s => s.id === editingStatusId ? updatedStatus : s))
+          setStatuses(statuses.map(s => s.id === editingStatusId ? updatedStatus : s))          
           setNewStatusName('')
           setNewStatusColor('blue')
           setEditingStatusId(null)
+          
+          // Registrar atividade
+          const oldName = statuses.find(s => s.id === editingStatusId)?.name || ''
+          await ActivitySettings.orderStatusUpdated(oldName, updatedStatus.name)
+          
           showToast({
             title: 'Status atualizado!',
             message: `"${updatedStatus.name}" foi atualizado com sucesso.`,
@@ -200,6 +206,10 @@ export default function OrdersSettingsPage() {
           setStatuses([...statuses, newStatus])
           setNewStatusName('')
           setNewStatusColor('blue')
+          
+          // Registrar atividade
+          await ActivitySettings.orderStatusAdded(newStatus.name, newStatus.color)
+          
           showToast({
             title: 'Status adicionado!',
             message: `"${newStatus.name}" foi adicionado com sucesso.`,
@@ -240,6 +250,10 @@ export default function OrdersSettingsPage() {
 
       if (response.ok) {
         setStatuses(statuses.filter(s => s.id !== id))
+        
+        // Registrar atividade
+        await ActivitySettings.orderStatusRemoved(name)
+        
         showToast({
           title: 'Status removido!',
           message: `"${name}" foi removido com sucesso.`,
@@ -276,6 +290,11 @@ export default function OrdersSettingsPage() {
           setNewCategoryName('')
           setNewCategoryColor('pink')
           setEditingCategoryId(null)
+          
+          // Registrar atividade
+          const oldName = categories.find(c => c.id === editingCategoryId)?.name || ''
+          await ActivitySettings.orderCategoryUpdated(oldName, updatedCategory.name)
+          
           showToast({
             title: 'Categoria atualizada!',
             message: `"${updatedCategory.name}" foi atualizada com sucesso.`,
@@ -296,6 +315,10 @@ export default function OrdersSettingsPage() {
           setCategories([...categories, newCategory])
           setNewCategoryName('')
           setNewCategoryColor('pink')
+          
+          // Registrar atividade
+          await ActivitySettings.orderCategoryAdded(newCategory.name)
+          
           showToast({
             title: 'Categoria adicionada!',
             message: `"${newCategory.name}" foi adicionada com sucesso.`,
@@ -336,6 +359,10 @@ export default function OrdersSettingsPage() {
 
       if (response.ok) {
         setCategories(categories.filter(c => c.id !== id))
+        
+        // Registrar atividade
+        await ActivitySettings.orderCategoryRemoved(name)
+        
         showToast({
           title: 'Categoria removida!',
           message: `"${name}" foi removida com sucesso.`,
@@ -372,6 +399,11 @@ export default function OrdersSettingsPage() {
           setNewTagName('')
           setNewTagColor('blue')
           setEditingTagId(null)
+          
+          // Registrar atividade
+          const oldName = tags.find(t => t.id === editingTagId)?.name || ''
+          await ActivitySettings.orderTagUpdated(oldName, updatedTag.name)
+          
           showToast({
             title: 'Tag atualizada!',
             message: `"${updatedTag.name}" foi atualizada com sucesso.`,
@@ -392,6 +424,10 @@ export default function OrdersSettingsPage() {
           setTags([...tags, newTag])
           setNewTagName('')
           setNewTagColor('blue')
+          
+          // Registrar atividade
+          await ActivitySettings.orderTagAdded(newTag.name)
+          
           showToast({
             title: 'Tag adicionada!',
             message: `"${newTag.name}" foi adicionada com sucesso.`,
@@ -432,6 +468,10 @@ export default function OrdersSettingsPage() {
 
       if (response.ok) {
         setTags(tags.filter(t => t.id !== id))
+        
+        // Registrar atividade
+        await ActivitySettings.orderTagRemoved(name)
+        
         showToast({
           title: 'Tag removida!',
           message: `"${name}" foi removida com sucesso.`,
@@ -468,10 +508,13 @@ export default function OrdersSettingsPage() {
 
   const dateExamples = getDateExamples()
 
-  const toggleAlternativeTitle = () => {
+  const toggleAlternativeTitle = async () => {
     const newValue = !enableAlternativeTitle
     setEnableAlternativeTitle(newValue)
     localStorage.setItem('ordersEnableAlternativeTitle', String(newValue))
+    
+    // Registrar atividade
+    await ActivitySettings.orderAlternativeTitleToggled(newValue)
     
     showToast({
       title: newValue ? 'Título alternativo habilitado!' : 'Título alternativo desabilitado!',

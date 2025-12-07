@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, loss_factor, unit, yield: yieldValue, items, image_url } = body
+    const { name, loss_factor, unit, yield: yieldValue, items, image_url } = body
 
     if (!name || loss_factor === undefined) {
       return NextResponse.json({ error: 'Dados incompletos' }, { status: 400 })
@@ -86,7 +86,6 @@ export async function POST(request: NextRequest) {
           user_id: user.id,
           workspace_id: profile.workspace_id,
           name,
-          description,
           loss_factor: parseFloat(loss_factor),
           unit: unit || 'gramas',
           yield: yieldValue ? parseFloat(yieldValue) : null,
@@ -218,7 +217,7 @@ export async function PATCH(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     const body = await request.json()
-    const { name, description, loss_factor, unit, yield: yieldValue, items, image_url } = body
+    const { name, loss_factor, unit, yield: yieldValue, items, image_url } = body
 
     if (!id) {
       return NextResponse.json({ error: 'ID não fornecido' }, { status: 400 })
@@ -229,7 +228,6 @@ export async function PATCH(request: NextRequest) {
       .from('base_recipes')
       .update({
         name,
-        description,
         loss_factor: parseFloat(loss_factor),
         unit: unit || 'gramas',
         yield: yieldValue ? parseFloat(yieldValue) : null,

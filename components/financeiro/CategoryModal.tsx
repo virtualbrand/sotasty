@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Spinner } from '@/components/ui/spinner'
 import { 
   X, Lightbulb, Cloud, ClipboardList, Shirt, Settings, Plane, Briefcase, 
   Music, Trophy, Newspaper, Sandwich, ChefHat, MessageCircle, Dices, MapPin, 
@@ -400,11 +401,17 @@ export default function CategoryModal({ isOpen, onClose, type, onSuccess, catego
             disabled={isSubmitting || !categoryName.trim()}
             className="btn-success disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            <Check className="w-4 h-4" />
-            {isSubmitting 
-              ? (isEdit ? 'Salvando...' : 'Criando...') 
-              : (isEdit ? `Atualizar ${type === 'despesa' ? 'Despesa' : 'Receita'}` : `Adicionar ${type === 'despesa' ? 'Despesa' : 'Receita'}`)
-            }
+            {isSubmitting ? (
+              <>
+                <Spinner size="small" className="w-4 h-4" />
+                {isEdit ? 'Salvando...' : 'Criando...'}
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4" />
+                {isEdit ? `Atualizar ${type === 'despesa' ? 'Despesa' : 'Receita'}` : `Adicionar ${type === 'despesa' ? 'Despesa' : 'Receita'}`}
+              </>
+            )}
           </button>
         </div>
       </div>

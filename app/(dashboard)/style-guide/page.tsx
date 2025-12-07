@@ -325,6 +325,15 @@ export default function StyleGuidePage() {
               <button className="btn-outline-danger-xs">Danger XS</button>
             </div>
           </div>
+          <div>
+            <h3 className="font-bold text-[#1A1C23] mb-4">Badges (Activity Status)</h3>
+            <p className="text-sm text-[#3D3F54] mb-3">Badges usados para indicar o tipo de ação em atividades. Estilo similar aos botões outline XS, mas com font-weight 400.</p>
+            <div className="flex flex-wrap gap-4 items-center">
+              <span className="badge-success">Produto criado</span>
+              <span className="badge-secondary">Produto atualizado</span>
+              <span className="badge-danger">Produto excluído</span>
+            </div>
+          </div>
         </div>
       </section>
 

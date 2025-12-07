@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { ActivityOrders } from '@/lib/activityLogger'
 
 export async function GET() {
   try {
@@ -116,6 +117,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Registrar atividade
+    const orderTitle = data.title || data.product
+    ActivityOrders.created(orderTitle, data.customer, data.id)
+      .catch(err => console.error('❌ Erro ao registrar atividade:', err))
+
     return NextResponse.json(data, { status: 201 })
   } catch (error) {
     console.error('Erro no POST /api/orders:', error)
@@ -196,6 +202,11 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Pedido não encontrado' }, { status: 404 })
     }
 
+    // Registrar atividade
+    const orderTitle = data.title || data.product
+    ActivityOrders.updated(orderTitle, updateData, data.id)
+      .catch(err => console.error('❌ Erro ao registrar atividade:', err))
+
     return NextResponse.json(data)
   } catch (error) {
     console.error('Erro no PATCH /api/orders:', error)
@@ -221,6 +232,14 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID do pedido é obrigatório' }, { status: 400 })
     }
 
+    // Buscar dados do pedido antes de deletar para registrar atividade
+    const { data: order } = await supabase
+      .from('orders')
+      .select('title, product')
+      .eq('id', id)
+      .eq('workspace_id', (await supabase.from('profiles').select('workspace_id').eq('id', user.id).single()).data?.workspace_id)
+      .single()
+
     // Deleta o pedido
     const { error } = await supabase
       .from('orders')
@@ -231,6 +250,13 @@ export async function DELETE(request: NextRequest) {
     if (error) {
       console.error('Erro ao deletar pedido:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Registrar atividade
+    if (order) {
+      const orderTitle = order.title || order.product
+      ActivityOrders.deleted(orderTitle, id)
+        .catch(err => console.error('❌ Erro ao registrar atividade:', err))
     }
 
     return NextResponse.json({ message: 'Pedido deletado com sucesso' })

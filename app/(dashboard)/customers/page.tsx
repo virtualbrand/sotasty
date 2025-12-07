@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { User, Phone, Mail, ShoppingBag, X, Search, Info, ArrowDownAZ, ArrowDownZA, Camera, SwitchCamera, CircleX, Trash2, CircleAlert, Check } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { Spinner } from '@/components/ui/spinner'
 import { showToast } from '@/app/(dashboard)/layout'
 import { useCustomerSettings } from '@/hooks/useCustomerSettings'
 import { createClient } from '@/lib/supabase/client'
@@ -879,8 +880,17 @@ export default function CustomersPage() {
                     disabled={loading || !hasChanges}
                     className="btn-success"
                   >
-                    <Check className="w-4 h-4" />
-                    {loading ? 'Salvando...' : 'Atualizar Cliente'}
+                    {loading ? (
+                      <>
+                        <Spinner size="small" className="w-4 h-4" />
+                        Atualizando...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Atualizar Cliente
+                      </>
+                    )}
                   </button>
                 </div>
               ) : (
@@ -890,8 +900,17 @@ export default function CustomersPage() {
                     disabled={loading}
                     className="btn-success"
                   >
-                    <Check className="w-4 h-4" />
-                    {loading ? 'Salvando...' : 'Salvar Cliente'}
+                    {loading ? (
+                      <>
+                        <Spinner size="small" className="w-4 h-4" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Salvar Cliente
+                      </>
+                    )}
                   </button>
                 </div>
               )}

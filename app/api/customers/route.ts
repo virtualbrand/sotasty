@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { ActivityCustomers } from '@/lib/activityLogger'
 
 export async function GET() {
   try {
@@ -98,6 +99,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Registrar atividade
+    ActivityCustomers.created(data.name, data.id)
+      .catch(err => console.error('❌ Erro ao registrar atividade:', err))
+
     return NextResponse.json(data)
   } catch (error) {
     console.error('Error creating customer:', error)
@@ -143,6 +148,10 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Registrar atividade
+    ActivityCustomers.updated(data.name, updateData, data.id)
+      .catch(err => console.error('❌ Erro ao registrar atividade:', err))
+
     return NextResponse.json(data)
   } catch (error) {
     console.error('Error updating customer:', error)
@@ -179,6 +188,14 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Customer ID is required' }, { status: 400 })
     }
 
+    // Buscar dados do cliente antes de deletar para registrar atividade
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('name')
+      .eq('id', id)
+      .eq('workspace_id', profile.workspace_id)
+      .single()
+
     const { error } = await supabase
       .from('customers')
       .delete()
@@ -188,6 +205,12 @@ export async function DELETE(request: Request) {
     if (error) {
       console.error('Erro ao deletar cliente:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Registrar atividade
+    if (customer) {
+      ActivityCustomers.deleted(customer.name, id)
+        .catch(err => console.error('❌ Erro ao registrar atividade:', err))
     }
 
     return NextResponse.json({ success: true })

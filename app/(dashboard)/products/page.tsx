@@ -559,6 +559,7 @@ function IngredientsTab({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [hasIngredientsChanges, setHasIngredientsChanges] = useState(false)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -716,6 +717,7 @@ function IngredientsTab({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSaving(true)
     
     try {
       // Preparar dados: converter unidades para o padrão do banco (g/ml)
@@ -771,6 +773,7 @@ function IngredientsTab({
         setIsModalOpen(false)
         setEditingId(null)
         setImagePreview(null)
+        setSaving(false)
         setFormData({
           type: 'ingredientes',
           name: '',
@@ -781,6 +784,7 @@ function IngredientsTab({
           image_url: ''
         })
       } else {
+        setSaving(false)
         const error = await response.json()
         showToast({
           title: 'Erro ao salvar insumo',
@@ -791,6 +795,7 @@ function IngredientsTab({
       }
     } catch (error) {
       console.error('Erro ao salvar insumo:', error)
+      setSaving(false)
       showToast({
         title: 'Erro ao salvar insumo',
         message: 'Não foi possível salvar o insumo. Tente novamente.',
@@ -961,7 +966,7 @@ function IngredientsTab({
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
               />
             </div>
             
@@ -995,7 +1000,7 @@ function IngredientsTab({
                       setFormData(prev => ({ ...prev, volume: rawValue }))
                     }}
                     required
-                    className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
+                    className="w-full px-3 pr-12 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">
                     {getUnitAbbreviation(formData.unit)}
@@ -1019,7 +1024,7 @@ function IngredientsTab({
                       setFormData(prev => ({ ...prev, average_cost: decimalValue }))
                     }}
                     required
-                    className="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
+                    className="w-full pl-12 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                   />
                 </div>
               </div>
@@ -1034,7 +1039,7 @@ function IngredientsTab({
                       value={formData.loss_factor}
                       onChange={(e) => setFormData({ ...formData, loss_factor: e.target.value })}
                       required
-                      className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
+                      className="w-full px-3 pr-12 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">%</span>
                   </div>
@@ -1072,14 +1077,23 @@ function IngredientsTab({
             <button 
               type="submit"
               disabled={
-                editingId 
+                saving || (editingId 
                   ? !hasIngredientsChanges 
-                  : !formData.name || !formData.volume || !formData.average_cost || !formData.loss_factor
+                  : !formData.name || !formData.volume || !formData.average_cost || !formData.loss_factor)
               }
               className="btn-success"
             >
-              <Check className="w-4 h-4" />
-              {editingId ? 'Atualizar Insumo' : 'Salvar Insumo'}
+              {saving ? (
+                <>
+                  <Spinner size="small" className="w-4 h-4" />
+                  {editingId ? 'Atualizando...' : 'Salvando...'}
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  {editingId ? 'Atualizar Insumo' : 'Salvar Insumo'}
+                </>
+              )}
             </button>
           </div>
         </form>
@@ -1241,6 +1255,7 @@ function BasesTab({
   const [bases, setBases] = useState<BaseRecipe[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [hasBasesChanges, setHasBasesChanges] = useState(false)
   const [originalBaseData, setOriginalBaseData] = useState<any>(null)
@@ -1403,6 +1418,7 @@ function BasesTab({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSaving(true)
     
     try {
       // Converter valores para o padrão do banco (g/ml)
@@ -1458,6 +1474,7 @@ function BasesTab({
         setIsModalOpen(false)
         setEditingId(null)
         setImagePreview(null)
+        setSaving(false)
         setFormData({
           name: '',
           loss_factor: '2',
@@ -1467,6 +1484,7 @@ function BasesTab({
           image_url: ''
         })
       } else {
+        setSaving(false)
         const error = await response.json()
         showToast({
           title: 'Erro ao salvar base',
@@ -1477,6 +1495,7 @@ function BasesTab({
       }
     } catch (error) {
       console.error('Erro ao salvar base:', error)
+      setSaving(false)
       showToast({
         title: 'Erro ao salvar base',
         message: 'Não foi possível salvar a base. Tente novamente.',
@@ -1631,7 +1650,7 @@ function BasesTab({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
             />
           </div>
 
@@ -1750,7 +1769,7 @@ function BasesTab({
                       setFormData(prev => ({ ...prev, yield: rawValue }))
                     }}
                     required
-                    className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
+                    className="w-full px-3 pr-12 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">
                     {formData.unit === 'gramas' ? 'g' : formData.unit === 'kg' ? 'kg' : formData.unit === 'ml' ? 'ml' : formData.unit === 'L' ? 'L' : 'un'}
@@ -1769,7 +1788,7 @@ function BasesTab({
                       value={formData.loss_factor}
                       onChange={(e) => setFormData({ ...formData, loss_factor: e.target.value })}
                       required
-                      className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
+                      className="w-full px-3 pr-12 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">
                       %
@@ -1810,14 +1829,23 @@ function BasesTab({
             <button 
               type="submit"
               disabled={
-                editingId 
+                saving || (editingId 
                   ? !hasBasesChanges 
-                  : !formData.name || !formData.yield || formData.items.length === 0
+                  : !formData.name || !formData.yield || formData.items.length === 0)
               }
               className="btn-success"
             >
-              <Check className="w-4 h-4" />
-              {editingId ? 'Atualizar Base' : 'Salvar Base'}
+              {saving ? (
+                <>
+                  <Spinner size="small" className="w-4 h-4" />
+                  {editingId ? 'Atualizando...' : 'Salvando...'}
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  {editingId ? 'Atualizar Base' : 'Salvar Base'}
+                </>
+              )}
             </button>
           </div>
         </form>
@@ -2479,7 +2507,7 @@ function ProductsTab({
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
               />
             </div>
             
@@ -2616,7 +2644,7 @@ function ProductsTab({
                       const decimalValue = rawValue ? (parseInt(rawValue, 10) / 100).toFixed(2) : ''
                       setFormData(prev => ({ ...prev, selling_price: decimalValue }))
                     }}
-                    className="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
+                    className="w-full pl-12 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                   />
                 </div>
               </div>
@@ -2633,7 +2661,7 @@ function ProductsTab({
                       value={formData.loss_factor}
                       onChange={(e) => setFormData({ ...formData, loss_factor: e.target.value })}
                       required
-                      className="w-full px-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
+                      className="w-full px-3 pr-12 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B3736B] focus:border-transparent text-sm text-gray-900 placeholder:text-sm text-gray-500 bg-white"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none">%</span>
                   </div>

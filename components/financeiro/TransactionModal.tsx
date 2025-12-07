@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Spinner } from '@/components/ui/spinner'
 import { 
   X, Repeat, MessageSquare, Paperclip, ThumbsUp, ThumbsDown, Plus,
   Lightbulb, Cloud, ClipboardList, Shirt, Settings, Plane, Briefcase, Music, Trophy, Newspaper, Sandwich, 
@@ -582,7 +583,10 @@ export default function TransactionModal({ isOpen, onClose, type, transaction, o
             className="btn-success w-full"
           >
             {isSubmitting ? (
-              <span>Salvando...</span>
+              <>
+                <Spinner size="small" className="w-4 h-4" />
+                Salvando...
+              </>
             ) : (
               <>
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check w-4 h-4" aria-hidden="true">

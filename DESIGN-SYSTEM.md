@@ -777,6 +777,83 @@ cursor: not-allowed;
 
 ---
 
+## Componentes: Badges (Activity Status)
+
+Badges são utilizados para indicar o tipo de ação realizada no sistema de atividades. Eles seguem o mesmo estilo dos botões outline XS, mas com font-weight 400 para uma aparência mais sutil.
+
+### Badge Danger (Exclusão)
+Utilizado para indicar ações de exclusão/remoção.
+
+```css
+/* Default */
+background: transparent;
+color: #A34C57;  /* danger-600 */
+border: 1px solid #C75D6A;  /* danger-500 */
+font-weight: 400;
+padding: 4px 12px;
+border-radius: 9999px;
+font-size: 0.75rem;
+```
+
+```html
+<span class="badge-danger">Produto excluído</span>
+```
+
+### Badge Secondary (Atualização/Edição)
+Utilizado para indicar ações de atualização ou edição.
+
+```css
+/* Default */
+background: transparent;
+color: #696E86;  /* graphite-600 */
+border: 1px solid #9096A0;  /* graphite-400 */
+font-weight: 400;
+padding: 4px 12px;
+border-radius: 9999px;
+font-size: 0.75rem;
+```
+
+```html
+<span class="badge-secondary">Produto atualizado</span>
+```
+
+### Badge Success (Adição/Criação)
+Utilizado para indicar ações de criação ou adição.
+
+```css
+/* Default */
+background: transparent;
+color: #4A8C6C;  /* success-600 */
+border: 1px solid #5DAA7F;  /* success-500 */
+font-weight: 400;
+padding: 4px 12px;
+border-radius: 9999px;
+font-size: 0.75rem;
+```
+
+```html
+<span class="badge-success">Produto criado</span>
+```
+
+### Exemplos de Uso
+
+```html
+<!-- Em descrições de atividades -->
+<div class="activity-description">
+  Insumo <span class="badge-danger">Farinha excluída</span>
+</div>
+
+<div class="activity-description">
+  Produto final <span class="badge-secondary">Bolo de chocolate atualizado</span>
+</div>
+
+<div class="activity-description">
+  Base <span class="badge-success">Massa de pizza criada</span>
+</div>
+```
+
+---
+
 ## Notas de Implementação
 
 ### Acessibilidade

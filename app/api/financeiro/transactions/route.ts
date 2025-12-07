@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { ActivityFinancial } from '@/lib/activityLogger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -137,6 +138,10 @@ export async function POST(request: NextRequest) {
         console.error('Error creating transaction:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
+
+      // Registrar atividade
+      ActivityFinancial.transactionCreated(type, parseFloat(amount), description, transaction.id)
+        .catch(err => console.error('❌ Erro ao registrar atividade:', err))
 
       return NextResponse.json({ transaction })
     }
@@ -301,6 +306,10 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Registrar atividade
+    ActivityFinancial.transactionUpdated(transaction.type, transaction.amount, transaction.description, transaction.id)
+      .catch(err => console.error('❌ Erro ao registrar atividade:', err))
+
     return NextResponse.json({ transaction })
   } catch (error) {
     console.error('Error in PUT /api/financeiro/transactions:', error)
@@ -335,6 +344,14 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Transaction ID required' }, { status: 400 })
     }
 
+    // Buscar dados da transação antes de deletar
+    const { data: transaction } = await supabase
+      .from('financial_transactions')
+      .select('type, description, amount')
+      .eq('id', id)
+      .eq('workspace_id', profile.workspace_id)
+      .single()
+
     const { error } = await supabase
       .from('financial_transactions')
       .delete()
@@ -344,6 +361,12 @@ export async function DELETE(request: NextRequest) {
     if (error) {
       console.error('Error deleting transaction:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Registrar atividade
+    if (transaction) {
+      ActivityFinancial.transactionDeleted(transaction.type, transaction.amount, transaction.description, id)
+        .catch(err => console.error('❌ Erro ao registrar atividade:', err))
     }
 
     return NextResponse.json({ success: true })

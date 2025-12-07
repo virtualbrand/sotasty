@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Spinner } from '@/components/ui/spinner'
 import Modal from '@/components/Modal'
 import { DateTimePicker } from '@/components/ui/datetime-picker'
 import { showToast } from '@/app/(dashboard)/layout'
@@ -1795,7 +1796,14 @@ export default function OrdersPage() {
                 className="btn-success flex-1"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Salvando...' : (isEditing ? 'Atualizar' : 'Salvar Pedido')}
+                {isSubmitting ? (
+                  <>
+                    <Spinner size="small" className="w-4 h-4" />
+                    Salvando...
+                  </>
+                ) : (
+                  isEditing ? 'Atualizar' : 'Salvar Pedido'
+                )}
               </button>
             </div>
           </form>
@@ -1868,7 +1876,14 @@ export default function OrdersPage() {
                 type="submit"
                 className="btn-success flex-1"
               >
-                Adicionar Cliente
+                {isSubmitting ? (
+                  <>
+                    <Spinner size="small" className="w-4 h-4" />
+                    Adicionando...
+                  </>
+                ) : (
+                  'Adicionar Cliente'
+                )}
               </button>
             </div>
           </form>
@@ -1964,7 +1979,14 @@ export default function OrdersPage() {
                 type="submit"
                 className="btn-success flex-1"
               >
-                Adicionar Produto
+                {isSubmitting ? (
+                  <>
+                    <Spinner size="small" className="w-4 h-4" />
+                    Adicionando...
+                  </>
+                ) : (
+                  'Adicionar Produto'
+                )}
               </button>
             </div>
           </form>

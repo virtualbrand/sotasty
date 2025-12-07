@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, MessageSquare, FileText, Paperclip, Repeat } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { Spinner } from '@/components/ui/spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { showToast } from '@/app/(dashboard)/layout'
@@ -433,7 +434,10 @@ export default function TransferModal({ isOpen, onClose, onSuccess }: TransferMo
               className="btn-success w-full"
             >
               {isSubmitting ? (
-                <span>Salvando...</span>
+                <>
+                  <Spinner size="small" className="w-4 h-4" />
+                  Salvando...
+                </>
               ) : (
                 <>
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check w-4 h-4" aria-hidden="true">

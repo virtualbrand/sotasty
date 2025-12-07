@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import OpenAI from 'openai'
 
 // Esta rota salva contextos de texto que serão injetados nas conversas do assistente
 export async function POST(request: NextRequest) {
@@ -24,6 +25,44 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Busca o assistant e vector store do cliente
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('openai_assistant_id, openai_vector_store_id')
+      .eq('id', user.id)
+      .single()
+
+    // Se o conteúdo for grande o suficiente, também adiciona ao Vector Store
+    let fileId = null
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY
+    
+    if (OPENAI_API_KEY && profile?.openai_vector_store_id && content.length > 100) {
+      try {
+        const openai = new OpenAI({ apiKey: OPENAI_API_KEY })
+        const vectorStoreId = profile.openai_vector_store_id
+
+        // Cria um arquivo temporário com o contexto
+        const blob = new Blob([content], { type: 'text/plain' })
+        const file = new File([blob], `${name}.txt`, { type: 'text/plain' })
+        
+        // Upload do arquivo
+        const uploadedFile = await openai.files.create({
+          file: file,
+          purpose: 'assistants',
+        })
+
+        // Adiciona ao vector store
+        await openai.vectorStores.files.create(vectorStoreId, {
+          file_id: uploadedFile.id,
+        })
+
+        fileId = uploadedFile.id
+      } catch (error) {
+        console.error('Erro ao adicionar contexto ao Vector Store:', error)
+        // Continua mesmo se falhar - o contexto ainda será salvo no Supabase
+      }
+    }
+
     // Salva o contexto no Supabase
     const { data, error } = await supabase
       .from('assistant_contexts')
@@ -32,6 +71,7 @@ export async function POST(request: NextRequest) {
           user_id: user.id,
           name: name,
           content: content,
+          file_id: fileId,
           created_at: new Date().toISOString(),
         }
       ])
@@ -49,7 +89,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true,
       context: data,
-      message: 'Contexto adicionado com sucesso.'
+      message: 'Contexto adicionado com sucesso à base de conhecimento.'
     })
   } catch (error) {
     console.error('Erro ao processar contexto:', error)
