@@ -201,17 +201,9 @@ export function KnowledgeBaseEditor({ entries, onRefresh }: KnowledgeBaseEditorP
       </div>
 
       <div>
-        <div className="flex items-center gap-2 mb-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Conteúdo <span className="text-gray-700">*</span>
-          </label>
-          <div className="group relative">
-            <Info className="w-4 h-4 text-gray-400 cursor-help" />
-            <div className="invisible group-hover:visible absolute left-0 top-full mt-2 w-[330px] bg-white text-[var(--color-licorice)] text-sm rounded-lg shadow-lg z-50 border border-gray-200" style={{ padding: '25px 15px 30px 20px' }}>
-              Use o editor rico para formatar seu conteúdo. Selecione o texto e use os botões da toolbar ou atalhos de teclado (Cmd+B para negrito, Cmd+I para itálico). Pressione / para comandos rápidos.
-            </div>
-          </div>
-        </div>
+        <label htmlFor="knowledge-content" className="block text-sm font-medium text-gray-700 mb-2">
+          Conteúdo <span className="text-gray-700">*</span>
+        </label>
         <RichTextEditor
           value={content}
           onChange={setContent}

@@ -74,32 +74,49 @@ export function BlockNoteEditorComponent({ value, onChange, onEscapePress }: Blo
   // Ocultar itens indesejados do dropdown dinamicamente com JavaScript
   useEffect(() => {
     const hideUnwantedItems = () => {
-      // Itens para ocultar do dropdown slash command (em português)
-      const itemsToHide = [
-        'Toggle List',
-        'Check List', 
-        'Heading 6',
-        'Toggle Heading 1',
-        'Toggle Heading 2',
-        'Toggle Heading 3',
-        'Quote',
-        // Versões em português
-        'Título 5',
-        'Título 6',
-        'Título Expansível',
-        'Lista expansível',
-        'Lista de verificação',
-        'Citação'
+      // Itens para MANTER no dropdown (apenas estes devem aparecer)
+      const itemsToKeep = [
+        'Título',       // H1
+        'Título 2',     // H2
+        'Título 3',     // H3
+        'Subtítulo',    // H4
+        'Lista Numerada',
+        'Lista com Marcadores',
+        'Separador',
+        'Emoji'
       ]
       
-      // Ocultar itens do menu
-      const menuItems = document.querySelectorAll('.mantine-Menu-item')
+      // Selecionar TODOS os itens do menu
+      const menuItems = document.querySelectorAll('.mantine-Menu-item, button[role="menuitem"]')
       menuItems.forEach((item) => {
         const label = item.querySelector('.mantine-Menu-itemLabel')
         const labelText = label?.textContent?.trim() || ''
         
-        if (itemsToHide.some(hideText => labelText.includes(hideText))) {
-          (item as HTMLElement).style.display = 'none'
+        // Se tem label e NÃO está na lista de manter, ocultar
+        if (labelText) {
+          const shouldKeep = itemsToKeep.some(keepText => 
+            labelText === keepText || labelText.startsWith(keepText)
+          )
+          
+          if (!shouldKeep) {
+            (item as HTMLElement).style.display = 'none !important'
+            item.setAttribute('data-hidden', 'true')
+          }
+        }
+      })
+      
+      // Ocultar seções/grupos inteiros que não queremos
+      const unwantedGroups = ['Mídia', 'Subtítulos', 'Avançado', 'Blocos básicos']
+      document.querySelectorAll('.mantine-Menu-label, [role="group"]').forEach((group) => {
+        const groupText = group.textContent?.trim() || ''
+        if (unwantedGroups.some(unwanted => groupText.includes(unwanted))) {
+          (group as HTMLElement).style.display = 'none !important'
+          // Ocultar também os próximos itens até o próximo grupo
+          let next = group.nextElementSibling
+          while (next && !next.classList.contains('mantine-Menu-label')) {
+            (next as HTMLElement).style.display = 'none !important'
+            next = next.nextElementSibling
+          }
         }
       })
 
@@ -155,13 +172,19 @@ export function BlockNoteEditorComponent({ value, onChange, onEscapePress }: Blo
 
   return (
     <div 
-      className="border rounded-lg overflow-visible bg-white relative"
+      className="border border-gray-300 rounded-md overflow-visible bg-white relative focus-within:outline-none transition-colors"
       style={{
         fontFamily: 'var(--font-kumbh-sans)',
         minHeight: '150px',
         zIndex: 1,
       }}
     >
+      <style jsx>{`
+        div:focus-within {
+          border-color: var(--color-clay-500);
+          box-shadow: 0 0 0 2px #b1746726;
+        }
+      `}</style>
       <style jsx global>{`
         .bn-container .bn-editor {
           min-height: 150px;
@@ -192,6 +215,10 @@ export function BlockNoteEditorComponent({ value, onChange, onEscapePress }: Blo
         }
         .bn-container [role="menu"] {
           z-index: 9999999 !important;
+        }
+        /* Ocultar itens indesejados do menu slash (/) */
+        .mantine-Menu-item[data-hidden="true"] {
+          display: none !important;
         }
         /* Ocultar itens da toolbar: strikethrough, text color, background color, align, link */
         .bn-toolbar-button[data-test="strikethrough"],
