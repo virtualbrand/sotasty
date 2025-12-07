@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useCreateBlockNote } from '@blocknote/react'
 import { BlockNoteView } from '@blocknote/mantine'
+import { pt } from '@blocknote/core/locales'
 import '@blocknote/mantine/style.css'
 import '@blocknote/core/fonts/inter.css'
 
@@ -15,8 +16,10 @@ interface BlockNoteEditorProps {
 export function BlockNoteEditorComponent({ value, onChange, onEscapePress }: BlockNoteEditorProps) {
   const [isMounted, setIsMounted] = useState(false)
 
-  // Criar editor
-  const editor = useCreateBlockNote()
+  // Criar editor com tradução pt-BR
+  const editor = useCreateBlockNote({
+    dictionary: pt,
+  })
 
   // Montar componente (evitar SSR issues)
   useEffect(() => {
@@ -71,7 +74,7 @@ export function BlockNoteEditorComponent({ value, onChange, onEscapePress }: Blo
   // Ocultar itens indesejados do dropdown dinamicamente com JavaScript
   useEffect(() => {
     const hideUnwantedItems = () => {
-      // Itens para ocultar do dropdown slash command
+      // Itens para ocultar do dropdown slash command (em português)
       const itemsToHide = [
         'Toggle List',
         'Check List', 
@@ -79,14 +82,23 @@ export function BlockNoteEditorComponent({ value, onChange, onEscapePress }: Blo
         'Toggle Heading 1',
         'Toggle Heading 2',
         'Toggle Heading 3',
-        'Quote'
+        'Quote',
+        // Versões em português
+        'Título 5',
+        'Título 6',
+        'Título Expansível',
+        'Lista expansível',
+        'Lista de verificação',
+        'Citação'
       ]
       
       // Ocultar itens do menu
       const menuItems = document.querySelectorAll('.mantine-Menu-item')
       menuItems.forEach((item) => {
         const label = item.querySelector('.mantine-Menu-itemLabel')
-        if (label && itemsToHide.includes(label.textContent || '')) {
+        const labelText = label?.textContent?.trim() || ''
+        
+        if (itemsToHide.some(hideText => labelText.includes(hideText))) {
           (item as HTMLElement).style.display = 'none'
         }
       })
@@ -97,11 +109,28 @@ export function BlockNoteEditorComponent({ value, onChange, onEscapePress }: Blo
         const ariaLabel = btn.getAttribute('aria-label') || ''
         const textContent = btn.textContent || ''
         
-        if (
-          ariaLabel.includes('Create Link') || 
-          ariaLabel.includes('Link') ||
-          textContent.includes('Create Link')
-        ) {
+        // Itens da toolbar para ocultar
+        const toolbarItemsToHide = [
+          'Create Link',
+          'Criar link',
+          'Link',
+          'Riscado',
+          'Strike',
+          'Alinhar',
+          'Align',
+          'Aninhar',
+          'Nest',
+          'Unnest',
+          'Desaninhar',
+          'Cores',
+          'Colors',
+          'Color',
+          'Cor'
+        ]
+        
+        if (toolbarItemsToHide.some(hideText => 
+          ariaLabel.includes(hideText) || textContent.includes(hideText)
+        )) {
           (btn as HTMLElement).style.display = 'none'
         }
       })
