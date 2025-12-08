@@ -2,6 +2,8 @@
 
 import Sidebar from "@/components/Sidebar";
 import Toaster from "@/components/ui/toast";
+import TrialBanner from "@/components/TrialBanner";
+import { LastLoginTracker } from "@/components/LastLoginTracker";
 import { useState, useEffect, useRef } from "react";
 import type { ToasterRef } from "@/components/ui/toast";
 import { usePermissionsWatcher } from "@/hooks/usePermissionsWatcher";
@@ -74,6 +76,7 @@ export default function DashboardLayout({
   if (!mounted) {
     return (
       <>
+        <LastLoginTracker />
         <Toaster ref={toasterRef} defaultPosition="top-right" />
         <Sidebar position="sidebar" />
         <main className="min-h-screen bg-[var(--color-bg-app)] p-8 transition-all duration-300 ml-64">
@@ -87,12 +90,14 @@ export default function DashboardLayout({
   if (menuPosition === 'header') {
     return (
       <>
+        <LastLoginTracker />
         <Toaster ref={toasterRef} defaultPosition="top-right" />
         <div className="min-h-screen bg-[var(--color-bg-app)]">
           <div className="fixed top-0 left-0 right-0 z-50">
             <Sidebar position="header" />
           </div>
           <main className="pt-20 p-8">
+            <TrialBanner />
             {children}
           </main>
         </div>
@@ -103,9 +108,11 @@ export default function DashboardLayout({
   if (menuPosition === 'footer') {
     return (
       <>
+        <LastLoginTracker />
         <Toaster ref={toasterRef} defaultPosition="top-right" />
         <div className="min-h-screen bg-[var(--color-bg-app)]">
           <main className="pb-20 p-8">
+            <TrialBanner />
             {children}
           </main>
           <div className="fixed bottom-0 left-0 right-0 z-50">
@@ -119,9 +126,11 @@ export default function DashboardLayout({
   if (menuPosition === 'right') {
     return (
       <>
+        <LastLoginTracker />
         <Toaster ref={toasterRef} defaultPosition="top-right" />
         <Sidebar position="right" />
         <main className={`min-h-screen bg-[var(--color-bg-app)] p-8 transition-all duration-300 ${isCollapsed ? 'mr-20' : 'mr-64'}`}>
+          <TrialBanner />
           {children}
         </main>
       </>
@@ -131,9 +140,11 @@ export default function DashboardLayout({
   // Padrão: sidebar lateral esquerda
   return (
     <>
+      <LastLoginTracker />
       <Toaster ref={toasterRef} defaultPosition="top-right" />
       <Sidebar position="sidebar" />
       <main className={`min-h-screen bg-[var(--color-bg-app)] p-8 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
+        <TrialBanner />
         {children}
       </main>
     </>

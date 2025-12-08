@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { User, Phone, Mail, ShoppingBag, X, Search, Info, ArrowDownAZ, ArrowDownZA, Camera, SwitchCamera, CircleX, Trash2, CircleAlert, Check } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
+import PageLoading from '@/components/PageLoading'
 import { showToast } from '@/app/(dashboard)/layout'
 import { useCustomerSettings } from '@/hooks/useCustomerSettings'
 import { createClient } from '@/lib/supabase/client'
@@ -149,12 +150,12 @@ export default function CustomersPage() {
 
   const loadUserRole = async () => {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
     
     if (user) {
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('role, is_superadmin')
+        .select('*')
         .eq('id', user.id)
         .single()
       
@@ -528,6 +529,19 @@ export default function CustomersPage() {
     })
   }
 
+  // Se é superadmin, mostra o painel de clientes SaaS
+  if (loadingRole) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <PageLoading />
+      </div>
+    )
+  }
+
+  if (userRole === 'superadmin' || profile?.is_superadmin) {
+    return <SuperAdminCustomers />
+  }
+
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
@@ -882,7 +896,7 @@ export default function CustomersPage() {
                   >
                     {loading ? (
                       <>
-                        <Spinner size="small" className="w-4 h-4" />
+                        <Spinner size="small" className="w-4 h-4 text-white" />
                         Atualizando...
                       </>
                     ) : (
@@ -902,7 +916,7 @@ export default function CustomersPage() {
                   >
                     {loading ? (
                       <>
-                        <Spinner size="small" className="w-4 h-4" />
+                        <Spinner size="small" className="w-4 h-4 text-white" />
                         Salvando...
                       </>
                     ) : (

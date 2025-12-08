@@ -42,6 +42,14 @@ export default function AgendaSettingsPage() {
     return 'numeric'
   })
   
+  const [showOrdersInAgenda, setShowOrdersInAgenda] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('showOrdersInAgenda')
+      return saved === 'true'
+    }
+    return false
+  })
+  
   const [statuses, setStatuses] = useState<Status[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [tags, setTags] = useState<TagItem[]>([])
@@ -89,39 +97,23 @@ export default function AgendaSettingsPage() {
     loadData()
   }, [])
 
-  const saveDefaultView = () => {
-    localStorage.setItem('agendaDefaultView', defaultView)
+  const toggleShowOrdersInAgenda = () => {
+    const newValue = !showOrdersInAgenda
+    setShowOrdersInAgenda(newValue)
+    localStorage.setItem('showOrdersInAgenda', String(newValue))
     
-    const viewNames = {
-      list: 'Lista',
-      kanban: 'Kanban',
-      day: 'Dia',
-      week: 'Semana',
-      month: 'Mês'
-    }
+    // Disparar evento customizado para outras abas/componentes
+    window.dispatchEvent(new CustomEvent('showOrdersInAgendaChanged', { detail: newValue }))
     
     showToast({
-      title: 'Preferência salva!',
-      message: `Visualização padrão alterada para ${viewNames[defaultView]}`,
+      title: newValue ? 'Pedidos ativados!' : 'Pedidos desativados!',
+      message: newValue 
+        ? 'Os pedidos agora serão exibidos na agenda junto com as tarefas'
+        : 'Os pedidos não serão mais exibidos na agenda',
       variant: 'success',
       duration: 3000,
     })
   }
-
-  const saveDefaultDateFormat = () => {
-    localStorage.setItem('agendaDateFormat', dateFormat)
-    
-    const dateExamples = getDateExamples()
-    
-    showToast({
-      title: 'Preferência salva!',
-      message: `Formato de data alterado para ${dateExamples[dateFormat]}`,
-      variant: 'success',
-      duration: 3000,
-    })
-  }
-
-  const hasUnsavedChanges = false // Não mais necessário
 
   const colors = [
     { name: 'pink', label: 'Rosa', class: 'bg-pink-100 text-pink-800 border-pink-200' },
@@ -422,17 +414,20 @@ export default function AgendaSettingsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Visualização Padrão */}
+      {/* Visualização */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center gap-2 mb-4">
           <Eye className="w-5 h-5 text-gray-700" />
-          <h2 className="text-lg font-semibold text-gray-900">Visualização Padrão</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Visualização</h2>
         </div>
-        <p className="text-sm text-gray-600 mb-6">
-          Defina qual será a visualização padrão ao abrir a página de agenda.
-        </p>
 
-        <div className="space-y-4">
+        {/* Visualização Padrão */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2">Visualização padrão</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Defina qual será a visualização padrão ao abrir a página de agenda.
+          </p>
+
           <div className="flex items-center gap-6">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -545,19 +540,38 @@ export default function AgendaSettingsPage() {
             </label>
           </div>
         </div>
-      </div>
 
-      {/* Formato de Data */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Eye className="w-5 h-5 text-gray-700" />
-          <h2 className="text-lg font-semibold text-gray-900">Formato de Data</h2>
+        {/* Mostrar Pedidos na Agenda */}
+        <div className="mb-6 pt-6 border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Mostrar pedidos na agenda</h3>
+              <p className="text-sm text-gray-600">
+                Exibe os pedidos junto com as tarefas para uma visão completa das demandas do dia
+              </p>
+            </div>
+            <button
+              onClick={toggleShowOrdersInAgenda}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#BE9089] focus:ring-offset-2 ${
+                showOrdersInAgenda ? 'bg-[#BE9089]' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  showOrdersInAgenda ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
         </div>
-        <p className="text-sm text-gray-600 mb-6">
-          Escolha como deseja visualizar as datas nos calendários e navegação.
-        </p>
 
-        <div className="space-y-4">
+        {/* Formato de Data */}
+        <div className="pt-6 border-t border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2">Formato de data</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Escolha como deseja visualizar as datas nos calendários e navegação.
+          </p>
+
           <div className="flex items-center gap-6">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -571,7 +585,7 @@ export default function AgendaSettingsPage() {
                   localStorage.setItem('agendaDateFormat', newFormat)
                   showToast({
                     title: 'Preferência salva!',
-                    message: `Formato de data alterado para ${dateExamples.short}`,
+                    message: `Formato alterado para ${getDateExamples()[newFormat]}`,
                     variant: 'success',
                     duration: 3000,
                   })
@@ -593,7 +607,7 @@ export default function AgendaSettingsPage() {
                   localStorage.setItem('agendaDateFormat', newFormat)
                   showToast({
                     title: 'Preferência salva!',
-                    message: `Formato de data alterado para ${dateExamples.numeric}`,
+                    message: `Formato alterado para ${getDateExamples()[newFormat]}`,
                     variant: 'success',
                     duration: 3000,
                   })
@@ -615,7 +629,7 @@ export default function AgendaSettingsPage() {
                   localStorage.setItem('agendaDateFormat', newFormat)
                   showToast({
                     title: 'Preferência salva!',
-                    message: `Formato de data alterado para ${dateExamples.long}`,
+                    message: `Formato alterado para ${getDateExamples()[newFormat]}`,
                     variant: 'success',
                     duration: 3000,
                   })

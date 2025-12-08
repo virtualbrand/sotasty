@@ -8,24 +8,6 @@ import Modal from '@/components/Modal'
 import { DateTimePicker } from '@/components/ui/datetime-picker'
 import { showToast } from '@/app/(dashboard)/layout'
 import PageLoading from '@/components/PageLoading'
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  useDroppable,
-} from '@dnd-kit/core'
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { 
   Plus, 
   Clock, 
@@ -150,94 +132,8 @@ const getOrderTitle = (order: Order, enableAlternativeTitle: boolean): string =>
   return order.customer
 }
 
-// Componente de célula droppable do calendário
-function DroppableCalendarCell({ date, children }: { 
-  date: Date; 
-  children: React.ReactNode;
-}) {
-  const dateStr = `date-${date.toISOString()}`
-  const { setNodeRef, isOver } = useDroppable({
-    id: dateStr,
-  })
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`min-h-[120px] border-b border-r border-gray-200 p-2 transition-colors ${
-        isOver ? 'bg-pink-50 ring-2 ring-pink-300 ring-inset' : 'bg-white'
-      }`}
-    >
-      {children}
-    </div>
-  )
-}
-
-// Componente de pedido draggable simplificado para o calendário
-function DraggableCalendarOrder({ order, onClick, enableAlternativeTitle }: { order: Order; onClick: () => void; enableAlternativeTitle: boolean }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: order.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
-
-  const getStatusBadgeColor = (status: Order['status']) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-500'
-      case 'in-progress':
-        return 'bg-blue-500'
-      case 'pending':
-        return 'bg-yellow-500'
-      default:
-        return 'bg-gray-500'
-    }
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      onClick={(e) => {
-        e.stopPropagation()
-        onClick()
-      }}
-      className="text-xs px-2 py-1 mb-1 rounded bg-white border border-gray-200 cursor-move hover:shadow-md hover:border-pink-300 transition-all flex items-center gap-1"
-    >
-      <div className={`w-2 h-2 rounded-full ${getStatusBadgeColor(order.status)}`} />
-      <span className="truncate flex-1">{getOrderTitle(order, enableAlternativeTitle)}</span>
-      <span className="text-gray-500 text-[10px]">
-        {order.deliveryDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-      </span>
-    </div>
-  )
-}
-
-// Componente de card draggable
-function SortableOrderCard({ order, onClick, enableAlternativeTitle }: { order: Order; onClick: () => void; enableAlternativeTitle: boolean }) {
-  const {
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: order.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
-
+// Componente de card simples
+function OrderCard({ order, onClick, enableAlternativeTitle }: { order: Order; onClick: () => void; enableAlternativeTitle: boolean }) {
   const getStatusBadgeColor = (status: Order['status']) => {
     switch (status) {
       case 'completed':
@@ -262,8 +158,6 @@ function SortableOrderCard({ order, onClick, enableAlternativeTitle }: { order: 
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
       className="bg-white border border-gray-200 rounded-lg p-5 mb-4 cursor-pointer hover:shadow-md transition-shadow duration-200"
       onClick={onClick}
     >
@@ -272,9 +166,14 @@ function SortableOrderCard({ order, onClick, enableAlternativeTitle }: { order: 
         
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-4 mb-2">
-            <div>
-              <h3 className="font-medium text-gray-900 mb-1">{getOrderTitle(order, enableAlternativeTitle)}</h3>
-              <p className="text-sm text-gray-600">{order.product}</p>
+            <div className="flex-1">
+              {enableAlternativeTitle && order.title && (
+                <h3 className="font-semibold text-gray-900 mb-1">{order.title}</h3>
+              )}
+              <p className="text-sm text-gray-600">{order.customer}</p>
+              {order.product !== 'Sem produto' && (
+                <p className="text-xs text-gray-500">{order.product}</p>
+              )}
             </div>
             <Badge variant="outline" className={`${getStatusBadgeColor(order.status)} shrink-0`}>
               {getStatusText(order.status)}
@@ -295,6 +194,52 @@ function SortableOrderCard({ order, onClick, enableAlternativeTitle }: { order: 
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// Componente de célula do calendário
+function CalendarCell({ date, children }: { 
+  date: Date; 
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-[120px] border-b border-r border-gray-200 p-2 bg-white">
+      {children}
+    </div>
+  )
+}
+
+// Componente de pedido simplificado para o calendário
+function CalendarOrder({ order, onClick, enableAlternativeTitle }: { order: Order; onClick: () => void; enableAlternativeTitle: boolean }) {
+  const getStatusBadgeColor = (status: Order['status']) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-500'
+      case 'in-progress':
+        return 'bg-blue-500'
+      case 'pending':
+        return 'bg-yellow-500'
+      default:
+        return 'bg-gray-500'
+    }
+  }
+
+  return (
+    <div
+      onClick={(e) => {
+        e.stopPropagation()
+        onClick()
+      }}
+      className="text-xs px-2 py-1 mb-1 rounded bg-white border border-gray-200 cursor-pointer hover:shadow-md hover:border-pink-300 transition-all flex items-center gap-1"
+    >
+      <div className={`w-2 h-2 rounded-full ${getStatusBadgeColor(order.status)}`} />
+      <span className="truncate flex-1">
+        {enableAlternativeTitle && order.title ? order.title : order.product || order.customer}
+      </span>
+      <span className="text-gray-500 text-[10px]">
+        {order.deliveryDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+      </span>
     </div>
   )
 }
@@ -382,65 +327,6 @@ export default function OrdersPage() {
     value: '',
     notes: ''
   })
-
-  // Drag and drop sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
-
-  // Handle drag end
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-
-    if (!over) return
-
-    const orderId = active.id as string
-    const targetDateStr = over.id as string
-
-    // Se foi arrastado para uma célula de data (no calendário)
-    if (targetDateStr.startsWith('date-')) {
-      const targetDate = new Date(targetDateStr.replace('date-', ''))
-      
-      setOrders((items) => {
-        return items.map((item) => {
-          if (item.id === orderId) {
-            // Manter a hora original, apenas mudar a data
-            const newDate = new Date(targetDate)
-            newDate.setHours(item.deliveryDate.getHours())
-            newDate.setMinutes(item.deliveryDate.getMinutes())
-            
-            return {
-              ...item,
-              deliveryDate: newDate,
-            }
-          }
-          return item
-        })
-      })
-
-      showToast({
-        title: 'Pedido reagendado!',
-        message: `Pedido movido para ${targetDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}`,
-        variant: 'success',
-        duration: 3000,
-      })
-    } else if (active.id !== over.id) {
-      // Reordenação dentro da mesma data (lista)
-      setOrders((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id)
-        const newIndex = items.findIndex((item) => item.id === over.id)
-
-        return arrayMove(items, oldIndex, newIndex)
-      })
-    }
-  }
 
   // Carregar a view padrão do localStorage após montar
   useEffect(() => {
@@ -1317,27 +1203,16 @@ export default function OrdersPage() {
                       {capitalizeWeekday(date)}, {formatDateDisplay(date)}
                     </h3>
                     
-                    <DndContext
-                      sensors={sensors}
-                      collisionDetection={closestCenter}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <SortableContext
-                        items={ordersForDate.map(o => o.id)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        <div className="space-y-0">
-                          {ordersForDate.map(order => (
-                            <SortableOrderCard
-                              key={order.id}
-                              order={order}
-                              onClick={() => handleOrderClick(order)}
-                              enableAlternativeTitle={enableAlternativeTitle}
-                            />
-                          ))}
-                        </div>
-                      </SortableContext>
-                    </DndContext>
+                    <div className="space-y-0">
+                      {ordersForDate.map(order => (
+                        <OrderCard
+                          key={order.id}
+                          order={order}
+                          onClick={() => handleOrderClick(order)}
+                          enableAlternativeTitle={enableAlternativeTitle}
+                        />
+                      ))}
+                    </div>
                   </div>
                 )
               })}
@@ -1351,24 +1226,15 @@ export default function OrdersPage() {
           {isLoading ? (
             <PageLoading />
           ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <div className="grid grid-cols-7 border-b border-gray-200">
-              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-                <div key={day} className="p-3 text-center text-sm font-medium text-gray-700 border-r border-gray-200 last:border-r-0">
-                  {day}
-                </div>
-              ))}
-            </div>
-            
-            <SortableContext
-              items={filteredOrders.map(o => o.id)}
-              strategy={verticalListSortingStrategy}
-            >
+            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <div className="grid grid-cols-7 border-b border-gray-200">
+                {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
+                  <div key={day} className="p-3 text-center text-sm font-medium text-gray-700 border-r border-gray-200 last:border-r-0">
+                    {day}
+                  </div>
+                ))}
+              </div>
+              
               <div className="grid grid-cols-7">
                 {(() => {
                   const year = currentDate.getFullYear()
@@ -1388,7 +1254,7 @@ export default function OrdersPage() {
                     )
                     
                     days.push(
-                      <DroppableCalendarCell
+                      <CalendarCell
                         key={i}
                         date={dayDate}
                       >
@@ -1400,7 +1266,7 @@ export default function OrdersPage() {
                         
                         <div className="space-y-1">
                           {dayOrders.map(order => (
-                            <DraggableCalendarOrder
+                            <CalendarOrder
                               key={order.id}
                               order={order}
                               onClick={() => handleOrderClick(order)}
@@ -1408,7 +1274,7 @@ export default function OrdersPage() {
                             />
                           ))}
                         </div>
-                      </DroppableCalendarCell>
+                      </CalendarCell>
                     )
                     
                     current.setDate(current.getDate() + 1)
@@ -1417,9 +1283,9 @@ export default function OrdersPage() {
                   return days
                 })()}
               </div>
-            </SortableContext>
+            
           </div>
-        </DndContext>
+        
           )}
         </>
       )}
@@ -1429,11 +1295,7 @@ export default function OrdersPage() {
           {isLoading ? (
             <PageLoading />
           ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
+            
               <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
             <div className="grid grid-cols-8">
               <div className="p-3 text-sm font-medium text-gray-700 border-r border-b border-gray-200">
@@ -1462,12 +1324,8 @@ export default function OrdersPage() {
               })()}
             </div>
             
-            <SortableContext
-              items={filteredOrders.map(o => o.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="grid grid-cols-8 max-h-[600px] overflow-y-auto">
-                {Array.from({ length: 24 }).map((_, hour) => {
+            <div className="grid grid-cols-8 max-h-[600px] overflow-y-auto">
+              {Array.from({ length: 24 }).map((_, hour) => {
                   const startOfWeek = new Date(currentDate)
                   startOfWeek.setDate(currentDate.getDate() - currentDate.getDay())
                   
@@ -1489,28 +1347,28 @@ export default function OrdersPage() {
                         })
                         
                         return (
-                          <DroppableCalendarCell
+                          <CalendarCell
                             key={dayIndex}
                             date={day}
                           >
                             {hourOrders.map(order => (
-                              <DraggableCalendarOrder
+                              <CalendarOrder
                                 key={order.id}
                                 order={order}
                                 onClick={() => handleOrderClick(order)}
                                 enableAlternativeTitle={enableAlternativeTitle}
                               />
                             ))}
-                          </DroppableCalendarCell>
+                          </CalendarCell>
                         )
                       })}
                     </div>
                   )
                 })}
               </div>
-            </SortableContext>
+            
           </div>
-        </DndContext>
+        
           )}
         </>
       )}
@@ -1798,7 +1656,7 @@ export default function OrdersPage() {
               >
                 {isSubmitting ? (
                   <>
-                    <Spinner size="small" className="w-4 h-4" />
+                    <Spinner size="small" className="w-4 h-4 text-white" />
                     Salvando...
                   </>
                 ) : (
@@ -1878,7 +1736,7 @@ export default function OrdersPage() {
               >
                 {isSubmitting ? (
                   <>
-                    <Spinner size="small" className="w-4 h-4" />
+                    <Spinner size="small" className="w-4 h-4 text-white" />
                     Adicionando...
                   </>
                 ) : (
@@ -1981,7 +1839,7 @@ export default function OrdersPage() {
               >
                 {isSubmitting ? (
                   <>
-                    <Spinner size="small" className="w-4 h-4" />
+                    <Spinner size="small" className="w-4 h-4 text-white" />
                     Adicionando...
                   </>
                 ) : (

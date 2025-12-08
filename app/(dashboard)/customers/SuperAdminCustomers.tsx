@@ -5,6 +5,8 @@ import { Mail, Phone, Clock, TrendingUp, Package, ShoppingCart, X, Search, Info,
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { createClient } from '@/lib/supabase/client'
+import PageLoading from '@/components/PageLoading'
 
 type SaaSCustomer = {
   id: string
@@ -31,108 +33,9 @@ type SaaSCustomer = {
   created_at: string
 }
 
-// Mock data
-const mockCustomers: SaaSCustomer[] = [
-  {
-    id: '1',
-    company_name: 'Doce Arte Confeitaria',
-    email: 'contato@docearte.com.br',
-    phone: '(48) 99999-1234',
-    status: 'active',
-    plan: 'grow',
-    trial_start: '2025-11-01',
-    trial_end: '2025-11-15',
-    conversion_date: '2025-11-14',
-    mrr: 197,
-    total_revenue: 591,
-    payment_status: 'paid',
-    next_billing: '2025-12-14',
-    last_access: '2025-11-17T10:30:00',
-    days_active_7: 7,
-    days_active_30: 28,
-    products_count: 45,
-    orders_count: 123,
-    health_score: 'green',
-    tags: ['Power User'],
-    notes: 'Cliente muito engajado, usa todas as features',
-    created_at: '2025-11-01'
-  },
-  {
-    id: '2',
-    company_name: 'Sabor Doce',
-    email: 'admin@sabordoce.com',
-    phone: '(11) 98888-5678',
-    status: 'trial',
-    plan: 'start',
-    trial_start: '2025-11-10',
-    trial_end: '2025-11-24',
-    conversion_date: null,
-    mrr: 0,
-    total_revenue: 0,
-    payment_status: 'pending',
-    next_billing: '2025-11-24',
-    last_access: '2025-11-16T15:20:00',
-    days_active_7: 4,
-    days_active_30: 4,
-    products_count: 8,
-    orders_count: 2,
-    health_score: 'yellow',
-    tags: ['Trial', 'Precisa Onboarding'],
-    notes: 'Não acessou nos últimos 2 dias',
-    created_at: '2025-11-10'
-  },
-  {
-    id: '3',
-    company_name: 'Confeitaria Premium',
-    email: 'gestao@premium.com.br',
-    phone: '(21) 97777-9012',
-    status: 'trial',
-    plan: 'grow',
-    trial_start: '2025-11-12',
-    trial_end: '2025-11-26',
-    conversion_date: null,
-    mrr: 0,
-    total_revenue: 0,
-    payment_status: 'pending',
-    next_billing: '2025-11-26',
-    last_access: '2025-11-12T09:15:00',
-    days_active_7: 1,
-    days_active_30: 1,
-    products_count: 0,
-    orders_count: 0,
-    health_score: 'red',
-    tags: ['Risco de Churn', 'Trial'],
-    notes: '⚠️ Cadastrou mas nunca voltou - 5 dias sem acesso',
-    created_at: '2025-11-12'
-  },
-  {
-    id: '4',
-    company_name: 'Bolo & Cia',
-    email: 'contato@boloecia.com',
-    phone: '(47) 96666-3456',
-    status: 'active',
-    plan: 'scale',
-    trial_start: '2025-10-15',
-    trial_end: '2025-10-29',
-    conversion_date: '2025-10-28',
-    mrr: 397,
-    total_revenue: 794,
-    payment_status: 'paid',
-    next_billing: '2025-12-28',
-    last_access: '2025-11-17T08:45:00',
-    days_active_7: 6,
-    days_active_30: 27,
-    products_count: 89,
-    orders_count: 234,
-    health_score: 'green',
-    tags: ['Power User', 'High LTV'],
-    notes: 'Melhor cliente do mês',
-    created_at: '2025-10-15'
-  }
-]
-
 export default function SuperAdminCustomers() {
-  const [customers] = useState<SaaSCustomer[]>(mockCustomers)
+  const [customers, setCustomers] = useState<SaaSCustomer[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCustomer, setSelectedCustomer] = useState<SaaSCustomer | null>(null)
   const [activeFilters, setActiveFilters] = useState<string[]>([])
@@ -143,6 +46,89 @@ export default function SuperAdminCustomers() {
   const statusFilterRef = useRef<HTMLDivElement>(null)
   const planFilterRef = useRef<HTMLDivElement>(null)
   const healthFilterRef = useRef<HTMLDivElement>(null)
+
+  // Buscar admins como clientes
+  useEffect(() => {
+    const fetchAdminCustomers = async () => {
+      try {
+        const response = await fetch('/api/admin-customers')
+        if (!response.ok) {
+          console.error('Failed to fetch admin customers:', await response.text())
+          setLoading(false)
+          return
+        }
+        
+        const profiles = await response.json()
+
+        // Mapear perfis para formato SaaSCustomer
+        const mappedCustomers: SaaSCustomer[] = profiles.map((profile: any) => {
+          // Calcular status baseado em trial e subscription
+          let status: 'trial' | 'active' | 'canceled' | 'past_due' | 'expired' = 'trial'
+          if (profile.subscription_status === 'active') status = 'active'
+          else if (profile.subscription_status === 'canceled') status = 'canceled'
+          else if (profile.subscription_status === 'past_due') status = 'past_due'
+          else if (!profile.is_trial_active && profile.trial_end_date) {
+            const trialEnd = new Date(profile.trial_end_date)
+            if (trialEnd < new Date()) status = 'expired'
+          }
+
+          // Mapear plano
+          const planMap: Record<string, 'start' | 'grow' | 'scale'> = {
+            'cake-start': 'start',
+            'cake-grow': 'grow',
+            'cake-scale': 'scale'
+          }
+          const plan = planMap[profile.subscription_plan || 'cake-start'] || 'start'
+
+          // Calcular MRR baseado no plano
+          const mrrMap = { start: 0, grow: 49, scale: 149 }
+          const mrr = mrrMap[plan]
+
+          // Calcular dias restantes
+          const trialEnd = profile.trial_end_date ? new Date(profile.trial_end_date) : new Date()
+          const daysRemaining = Math.ceil((trialEnd.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+
+          // Health score baseado em atividade e pagamento
+          let health_score: 'red' | 'yellow' | 'green' = 'green'
+          if (status === 'past_due' || status === 'expired') health_score = 'red'
+          else if (status === 'trial' && daysRemaining < 3) health_score = 'yellow'
+
+          return {
+            id: profile.id,
+            company_name: profile.business_name || 'Sem nome',
+            email: profile.email,
+            phone: profile.phone || '',
+            status,
+            plan,
+            trial_start: profile.trial_start_date || profile.created_at,
+            trial_end: profile.trial_end_date || profile.created_at,
+            conversion_date: status === 'active' ? profile.created_at : null,
+            mrr,
+            total_revenue: mrr * 3, // Estimativa simples
+            payment_status: status === 'past_due' ? 'failed' : status === 'active' ? 'paid' : 'pending',
+            next_billing: profile.created_at, // TODO: implementar data de próxima cobrança
+            last_access: profile.last_login || profile.created_at,
+            days_active_7: 7, // TODO: implementar tracking
+            days_active_30: 30, // TODO: implementar tracking
+            products_count: profile.products_count || 0,
+            orders_count: profile.orders_count || 0,
+            health_score,
+            tags: [],
+            notes: '',
+            created_at: profile.created_at
+          }
+        })
+
+        setCustomers(mappedCustomers)
+      } catch (error) {
+        console.error('Erro ao buscar clientes admin:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAdminCustomers()
+  }, [])
 
   // Fechar filtros ao clicar fora ou pressionar ESC
   useEffect(() => {
@@ -337,6 +323,7 @@ export default function SuperAdminCustomers() {
       </div>
 
       {/* Busca e Filtros */}
+      {!loading && customers.length > 0 && (
       <div className="mb-6">
         <div className="flex items-center gap-3">
           <div className="relative flex-1 max-w-md">
@@ -515,9 +502,25 @@ export default function SuperAdminCustomers() {
           </div>
         )}
       </div>
+      )}
 
       {/* Tabela de Clientes */}
       <div className="bg-white rounded-xl overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <PageLoading />
+          </div>
+        ) : customers.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <User className="w-16 h-16 text-gray-400 mb-4" />
+            <p className="text-gray-600">Nenhum cliente cadastrado. Clique em "+ Novo Cliente" para começar.</p>
+          </div>
+        ) : filteredCustomers.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Search className="w-16 h-16 text-gray-400 mb-4" />
+            <p className="text-gray-600">Nenhum cliente encontrado com os filtros aplicados.</p>
+          </div>
+        ) : (
         <div className="overflow-x-auto p-6">
           <table className="w-full">
             <thead>
@@ -615,11 +618,12 @@ export default function SuperAdminCustomers() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
-      {filteredCustomers.length === 0 && (
+      {filteredCustomers.length > 0 && (
         <div className="text-center py-8 text-gray-500">
-          Nenhum cliente encontrado.
+          {/* Espaço reservado para paginação futura */}
         </div>
       )}
 

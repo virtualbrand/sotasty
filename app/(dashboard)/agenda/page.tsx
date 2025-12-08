@@ -8,26 +8,6 @@ import Modal from '@/components/Modal'
 import { DateTimePicker } from '@/components/ui/datetime-picker'
 import { showToast } from '@/app/(dashboard)/layout'
 import PageLoading from '@/components/PageLoading'
-import {
-  DndContext,
-  closestCenter,
-  closestCorners,
-  KeyboardSensor,
-  PointerSensor,
-  MouseSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  useDroppable,
-} from '@dnd-kit/core'
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { 
   Plus, 
   Clock, 
@@ -157,45 +137,20 @@ type Product = {
   available?: boolean
 }
 
-// Componente de célula droppable do calendário
-function DroppableCalendarCell({ date, children }: { 
+// Componente de célula do calendário
+function CalendarCell({ date, children }: { 
   date: Date; 
   children: React.ReactNode;
 }) {
-  const dateStr = `date-${date.toISOString()}`
-  const { setNodeRef, isOver } = useDroppable({
-    id: dateStr,
-  })
-
   return (
-    <div
-      ref={setNodeRef}
-      className={`min-h-[120px] border-b border-r border-gray-200 p-2 transition-colors ${
-        isOver ? 'bg-pink-50 ring-2 ring-pink-300 ring-inset' : 'bg-white'
-      }`}
-    >
+    <div className="min-h-[120px] border-b border-r border-gray-200 p-2 bg-white">
       {children}
     </div>
   )
 }
 
-// Componente de pedido draggable simplificado para o calendário
-function DraggableCalendarOrder({ order, onClick }: { order: Order; onClick: () => void }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: order.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
-
+// Componente de pedido simplificado para o calendário
+function CalendarOrder({ order, onClick }: { order: Order; onClick: () => void }) {
   const getStatusBadgeColor = (status: Order['status']) => {
     switch (status) {
       case 'completed':
@@ -211,15 +166,11 @@ function DraggableCalendarOrder({ order, onClick }: { order: Order; onClick: () 
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
       onClick={(e) => {
         e.stopPropagation()
         onClick()
       }}
-      className="text-xs px-2 py-1 mb-1 rounded bg-white border border-gray-200 cursor-move hover:shadow-md hover:border-pink-300 transition-all flex items-center gap-1"
+      className="text-xs px-2 py-1 mb-1 rounded bg-white border border-gray-200 cursor-pointer hover:shadow-md hover:border-pink-300 transition-all flex items-center gap-1"
     >
       <div className={`w-2 h-2 rounded-full ${getStatusBadgeColor(order.status)}`} />
       <span className="truncate flex-1">{order.task_name || order.product || order.customer}</span>
@@ -230,21 +181,8 @@ function DraggableCalendarOrder({ order, onClick }: { order: Order; onClick: () 
   )
 }
 
-// Componente de card draggable
-function SortableOrderCard({ order, onClick }: { order: Order; onClick: () => void }) {
-  const {
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: order.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
-
+// Componente de card simples
+function OrderCard({ order, onClick }: { order: Order; onClick: () => void }) {
   const getStatusBadgeColor = (status: Order['status']) => {
     switch (status) {
       case 'completed':
@@ -269,8 +207,6 @@ function SortableOrderCard({ order, onClick }: { order: Order; onClick: () => vo
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
       className="bg-white border border-gray-200 rounded-lg p-5 mb-4 cursor-pointer hover:shadow-md transition-shadow duration-200"
       onClick={onClick}
     >
@@ -329,21 +265,6 @@ function SortableOrderCard({ order, onClick }: { order: Order; onClick: () => vo
 
 // Componente de card para visualização Kanban
 function KanbanOrderCard({ order, onClick, dateFormat }: { order: Order; onClick: () => void; dateFormat: 'short' | 'numeric' | 'long' }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: order.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition: transition || 'transform 200ms ease',
-    opacity: isDragging ? 0.5 : 1,
-  }
-
   // Função para formatar data
   const formatDate = (date: Date): string => {
     const day = String(date.getDate()).padStart(2, '0')
@@ -363,12 +284,8 @@ function KanbanOrderCard({ order, onClick, dateFormat }: { order: Order; onClick
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
       onClick={onClick}
-      className="bg-white border border-gray-200 rounded-lg p-4 mb-3 cursor-grab active:cursor-grabbing hover:shadow-lg hover:border-pink-300 transition-all duration-200"
+      className="bg-white border border-gray-200 rounded-lg p-4 mb-3 cursor-pointer hover:shadow-lg hover:border-pink-300 transition-all duration-200"
     >
       {order.task_name && (
         <h4 className="font-semibold text-gray-900 mb-2">{order.task_name}</h4>
@@ -426,29 +343,22 @@ function KanbanOrderCard({ order, onClick, dateFormat }: { order: Order; onClick
   )
 }
 
-// Componente de coluna droppable para Kanban
-function DroppableKanbanColumn({
-  id,
+// Componente de coluna simples para Kanban
+function KanbanColumn({
   title,
   color,
   badgeColor,
   count,
   children,
 }: {
-  id: string
   title: string
   color: string
   badgeColor: string
   count: number
   children: React.ReactNode
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id })
-
   return (
-    <div 
-      ref={setNodeRef}
-      className={`bg-gray-50 rounded-lg p-4 transition-colors ${isOver ? 'bg-gray-100 ring-2 ring-blue-400' : ''}`}
-    >
+    <div className="bg-gray-50 rounded-lg p-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-gray-900 flex items-center gap-2">
           <div className={`w-3 h-3 rounded-full ${color}`}></div>
@@ -487,6 +397,13 @@ export default function AgendaPage() {
       return (saved as 'short' | 'numeric' | 'long') || 'numeric'
     }
     return 'numeric'
+  })
+  const [showOrdersInAgenda, setShowOrdersInAgenda] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('showOrdersInAgenda')
+      return saved === 'true'
+    }
+    return true
   })
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -535,135 +452,11 @@ export default function AgendaPage() {
     selectedTags: [] as string[]
   })
 
-  // Drag and drop sensors - otimizado para experiência mais fluida
-  const sensors = useSensors(
-    useSensor(MouseSensor, {
-      activationConstraint: {
-        distance: 5, // Menor distância para iniciar o drag
-      },
-    }),
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5, // Reduzido de 8 para 5 para mais responsividade
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
-
-  // Handle drag end
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event
-
-    if (!over) return
-
-    const orderId = active.id as string
-    const targetId = over.id as string
-
-    // Se foi arrastado para uma célula de data (no calendário)
-    if (targetId.startsWith('date-')) {
-      const targetDate = new Date(targetId.replace('date-', ''))
-      
-      setOrders((items) => {
-        return items.map((item) => {
-          if (item.id === orderId) {
-            // Manter a hora original, apenas mudar a data
-            const newDate = new Date(targetDate)
-            newDate.setHours(item.deliveryDate.getHours())
-            newDate.setMinutes(item.deliveryDate.getMinutes())
-            
-            return {
-              ...item,
-              deliveryDate: newDate,
-            }
-          }
-          return item
-        })
-      })
-
-      showToast({
-        title: 'Pedido reagendado!',
-        message: `Pedido movido para ${targetDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}`,
-        variant: 'success',
-        duration: 3000,
-      })
-    } else if (allStatuses.some(status => status.id === targetId)) {
-      // Mudança de status no Kanban (usando status dinâmicos)
-      const targetStatus = allStatuses.find(s => s.id === targetId)
-      const order = orders.find(o => o.id === orderId)
-      
-      if (!targetStatus || !order) return
-
-      // Atualizar o status localmente
-      setOrders((items) => {
-        return items.map((item) => {
-          if (item.id === orderId) {
-            return {
-              ...item,
-              status: targetId,
-            }
-          }
-          return item
-        })
-      })
-
-      // Atualizar no banco de dados
-      try {
-        const response = await fetch(`/api/orders?id=${orderId}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            status: targetId,
-          }),
-        })
-
-        if (!response.ok) {
-          throw new Error('Erro ao atualizar status')
-        }
-
-        showToast({
-          title: 'Status atualizado!',
-          message: `Tarefa movida para ${targetStatus.name}`,
-          variant: 'success',
-          duration: 3000,
-        })
-      } catch (error) {
-        console.error('Erro ao atualizar status:', error)
-        showToast({
-          title: 'Erro ao atualizar status',
-          message: 'Tente novamente',
-          variant: 'error',
-          duration: 3000,
-        })
-        
-        // Reverter mudança local em caso de erro
-        setOrders((items) => {
-          return items.map((item) => {
-            if (item.id === orderId) {
-              return order
-            }
-            return item
-          })
-        })
-      }
-    } else if (active.id !== over.id) {
-      // Reordenação dentro da mesma data (lista)
-      setOrders((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id)
-        const newIndex = items.findIndex((item) => item.id === over.id)
-
-        return arrayMove(items, oldIndex, newIndex)
-      })
-    }
-  }
-
   // Carregar a view padrão do localStorage após montar
   useEffect(() => {
     const savedView = localStorage.getItem('agendaDefaultView')
     const savedDateFormat = localStorage.getItem('agendaDateFormat')
+    
     if (savedView) {
       setView(savedView as 'month' | 'week' | 'day' | 'kanban' | 'list')
     }
@@ -700,7 +493,14 @@ export default function AgendaPage() {
           const ordersData = await ordersRes.json()
           // Converte as datas do banco para objetos Date e mapeia os campos
           const ordersWithDates: Order[] = ordersData
-            .filter((order: any) => order.type === 'task') // Filtra apenas tarefas da Agenda
+            .filter((order: any) => {
+              // Se showOrdersInAgenda está ativado, mostra tanto tasks quanto orders
+              // Senão, mostra apenas tasks
+              const savedShowOrders = localStorage.getItem('showOrdersInAgenda')
+              const showOrders = savedShowOrders === 'true'
+              
+              return showOrders ? true : order.type === 'task'
+            })
             .filter((order: any) => order.delivery_date) // Filtra pedidos sem data
             .map((order: any) => ({
               id: order.id,
@@ -753,12 +553,76 @@ export default function AgendaPage() {
       fetchData()
     }
     
+    // Recarregar dados quando a preferência de mostrar pedidos mudar
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'showOrdersInAgenda') {
+        const newValue = e.newValue === 'true'
+        setShowOrdersInAgenda(newValue)
+        fetchData()
+      }
+    }
+    
+    // Listener para evento customizado (mesma aba)
+    const handleShowOrdersChange = (e: any) => {
+      setShowOrdersInAgenda(e.detail)
+      fetchData()
+    }
+    
     window.addEventListener('focus', handleFocus)
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('showOrdersInAgendaChanged', handleShowOrdersChange)
     
     return () => {
       window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('showOrdersInAgendaChanged', handleShowOrdersChange)
     }
   }, [])
+
+  // Recarregar dados quando showOrdersInAgenda mudar
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const ordersRes = await fetch('/api/orders')
+        
+        if (ordersRes.ok) {
+          const ordersData = await ordersRes.json()
+          const ordersWithDates: Order[] = ordersData
+            .filter((order: any) => {
+              // Usa o estado atual para filtrar
+              return showOrdersInAgenda ? true : order.type === 'task'
+            })
+            .filter((order: any) => order.delivery_date)
+            .map((order: any) => ({
+              id: order.id,
+              customer: order.customer,
+              customer_id: order.customer_id,
+              product: order.product,
+              product_id: order.product_id,
+              deliveryDate: new Date(order.delivery_date),
+              status: order.status,
+              title: order.title,
+              notes: order.notes,
+              phone: order.phone,
+              value: order.value,
+              tags: order.tags,
+              category: order.category,
+              images: order.images,
+              task_name: order.task_name,
+              categories: order.categories,
+            }))
+          setOrders(ordersWithDates)
+        }
+      } catch (error) {
+        console.error('Erro ao recarregar pedidos:', error)
+      }
+    }
+    
+    // Só recarrega se não for a primeira renderização
+    if (orders.length > 0 || !isLoading) {
+      fetchData()
+    }
+  }, [showOrdersInAgenda])
 
   // Fechar filtros ao clicar fora ou pressionar ESC
   useEffect(() => {
@@ -1616,26 +1480,15 @@ export default function AgendaPage() {
                       {capitalizeWeekday(date)}, {formatDateDisplay(date)}
                     </h3>
                     
-                    <DndContext
-                      sensors={sensors}
-                      collisionDetection={closestCorners}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <SortableContext
-                        items={ordersForDate.map(o => o.id)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        <div className="space-y-0">
-                          {ordersForDate.map(order => (
-                            <SortableOrderCard
-                              key={order.id}
-                              order={order}
-                              onClick={() => handleOrderClick(order)}
-                            />
-                          ))}
-                        </div>
-                      </SortableContext>
-                    </DndContext>
+                    <div className="space-y-0">
+                      {ordersForDate.map(order => (
+                        <OrderCard
+                          key={order.id}
+                          order={order}
+                          onClick={() => handleOrderClick(order)}
+                        />
+                      ))}
+                    </div>
                   </div>
                 )
               })}
@@ -1649,51 +1502,39 @@ export default function AgendaPage() {
           {isLoading ? (
             <PageLoading />
           ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCorners}
-              onDragEnd={handleDragEnd}
-            >
-              <div className={`grid gap-6`} style={{ gridTemplateColumns: `repeat(${allStatuses.length}, minmax(0, 1fr))` }}>
-                {allStatuses.map(status => {
-                  const statusOrders = filteredOrders.filter(o => o.status === status.id)
-                  const colorClass = getColorClass(status.color)
-                  
-                  return (
-                    <DroppableKanbanColumn
-                      key={status.id}
-                      id={status.id}
-                      title={status.name}
-                      color={colorClass}
-                      badgeColor={colorClass}
-                      count={statusOrders.length}
-                    >
-                      <SortableContext
-                        items={statusOrders.map(o => o.id)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        {statusOrders
-                          .sort((a, b) => a.deliveryDate.getTime() - b.deliveryDate.getTime())
-                          .map(order => (
-                            <KanbanOrderCard
-                              key={order.id}
-                              order={order}
-                              onClick={() => handleOrderClick(order)}
-                              dateFormat={dateFormat}
-                            />
-                          ))}
-                        {statusOrders.length === 0 && (
-                          <div className="text-center py-12 text-gray-400">
-                            <Package className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                            <p className="text-sm">Nenhuma tarefa</p>
-                          </div>
-                        )}
-                      </SortableContext>
-                    </DroppableKanbanColumn>
-                  )
-                })}
-              </div>
-            </DndContext>
+            <div className={`grid gap-6`} style={{ gridTemplateColumns: `repeat(${allStatuses.length}, minmax(0, 1fr))` }}>
+              {allStatuses.map(status => {
+                const statusOrders = filteredOrders.filter(o => o.status === status.id)
+                const colorClass = getColorClass(status.color)
+                
+                return (
+                  <KanbanColumn
+                    key={status.id}
+                    title={status.name}
+                    color={colorClass}
+                    badgeColor={colorClass}
+                    count={statusOrders.length}
+                  >
+                    {statusOrders
+                      .sort((a, b) => a.deliveryDate.getTime() - b.deliveryDate.getTime())
+                      .map(order => (
+                        <KanbanOrderCard
+                          key={order.id}
+                          order={order}
+                          onClick={() => handleOrderClick(order)}
+                          dateFormat={dateFormat}
+                        />
+                      ))}
+                    {statusOrders.length === 0 && (
+                      <div className="text-center py-12 text-gray-400">
+                        <Package className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">Nenhuma tarefa</p>
+                      </div>
+                    )}
+                  </KanbanColumn>
+                )
+              })}
+            </div>
           )}
         </>
       )}
@@ -1703,24 +1544,15 @@ export default function AgendaPage() {
           {isLoading ? (
             <PageLoading />
           ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCorners}
-              onDragEnd={handleDragEnd}
-            >
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <div className="grid grid-cols-7 border-b border-gray-200">
-              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-                <div key={day} className="p-3 text-center text-sm font-medium text-gray-700 border-r border-gray-200 last:border-r-0">
-                  {day}
-                </div>
-              ))}
-            </div>
-            
-            <SortableContext
-              items={filteredOrders.map(o => o.id)}
-              strategy={verticalListSortingStrategy}
-            >
+            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <div className="grid grid-cols-7 border-b border-gray-200">
+                {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
+                  <div key={day} className="p-3 text-center text-sm font-medium text-gray-700 border-r border-gray-200 last:border-r-0">
+                    {day}
+                  </div>
+                ))}
+              </div>
+              
               <div className="grid grid-cols-7">
                 {(() => {
                   const year = currentDate.getFullYear()
@@ -1740,7 +1572,7 @@ export default function AgendaPage() {
                     )
                     
                     days.push(
-                      <DroppableCalendarCell
+                      <CalendarCell
                         key={i}
                         date={dayDate}
                       >
@@ -1752,14 +1584,14 @@ export default function AgendaPage() {
                         
                         <div className="space-y-1">
                           {dayOrders.map(order => (
-                            <DraggableCalendarOrder
+                            <CalendarOrder
                               key={order.id}
                               order={order}
                               onClick={() => handleOrderClick(order)}
                             />
                           ))}
                         </div>
-                      </DroppableCalendarCell>
+                      </CalendarCell>
                     )
                     
                     current.setDate(current.getDate() + 1)
@@ -1768,9 +1600,7 @@ export default function AgendaPage() {
                   return days
                 })()}
               </div>
-            </SortableContext>
-          </div>
-        </DndContext>
+            </div>
           )}
         </>
       )}
@@ -1780,43 +1610,34 @@ export default function AgendaPage() {
           {isLoading ? (
             <PageLoading />
           ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCorners}
-              onDragEnd={handleDragEnd}
-            >
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <div className="grid grid-cols-8">
-              <div className="p-3 text-sm font-medium text-gray-700 border-r border-b border-gray-200">
-                Horário
+            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <div className="grid grid-cols-8">
+                <div className="p-3 text-sm font-medium text-gray-700 border-r border-b border-gray-200">
+                  Horário
+                </div>
+                {(() => {
+                  const days = []
+                  const startOfWeek = new Date(currentDate)
+                  startOfWeek.setDate(currentDate.getDate() - currentDate.getDay())
+                  
+                  for (let i = 0; i < 7; i++) {
+                    const day = new Date(startOfWeek)
+                    day.setDate(startOfWeek.getDate() + i)
+                    days.push(
+                      <div key={i} className="p-3 text-center border-r border-b border-gray-200 last:border-r-0">
+                        <div className="text-sm font-medium text-gray-900">
+                          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][i]}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {formatDateDisplay(day)}
+                        </div>
+                      </div>
+                    )
+                  }
+                  return days
+                })()}
               </div>
-              {(() => {
-                const days = []
-                const startOfWeek = new Date(currentDate)
-                startOfWeek.setDate(currentDate.getDate() - currentDate.getDay())
-                
-                for (let i = 0; i < 7; i++) {
-                  const day = new Date(startOfWeek)
-                  day.setDate(startOfWeek.getDate() + i)
-                  days.push(
-                    <div key={i} className="p-3 text-center border-r border-b border-gray-200 last:border-r-0">
-                      <div className="text-sm font-medium text-gray-900">
-                        {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][i]}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {formatDateDisplay(day)}
-                      </div>
-                    </div>
-                  )
-                }
-                return days
-              })()}
-            </div>
-            
-            <SortableContext
-              items={filteredOrders.map(o => o.id)}
-              strategy={verticalListSortingStrategy}
-            >
+              
               <div className="grid grid-cols-8 max-h-[600px] overflow-y-auto">
                 {Array.from({ length: 24 }).map((_, hour) => {
                   const startOfWeek = new Date(currentDate)
@@ -1840,27 +1661,25 @@ export default function AgendaPage() {
                         })
                         
                         return (
-                          <DroppableCalendarCell
+                          <CalendarCell
                             key={dayIndex}
                             date={day}
                           >
                             {hourOrders.map(order => (
-                              <DraggableCalendarOrder
+                              <CalendarOrder
                                 key={order.id}
                                 order={order}
                                 onClick={() => handleOrderClick(order)}
                               />
                             ))}
-                          </DroppableCalendarCell>
+                          </CalendarCell>
                         )
                       })}
                     </div>
                   )
                 })}
               </div>
-            </SortableContext>
-          </div>
-        </DndContext>
+            </div>
           )}
         </>
       )}

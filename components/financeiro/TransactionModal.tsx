@@ -584,7 +584,7 @@ export default function TransactionModal({ isOpen, onClose, type, transaction, o
           >
             {isSubmitting ? (
               <>
-                <Spinner size="small" className="w-4 h-4" />
+                <Spinner size="small" className="w-4 h-4 text-white" />
                 Salvando...
               </>
             ) : (

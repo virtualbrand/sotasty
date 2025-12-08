@@ -403,7 +403,7 @@ export default function CategoryModal({ isOpen, onClose, type, onSuccess, catego
           >
             {isSubmitting ? (
               <>
-                <Spinner size="small" className="w-4 h-4" />
+                <Spinner size="small" className="w-4 h-4 text-white" />
                 {isEdit ? 'Salvando...' : 'Criando...'}
               </>
             ) : (

@@ -435,7 +435,7 @@ export default function TransferModal({ isOpen, onClose, onSuccess }: TransferMo
             >
               {isSubmitting ? (
                 <>
-                  <Spinner size="small" className="w-4 h-4" />
+                  <Spinner size="small" className="w-4 h-4 text-white" />
                   Salvando...
                 </>
               ) : (

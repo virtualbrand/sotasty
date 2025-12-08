@@ -1085,7 +1085,7 @@ function IngredientsTab({
             >
               {saving ? (
                 <>
-                  <Spinner size="small" className="w-4 h-4" />
+                  <Spinner size="small" className="w-4 h-4 text-white" />
                   {editingId ? 'Atualizando...' : 'Salvando...'}
                 </>
               ) : (
@@ -1837,7 +1837,7 @@ function BasesTab({
             >
               {saving ? (
                 <>
-                  <Spinner size="small" className="w-4 h-4" />
+                  <Spinner size="small" className="w-4 h-4 text-white" />
                   {editingId ? 'Atualizando...' : 'Salvando...'}
                 </>
               ) : (

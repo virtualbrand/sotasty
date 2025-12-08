@@ -150,6 +150,130 @@ export async function proxy(request: NextRequest) {
       }
       return NextResponse.redirect(redirectUrl)
     }
+
+    // Verificar status de bloqueio para rotas protegidas
+    const isProtectedRoute = pathname.startsWith('/dashboard') ||
+                            pathname.startsWith('/produtos') ||
+                            pathname.startsWith('/pedidos') ||
+                            pathname.startsWith('/clientes') ||
+                            pathname.startsWith('/financeiro') ||
+                            pathname.startsWith('/mensagens') ||
+                            pathname.startsWith('/atendimento') ||
+                            pathname.startsWith('/agenda') ||
+                            pathname.startsWith('/atividades') ||
+                            pathname.startsWith('/settings')
+
+    const isBlockedRoute = pathname === '/blocked'
+
+    if (isProtectedRoute && !isBlockedRoute) {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+          }
+        }
+      )
+
+      // Extrair user ID do token
+      const tokenValue = accessToken.value
+      const tokenData = JSON.parse(tokenValue)
+      const userId = tokenData?.user?.id
+
+      if (userId) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('trial_end_date, subscription_status, last_payment_date')
+          .eq('id', userId)
+          .single()
+
+        if (profile) {
+          let shouldBlock = false
+
+          // Verificar se trial expirou há mais de 1 dia
+          if (profile.trial_end_date) {
+            const trialEnd = new Date(profile.trial_end_date)
+            const now = new Date()
+            const daysSinceExpiry = Math.floor((now.getTime() - trialEnd.getTime()) / (1000 * 60 * 60 * 24))
+            
+            if (daysSinceExpiry >= 1 && profile.subscription_status !== 'active') {
+              shouldBlock = true
+            }
+          }
+
+          // Verificar inadimplência por 2+ dias
+          if (profile.subscription_status === 'past_due' && profile.last_payment_date) {
+            const lastPayment = new Date(profile.last_payment_date)
+            const now = new Date()
+            const daysSincePayment = Math.floor((now.getTime() - lastPayment.getTime()) / (1000 * 60 * 60 * 24))
+            
+            if (daysSincePayment >= 2) {
+              shouldBlock = true
+            }
+          }
+
+          if (shouldBlock) {
+            return NextResponse.redirect(new URL('/blocked', request.url))
+          }
+        }
+      }
+    }
+
+    // Se está na página de bloqueio mas não deveria estar bloqueado, redirecionar
+    if (isBlockedRoute && accessToken) {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+          }
+        }
+      )
+
+      const tokenValue = accessToken.value
+      const tokenData = JSON.parse(tokenValue)
+      const userId = tokenData?.user?.id
+
+      if (userId) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('trial_end_date, subscription_status, last_payment_date')
+          .eq('id', userId)
+          .single()
+
+        if (profile) {
+          let shouldBlock = false
+
+          if (profile.trial_end_date) {
+            const trialEnd = new Date(profile.trial_end_date)
+            const now = new Date()
+            const daysSinceExpiry = Math.floor((now.getTime() - trialEnd.getTime()) / (1000 * 60 * 60 * 24))
+            
+            if (daysSinceExpiry >= 1 && profile.subscription_status !== 'active') {
+              shouldBlock = true
+            }
+          }
+
+          if (profile.subscription_status === 'past_due' && profile.last_payment_date) {
+            const lastPayment = new Date(profile.last_payment_date)
+            const now = new Date()
+            const daysSincePayment = Math.floor((now.getTime() - lastPayment.getTime()) / (1000 * 60 * 60 * 24))
+            
+            if (daysSincePayment >= 2) {
+              shouldBlock = true
+            }
+          }
+
+          if (!shouldBlock) {
+            return NextResponse.redirect(new URL('/dashboard', request.url))
+          }
+        }
+      }
+    }
   } catch (error) {
     console.error('Middleware error:', error)
   }
